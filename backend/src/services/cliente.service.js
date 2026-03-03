@@ -2,6 +2,10 @@ import { clienteRepository } from "../repositories/cliente.repository.js";
 
 export const clienteService = {
     async registerCliente(data) {
+       if (!data) {
+            throw new Error("No se recibieron datos para registrar el cliente");
+        } 
+    
     const required= ["nombre", "email","telefono"];
     for(const field of required){
         if (!data[field]) { 

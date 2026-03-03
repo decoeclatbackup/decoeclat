@@ -14,7 +14,7 @@ export const clienteRepository = {
 
     async find(filters={}){
         let query = `
-        SELECT * FROM clientes WHERE 1=1
+        SELECT * FROM clientes WHERE activo = true
         `;
         const values = [];
         let idx = 1;
