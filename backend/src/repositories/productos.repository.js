@@ -1,24 +1,21 @@
 import { pool } from "../config/db.js";
 
 /**
- * Repository layer handles direct database operations for products.
- * SQL queries are executed with parameter binding to avoid injections.
+ * Capa de Repositorio para Productos (Decoeclat).
+ * Ahora la información de precios y stock se maneja en Variantes.
  */
 
 export const productosRepository = {
-  async create({ name, categoryId, price, description, offerPrice, onOffer }) {
+  async create({ nombre, descripcion, categoria_id }) {
     const text = `
-      INSERT INTO productos (nombre, descripcion, precio, precio_oferta, en_oferta, categoria_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO productos (nombre, descripcion, categoria_id)
+      VALUES ($1, $2, $3)
       RETURNING *
     `;
     const values = [
-      name,
-      description ?? null,
-      price,
-      offerPrice ?? null,
-      onOffer == null ? false : onOffer,
-      categoryId,
+      nombre,
+      descripcion ?? null,
+      categoria_id,
     ];
     const { rows } = await pool.query(text, values);
     return rows[0];
@@ -34,14 +31,17 @@ export const productosRepository = {
     const values = [];
     let idx = 1;
 
-    if (filters.name) {
+    // Filtro por nombre
+    if (filters.name || filters.nombre) {
       query += ` AND p.nombre ILIKE $${idx}`;
-      values.push(`%${filters.name}%`);
+      values.push(`%${filters.name || filters.nombre}%`);
       idx++;
     }
-    if (filters.categoryId) {
+    
+    // Filtro por categoría
+    if (filters.categoryId || filters.categoria_id) {
       query += ` AND p.categoria_id = $${idx}`;
-      values.push(filters.categoryId);
+      values.push(filters.categoryId || filters.categoria_id);
       idx++;
     }
 
@@ -50,41 +50,44 @@ export const productosRepository = {
   },
 
   async findById(id) {
-    const { rows } = await pool.query(
-      "SELECT * FROM productos WHERE producto_id = $1",
-      [id]
-    );
+    const query = `
+      SELECT p.*, c.nombre AS categoria
+      FROM productos p
+      LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
+      WHERE p.producto_id = $1
+    `;
+    const { rows } = await pool.query(query, [id]);
     return rows[0];
   },
 
-async update(id, fields = {}) {
+  async update(id, fields = {}) {
     const sets = [];
     const values = [];
     let idx = 1;
 
-    // Mapeo para que si mandas 'name' desde el service, se guarde como 'nombre' en SQL
+    // Mapeo de campos permitidos para la tabla productos
     const columnMap = {
       name: "nombre",
-      price: "precio",
-      categoryId: "categoria_id",
+      nombre: "nombre",
       description: "descripcion",
-      offerPrice: "precio_oferta",
-      onOffer: "en_oferta",
+      descripcion: "descripcion",
+      categoryId: "categoria_id",
+      categoria_id: "categoria_id",
+      activo: "activo"
     };
 
     for (const key of Object.keys(fields)) {
-      const col = columnMap[key] || key;
-      sets.push(`${col} = $${idx}`);
-      values.push(fields[key]);
-      idx++;
+      if (columnMap[key]) {
+        const col = columnMap[key];
+        sets.push(`${col} = $${idx}`);
+        values.push(fields[key]);
+        idx++;
+      }
     }
 
     if (sets.length === 0) return null;
 
-    // Agregamos el ID al final del array de valores
-    values.push(id);
-    
-    // IMPORTANTE: Quitamos updated_at para evitar errores de SQL
+    values.push(id); // El ID será el último parámetro
     const text = `
       UPDATE productos
       SET ${sets.join(", ")}

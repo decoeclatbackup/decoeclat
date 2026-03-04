@@ -1,65 +1,64 @@
 import { productosRepository } from "../repositories/productos.repository.js";
 
 /**
- * Service layer contains business logic and input validation.
- * It delegates data access to the repository layer.
+ * Service layer para Productos.
+ * Ahora solo maneja la información general del producto.
  */
 
 export const productosService = {
   async registerProduct(data) {
-    // Basic validation – for our existing database we expect
-    // { name, categoryId, price } are required. Optional fields:
-    // description, offerPrice, onOffer. Controller may normalize types.
-    const required = ["name", "categoryId", "price"];
+    // Validamos solo lo necesario para el "contenedor" del producto
+    const required = ["name", "categoryId"];
     for (const field of required) {
       if (data[field] == null) {
-        throw new Error(`${field} is required`);
+        throw new Error(`${field} es obligatorio`);
       }
     }
 
     const payload = {
-      name: data.name,
-      categoryId: data.categoryId,
-      price: data.price,
-      description: data.description ?? null,
-      offerPrice: data.offerPrice ?? null,
-      onOffer: data.onOffer == null ? false : data.onOffer,
+      nombre: data.name,
+      categoria_id: data.categoryId,
+      descripcion: data.description ?? null,
     };
 
     return productosRepository.create(payload);
   },
 
   async getProducts(filters) {
-    // filters may contain name or categoryId
     return productosRepository.find(filters);
   },
 
   async getProduct(id) {
-    return productosRepository.findById(id);
+    const product = await productosRepository.findById(id);
+    if (!product) throw new Error("Producto no encontrado");
+    return product;
   },
 
   async modifyProduct(id, updates) {
-    // Only allow known updatable fields to be sent to repository
+    // Solo permitimos campos generales del producto
     const allowed = [
       "name",
+      "nombre",
       "description",
-      "price",
-      "offerPrice",
-      "onOffer",
+      "descripcion",
       "categoryId",
+      "categoria_id"
     ];
+    
     const payload = {};
     for (const k of allowed) {
       if (Object.prototype.hasOwnProperty.call(updates, k)) {
         payload[k] = updates[k];
       }
     }
+
     if (Object.keys(payload).length === 0) return null;
+    
     return productosRepository.update(id, payload);
   },
 
   async removeProduct(id) {
-    // logical deletion/inactivation
+    // Desactivación lógica
     return productosRepository.deactivate(id);
   },
 };
