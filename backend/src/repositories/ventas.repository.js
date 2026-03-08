@@ -2,110 +2,106 @@ import {pool} from "../config/db.js";
 
 export const ventasRepository = {
 
-    async CreateVenta(ventaData, items) { // 1. Cambiamos 'venta' por 'ventaData'
+    async CreateVenta(ventaData, items) {
     const client = await pool.connect();
-
     try {
         await client.query('BEGIN');
 
+        // 1. Insertar la venta (ponemos total 0 inicialmente, lo actualizaremos al final)
         const ventaQuery = `
-            INSERT INTO ventas (total, metodo_pago, cliente_id, estado_id)
+            INSERT INTO ventas (total, metodo_id, cliente_id, estado_id)
             VALUES ($1, $2, $3, $4)
             RETURNING venta_id;
         `;
-
-        const valuesVenta = [
-            ventaData.total,
-            ventaData.metodo_pago,
-            ventaData.cliente_id,
-            1 // Sigue siendo 1 para Pendiente, ¡esto está bien!
-        ];
-
-        const { rows: ventaRows } = await client.query(ventaQuery, valuesVenta);
+        const { rows: ventaRows } = await client.query(ventaQuery, [0, ventaData.metodo_id, ventaData.cliente_id, 1]);
         const idGenerado = ventaRows[0].venta_id;
 
-        const detalleQuery = `
-            INSERT INTO detalle_ventas (cantidad, precio_unitario, venta_id, variante_id)
-            VALUES ($1, $2, $3, $4)
-        `;
+        let totalCalculado = 0;
 
+        // 2. Procesar items
         for (const item of items) {
-            const valuesDetalle = [
-                item.cantidad,
-                item.precio_unitario,
-                idGenerado,
-                item.variante_id
-            ];
-            await client.query(detalleQuery, valuesDetalle);
+            // BUSCAR PRECIO (OFERTA SI APLICA)
+            const precioQuery = `SELECT CASE WHEN en_oferta THEN precio_oferta ELSE precio END AS precio FROM variantes_producto WHERE variante_id = $1`;
+            const { rows: precioRows } = await client.query(precioQuery, [item.variante_id]);
+            
+            if (precioRows.length === 0) throw new Error(`La variante ${item.variante_id} no existe`);
+            
+            const precioUnitario = precioRows[0].precio;
+            totalCalculado += precioUnitario * item.cantidad;
+
+            // INSERTAR DETALLE con el precio encontrado
+            const detalleQuery = `
+                INSERT INTO detalle_ventas (cantidad, precio_unitario, venta_id, variante_id)
+                VALUES ($1, $2, $3, $4)
+            `;
+            await client.query(detalleQuery, [item.cantidad, precioUnitario, idGenerado, item.variante_id]);
         }
 
-        await client.query('COMMIT');
-        
-        // Devolvemos el objeto limpio
-        return { id: idGenerado, ...ventaData, items };
+        // 3. ACTUALIZAR EL TOTAL REAL DE LA VENTA
+        await client.query(`UPDATE ventas SET total = $1 WHERE venta_id = $2`, [totalCalculado, idGenerado]);
 
+        await client.query('COMMIT');
+        return { id: idGenerado, total: totalCalculado, ...ventaData, items };
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error("Error en CreateVenta Repository:", error); // Un log para ayudarte
         throw error;
     } finally {
         client.release();
     }
 },
-    async createVentaDirecta(ventaData, items) {
-        const client=await pool.connect();
-        try {
-            await client.query('BEGIN');
 
-            const ventaQuery = `
-            INSERT INTO ventas (total, metodo_pago, cliente_id, estado_id)
+async createVentaDirecta(ventaData, items) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const ventaQuery = `
+            INSERT INTO ventas (total, metodo_id, cliente_id, estado_id)
             VALUES ($1, $2, $3, $4)
             RETURNING venta_id;
-            `;
-            const {rows: ventaRows} = await client.query(ventaQuery, [
-                ventaData.total,
-                ventaData.metodo_pago,
-                ventaData.cliente_id,
-                2
-            ]);
-            const idGenerado = ventaRows[0].venta_id;
+        `;
+        const { rows: ventaRows } = await client.query(ventaQuery, [0, ventaData.metodo_id, ventaData.cliente_id, 2]);
+        const idGenerado = ventaRows[0].venta_id;
 
-            for (const item of items) {
-                const detalleQuery = `
+        let totalCalculado = 0;
+
+        for (const item of items) {
+            // BUSCAR PRECIO (OFERTA SI APLICA)
+            const precioQuery = `SELECT CASE WHEN en_oferta THEN precio_oferta ELSE precio END AS precio FROM variantes_producto WHERE variante_id = $1`;
+            const { rows: precioRows } = await client.query(precioQuery, [item.variante_id]);
+            const precioUnitario = precioRows[0].precio;
+            
+            totalCalculado += precioUnitario * item.cantidad;
+
+            // INSERTAR DETALLE
+            await client.query(`
                 INSERT INTO detalle_ventas (cantidad, precio_unitario, venta_id, variante_id)
                 VALUES ($1, $2, $3, $4)
-                `;
-                await client.query(detalleQuery, [
-                    item.cantidad,
-                    item.precio_unitario,
-                    idGenerado,
-                    item.variante_id
-                ]);
+            `, [item.cantidad, precioUnitario, idGenerado, item.variante_id]);
 
-                const updateStockQuery = `
+            // ACTUALIZAR STOCK (Solo en venta directa)
+            const updateStockQuery = `
                 UPDATE variantes_producto
                 SET stock = stock - $1
                 WHERE variante_id = $2 AND stock >= $1
                 RETURNING stock
-                `;
-
-                const stockRes= await client.query(updateStockQuery, [item.cantidad, item.variante_id]);
-
-                if (stockRes.rowCount === 0) {
-                    throw new Error(`Stock insuficiente para variante_id ${item.variante_id}`);
-                }
-
-            }
-
-            await client.query('COMMIT');
-            return {id: idGenerado, ...ventaData, items, estado: 'confirmada'};
-        }catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        }finally {
-            client.release();
+            `;
+            const stockRes = await client.query(updateStockQuery, [item.cantidad, item.variante_id]);
+            if (stockRes.rowCount === 0) throw new Error(`Stock insuficiente para variante_id ${item.variante_id}`);
         }
-    },
+
+        // ACTUALIZAR TOTAL REAL
+        await client.query(`UPDATE ventas SET total = $1 WHERE venta_id = $2`, [totalCalculado, idGenerado]);
+
+        await client.query('COMMIT');
+        return { id: idGenerado, total: totalCalculado, ...ventaData, items, estado: 'confirmada' };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+},
 
 
     async findAll(){

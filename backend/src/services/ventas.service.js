@@ -3,38 +3,39 @@ import { ventasRepository } from "../repositories/ventas.repository.js";
 export const ventasService = {
     async registrarPedidoWeb(datosVenta) {
 
-        const { cliente_id, metodo_pago, items } = datosVenta;
+        const { cliente_id, metodo_id,items } = datosVenta;
 
         if (!items|| items.length === 0) {
             throw new Error("El pedido debe contener al menos un item");
         }
 
-        const montoTotal = items.reduce((acumulado, item) => { 
-            const subtotal = item.cantidad * item.precio_unitario;
-            return acumulado + subtotal;
-        }, 0);
+        if (!cliente_id) {
+            throw new Error("El cliente_id es requerido");
+        }
+
+        if (!metodo_id) {
+            throw new Error("El metodo_id es requerido");
+        }
 
         const nuevaVentaData= {
             cliente_id,
-            metodo_pago,
-            total: montoTotal
+            metodo_id,
         };
 
-        return await ventasRepository.createVentaDirecta(nuevaVentaData, items);
+        return await ventasRepository.CreateVenta(nuevaVentaData, items);
     },
 
     async registrarVentaManual(datosVenta) {
-        const { cliente_id, metodo_pago, items } = datosVenta;
+        const { cliente_id, metodo_id, items } = datosVenta;
 
         if (!cliente_id) throw new Error("El cliente_id es requerido");
+        if (!metodo_id) throw new Error("El metodo_id es requerido");
         if (!items || items.length === 0) throw new Error("La venta debe contener al menos un item");
-
-        const montoTotal = items.reduce((acc, item) => acc + item.cantidad * item.precio_unitario, 0);
 
         const ventaData ={
             cliente_id,
-            metodo_pago,
-            total: montoTotal
+            metodo_id,
+            estado_id: 2 // Directamente confirmada para ventas manuales
         }
 
         return await ventasRepository.createVentaDirecta(ventaData, items);
