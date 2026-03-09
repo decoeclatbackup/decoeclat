@@ -45,12 +45,54 @@ export const reportesService ={
         reportesRepository.getMejoresClientes(mes, anio)
     ]);
 
-    return {
-        mes,
-        anio,
-        topProductos: ranking,
-        mejoresClientes: clientes
-    };
+    if ((!ranking || ranking.length === 0) && (!clientes || clientes.length === 0)) {
+        throw new Error(`No se encontraron estadísticas para el periodo ${mes}/${anio}`);
+    }
+
+    try {
+        // Definimos las columnas para el CSV de estadísticas
+        const fields = [
+            'Tipo',
+            'Nombre',
+            'Telefono',
+            'Unidades',
+            'Recaudado',
+            'Compras',
+            'Total_Comprado'
+        ];
+
+        // Combinamos los datos de ranking y clientes en un solo array
+        const allData = [
+            ...ranking.map(r => ({ 
+                Tipo: 'Producto', 
+                Nombre: r.Producto, 
+                Telefono: null,
+                Unidades: r.Total_Unidades, 
+                Recaudado: r.Total_Recaudado, 
+                Compras: null, 
+                Total_Comprado: null 
+            })),
+            ...clientes.map(c => ({ 
+                Tipo: 'Cliente', 
+                Nombre: c.Cliente, 
+                Telefono: c.Telefono,
+                Unidades: null, 
+                Recaudado: null, 
+                Compras: c.Cantidad_Compras, 
+                Total_Comprado: c.Total_Comprado 
+            }))
+        ];
+
+        const json2csvParser = new Parser({ fields });
+        
+        // Transformamos el array en un string CSV
+        const csv = json2csvParser.parse(allData);
+        
+        return csv;
+    } catch (error) {
+        console.error("Error en el parseo de CSV:", error);
+        throw new Error("Error técnico al generar el archivo de estadísticas");
+    }
 },
 
 };

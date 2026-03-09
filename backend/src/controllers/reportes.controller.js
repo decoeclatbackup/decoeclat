@@ -37,8 +37,13 @@ export const reportesController = {
         }
 
         const estadisticas = await reportesService.obtenerEstadisticasMensuales(mes, anio);
+
+        const nombreArchivo = `Ventas_Clientes_${mes}_${anio}.csv`;
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader("Content-Disposition", `attachment; filename=${nombreArchivo}`);
         
-        return res.status(200).json(estadisticas);
+        return res.status(200).send(estadisticas);
 
     } catch (error) {
         console.error("Error en obtenerEstadisticasDashboard Controller:", error);

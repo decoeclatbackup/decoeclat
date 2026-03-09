@@ -7,7 +7,7 @@ export const reportesRepository = {
     getDatosParaCSV: async (mes, anio) => {
         const query = `
             SELECT 
-                v.created_at AS "Fecha",
+                TO_CHAR(v.created_at, 'DD/MM/YYYY') AS "Fecha",
                 v.venta_id AS "Orden_Nro",
                 c.nombre AS "Cliente",
                 p.nombre AS "Producto",
@@ -67,15 +67,16 @@ export const reportesRepository = {
         const query = `
             SELECT 
                 c.nombre AS "Cliente",
+                c.telefono AS "Telefono",
                 COUNT(DISTINCT v.venta_id) AS "Cantidad_Compras",
-                SUM(v.total) AS "Inversion_Total"
+                SUM(v.total) AS "Total_Comprado"
             FROM ventas v
             JOIN clientes c ON v.cliente_id = c.cliente_id
             WHERE EXTRACT(MONTH FROM v.created_at) = $1 
               AND EXTRACT(YEAR FROM v.created_at) = $2
               AND v.estado_id = 2
-            GROUP BY c.nombre
-            ORDER BY "Inversion_Total" DESC
+            GROUP BY c.nombre, c.telefono
+            ORDER BY "Total_Comprado" DESC
             LIMIT 10;
         `;
         const { rows } = await pool.query(query, [mes, anio]);
