@@ -3,7 +3,7 @@ import { usuariosService } from "../services/usuarios.service.js";
 export const usuariosController = {
     login: async (req, res) => {
         try {
-            const { email, contrasenia } = req.body;
+            const {email, contrasenia } = req.body;
             const resultado = await usuariosService.login(email, contrasenia);
             return res.status(200).json(resultado);
         } catch (error) {
@@ -55,10 +55,10 @@ export const usuariosController = {
 
     updatePassword: async (req, res) => {
         try {
-            const { passwordActual, passwordNueva } = req.body;
+            const {passwordActual, passwordNueva} = req.body;
             const usuario_id = req.user.id; // Recordá que esto lo inyecta el middleware verificarToken
 
-            await usuariosService.resetearPasswordConToken(usuario_id, passwordActual, passwordNueva);
+            await usuariosService.cambiarPassword(usuario_id, passwordActual, passwordNueva);
             
             return res.status(200).json({ message: "Contraseña actualizada con éxito" });
         } catch (error) {

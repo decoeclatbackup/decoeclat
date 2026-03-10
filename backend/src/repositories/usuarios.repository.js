@@ -18,6 +18,12 @@ export const usuariosRepository = {
         return rows[0];
     },
 
+    findById: async (usuario_id) => {
+        const query = 'SELECT * FROM usuarios WHERE usuario_id = $1;';
+        const { rows } = await pool.query(query, [usuario_id]);
+        return rows[0];
+    },
+
     list: async () => {
         const query = `
             SELECT u.usuario_id, u.nombre, u.email, r.descripcion as rol 

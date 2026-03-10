@@ -1,5 +1,6 @@
 import { usuariosRepository } from "../repositories/usuarios.repository.js";
-import { emailService } from "./email.service.js"; // IMPORTANTE: Agregar esta línea
+import { emailService } from "./email.service.js";
+import { envs } from "../config/env.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -13,7 +14,7 @@ export const usuariosService = {
 
         const token = jwt.sign(
             { id: usuario.usuario_id, rol: usuario.rol_id },
-            process.env.JWT_SECRET,
+            envs.JWT_SECRET,
             { expiresIn: '8h' }
         );
 
@@ -37,6 +38,21 @@ export const usuariosService = {
         return await usuariosRepository.list();
     },
 
+    cambiarPassword: async (usuario_id, passwordActual, passwordNueva) => {
+        const usuario = await usuariosRepository.findById(usuario_id);
+        if (!usuario) {
+            throw new Error("Usuario no encontrado");
+        }
+
+        const coincide = await bcrypt.compare(passwordActual, usuario.contrasenia);
+        if (!coincide) {
+            throw new Error("La contraseña actual es incorrecta");
+        }
+
+        const nuevoHash = await bcrypt.hash(passwordNueva, 10);
+        return await usuariosRepository.updatePassword(usuario_id, nuevoHash);
+    },
+
     solicitarRecuperacion: async (email) => {
         const usuario = await usuariosRepository.findByEmail(email);
         
@@ -45,7 +61,7 @@ export const usuariosService = {
 
         const tokenReset = jwt.sign(
             { id: usuario.usuario_id, reset: true }, 
-            process.env.JWT_SECRET, 
+            envs.JWT_SECRET, 
             { expiresIn: '15m' }
         );
 
@@ -57,7 +73,7 @@ export const usuariosService = {
 
     resetearPasswordConToken: async (token, nuevaPassword) => {
         try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = jwt.verify(token, envs.JWT_SECRET);
             
             if (!decoded.reset) throw new Error("Token inválido");
 
@@ -66,7 +82,14 @@ export const usuariosService = {
 
             return await usuariosRepository.updatePassword(decoded.id, nuevoHash);
         } catch (error) {
-            throw new Error("El link de recuperación expiró o es inválido");
+            // Distinguir si fue expiración o token inválido
+            if (error.name === 'TokenExpiredError') {
+                throw new Error("El link de recuperación expiró (válido por 15 minutos)");
+            }
+            if (error.name === 'JsonWebTokenError') {
+                throw new Error("El link de recuperación es inválido o corrupto");
+            }
+            throw error; // Re-lanzar si es otro error
         }
-    }
+    },
 };

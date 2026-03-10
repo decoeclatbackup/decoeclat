@@ -1,22 +1,23 @@
 import nodemailer from "nodemailer";
+import { envs } from "../config/env.js";
 
 const transporter = nodemailer.createTransport({
     service: 'gmail', // Podés usar 'outlook', 'sendgrid', etc.
     auth: {
-        user: process.env.EMAIL_USER, // Tu mail de Deceoclat
-        pass: process.env.EMAIL_PASS  // Tu contraseña de aplicación
+        user: envs.EMAIL_USER, // Tu mail de Deceoclat
+        pass: envs.EMAIL_PASS  // Tu contraseña de aplicación
     }
 });
 
 export const emailService = {
     enviarLinkReseteo: async (emailDestino, token) => {
-        // En un entorno real, este link llevaría a tu pantalla de Frontend
-        const urlReset = `http://decoeclat.com.ar/reset-password?token=${token}`;
+        // URL dinámica: se obtiene de .env o usa localhost para desarrollo
+        const urlReset = `${envs.RESET_PASSWORD_URL}?token=${token}`;
 
         const mailOptions = {
-            from: `"Sistema gestión decoeclat" <${process.env.EMAIL_USER}>`,
+            from: `"Sistema Gestión DECOECLAT" <${envs.EMAIL_USER}>`,
             to: emailDestino,
-            subject: "Recuperación de Contraseña - Decoeclat",
+            subject: "Recuperación de Contraseña - DECOECLAT",
             html: `
                 <div style="font-family: Arial, sans-serif; text-align: center;">
                     <h2>¿Olvidaste tu contraseña?</h2>

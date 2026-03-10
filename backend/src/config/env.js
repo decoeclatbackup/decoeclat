@@ -7,6 +7,11 @@ export const envs = {
   DATABASE_URL: process.env.DATABASE_URL,
 
   JWT_SECRET: process.env.JWT_SECRET,
+
+  // Email configuration
+  EMAIL_USER: process.env.EMAIL_USER,
+  EMAIL_PASS: process.env.EMAIL_PASS,
+  RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL || "http://localhost:5173/reset-password",
 };
 
 if (!envs.DATABASE_URL) {
