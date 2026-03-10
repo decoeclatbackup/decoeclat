@@ -54,7 +54,6 @@ export const reportesService ={
         const fields = [
             'Tipo',
             'Nombre',
-            'Telefono',
             'Unidades',
             'Recaudado',
             'Compras',
@@ -66,7 +65,6 @@ export const reportesService ={
             ...ranking.map(r => ({ 
                 Tipo: 'Producto', 
                 Nombre: r.Producto, 
-                Telefono: null,
                 Unidades: r.Total_Unidades, 
                 Recaudado: r.Total_Recaudado, 
                 Compras: null, 
@@ -75,7 +73,6 @@ export const reportesService ={
             ...clientes.map(c => ({ 
                 Tipo: 'Cliente', 
                 Nombre: c.Cliente, 
-                Telefono: c.Telefono,
                 Unidades: null, 
                 Recaudado: null, 
                 Compras: c.Cantidad_Compras, 
