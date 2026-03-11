@@ -1,9 +1,14 @@
+import { useState, useEffect } from 'react'
+
 const initialFieldErrors = {
   name: '',
   categoryId: '',
   sizeId: '',
   telaId: '',
   precio: '',
+  precioOferta: '',
+  enOferta: '',
+  stock: '',
 }
 
 function validate(form) {
@@ -11,22 +16,72 @@ function validate(form) {
 
   if (!form.name.trim()) errors.name = 'El nombre es obligatorio'
   if (!form.categoryId) errors.categoryId = 'La categoria es obligatoria'
-  if (!form.sizeId) errors.sizeId = 'El talle es obligatorio'
-  if (!form.telaId) errors.telaId = 'El color (tela ID) es obligatorio'
-  if (!form.precio || Number(form.precio) <= 0) {
-    errors.precio = 'El precio debe ser mayor a 0'
-  }
-
   return errors
 }
 
-export function ProductForm({ form, isEditing, onChange, onSubmit, onCancel }) {
+export function ProductForm({
+  form,
+  isEditing,
+  onChange,
+  onSubmit,
+  onCancel,
+  categories = [],
+  telas = [],
+  sizes = [],
+}) {
   const errors = validate(form)
   const hasErrors = Object.values(errors).some(Boolean)
 
+  const parentCategories = categories.filter((category) => category.parent_id == null)
+  const childCategories = categories.filter((category) => category.parent_id != null)
+
+  const [localParentId, setLocalParentId] = useState('')
+  const [localSizeTypeId, setLocalSizeTypeId] = useState('')
+
+  // Sincronizar el select padre cuando se carga una edicion o cambian las categorias
+  useEffect(() => {
+    if (!form.categoryId || categories.length === 0) return
+    const cat = categories.find((c) => c.categoria_id == form.categoryId)
+    if (!cat) return
+    const pid = cat.parent_id != null ? cat.parent_id : cat.categoria_id
+    setLocalParentId(String(pid))
+  }, [form.categoryId, categories])
+
+  useEffect(() => {
+    if (!form.sizeId || sizes.length === 0) return
+    const size = sizes.find((s) => s.size_id == form.sizeId)
+    if (!size) return
+    setLocalSizeTypeId(String(size.type_id))
+  }, [form.sizeId, sizes])
+
+  const childrenOfParent = childCategories.filter((c) => c.parent_id == localParentId)
+  const sizeTypes = Array.from(
+    new Map(sizes.map((size) => [String(size.type_id), size.type_nombre])).entries()
+  ).map(([type_id, type_nombre]) => ({ type_id, type_nombre }))
+  const sizesOfType = sizes.filter((size) => String(size.type_id) === localSizeTypeId)
+
+  function handleParentChange(e) {
+    const pid = e.target.value
+    setLocalParentId(pid)
+    const children = childCategories.filter((c) => c.parent_id == pid)
+    if (children.length === 0) {
+      // Categoria padre sin subcategorias: ella misma es la categoria final
+      onChange({ target: { name: 'categoryId', value: pid } })
+    } else {
+      // Tiene subcategorias: esperar que el usuario elija
+      onChange({ target: { name: 'categoryId', value: '' } })
+    }
+  }
+
+  function handleSizeTypeChange(e) {
+    const selectedTypeId = e.target.value
+    setLocalSizeTypeId(selectedTypeId)
+    onChange({ target: { name: 'sizeId', value: '' } })
+  }
+
   return (
     <section className="card">
-      <h2>{isEditing ? 'Modificar Producto (RD)' : 'Registrar Producto (RD)'}</h2>
+      <h2>{isEditing ? 'Modificar Producto' : 'Registrar Producto'}</h2>
 
       <form
         className="grid three"
@@ -42,51 +97,85 @@ export function ProductForm({ form, isEditing, onChange, onSubmit, onCancel }) {
             name="name"
             value={form.name}
             onChange={onChange}
-            placeholder="Ej: Sillon Oslo"
+            placeholder="Ej: Almohadón"
             required
           />
           {errors.name ? <small className="error">{errors.name}</small> : null}
         </label>
 
         <label className="field">
-          <span>Categoria ID</span>
-          <input
-            type="number"
-            min="1"
-            name="categoryId"
-            value={form.categoryId}
-            onChange={onChange}
-            placeholder="Ej: 2"
-            required
-          />
-          {errors.categoryId ? <small className="error">{errors.categoryId}</small> : null}
+          <span>Categoria</span>
+          <select value={localParentId} onChange={handleParentChange} required>
+            <option value="">Seleccionar categoria</option>
+            {parentCategories.map((parent) => (
+              <option key={parent.categoria_id} value={parent.categoria_id}>
+                {parent.nombre}
+              </option>
+            ))}
+          </select>
+          {errors.categoryId && !localParentId ? (
+            <small className="error">{errors.categoryId}</small>
+          ) : null}
         </label>
 
-        <label className="field">
-          <span>Talle (size ID)</span>
-          <input
-            type="number"
-            min="1"
-            name="sizeId"
-            value={form.sizeId}
-            onChange={onChange}
-            placeholder="Ej: 3"
-            required
-          />
-          {errors.sizeId ? <small className="error">{errors.sizeId}</small> : null}
-        </label>
+        {childrenOfParent.length > 0 && (
+          <label className="field">
+            <span>Subcategoria</span>
+            <select
+              name="categoryId"
+              value={form.categoryId}
+              onChange={onChange}
+              required
+            >
+              <option value="">Seleccionar subcategoria</option>
+              {childrenOfParent.map((child) => (
+                <option key={child.categoria_id} value={child.categoria_id}>
+                  {child.nombre}
+                </option>
+              ))}
+            </select>
+            {errors.categoryId ? <small className="error">{errors.categoryId}</small> : null}
+          </label>
+        )}
 
         <label className="field">
-          <span>Color (tela ID)</span>
-          <input
-            type="number"
-            min="1"
-            name="telaId"
-            value={form.telaId}
-            onChange={onChange}
-            placeholder="Ej: 1"
-            required
-          />
+          <span>Tipo de Talle</span>
+          <select value={localSizeTypeId} onChange={handleSizeTypeChange} required>
+            <option value="">Seleccionar tipo</option>
+            {sizeTypes.map((type) => (
+              <option key={type.type_id} value={type.type_id}>
+                {type.type_nombre}
+              </option>
+            ))}
+          </select>
+          {errors.sizeId && !localSizeTypeId ? <small className="error">{errors.sizeId}</small> : null}
+        </label>
+
+        {sizesOfType.length > 0 && (
+          <label className="field">
+            <span>Talle</span>
+            <select name="sizeId" value={form.sizeId} onChange={onChange} required>
+              <option value="">Seleccionar talle</option>
+              {sizesOfType.map((size) => (
+                <option key={size.size_id} value={size.size_id}>
+                  {size.valor}
+                </option>
+              ))}
+            </select>
+            {errors.sizeId ? <small className="error">{errors.sizeId}</small> : null}
+          </label>
+        )}
+
+        <label className="field">
+          <span>Tipo Tela</span>
+          <select name="telaId" value={form.telaId} onChange={onChange} required>
+            <option value="">Seleccionar tela</option>
+            {telas.map((tela) => (
+              <option key={tela.tela_id} value={tela.tela_id}>
+                {tela.nombre}
+              </option>
+            ))}
+          </select>
           {errors.telaId ? <small className="error">{errors.telaId}</small> : null}
         </label>
 
@@ -95,18 +184,30 @@ export function ProductForm({ form, isEditing, onChange, onSubmit, onCancel }) {
           <input
             type="number"
             min="0"
-            step="0.01"
             name="precio"
             value={form.precio}
             onChange={onChange}
-            placeholder="Ej: 149999.99"
+            placeholder="Ej: 15000"
             required
           />
           {errors.precio ? <small className="error">{errors.precio}</small> : null}
         </label>
 
         <label className="field">
-          <span>Descripcion</span>
+          <span>Stock</span>
+          <input
+            type="number"
+            min="0"
+            name="stock"
+            value={form.stock}
+            onChange={onChange}
+            placeholder="Ej: 20"
+          />
+          {errors.stock ? <small className="error">{errors.stock}</small> : null}
+        </label>
+
+        <label className="field">
+          <span>Descripción</span>
           <input
             type="text"
             name="description"
@@ -115,6 +216,31 @@ export function ProductForm({ form, isEditing, onChange, onSubmit, onCancel }) {
             placeholder="Opcional"
           />
         </label>
+
+        <label className="field">
+          <span>En Oferta</span>
+          <input
+            type="checkbox"
+            name="enOferta"
+            checked={form.enOferta}
+            onChange={onChange}
+          />
+        </label>
+
+        {form.enOferta && (
+          <label className="field">
+            <span>Precio Oferta</span>
+            <input
+              type="number"
+              min="0"
+              name="precioOferta"
+              value={form.precioOferta}
+              onChange={onChange}
+              placeholder="Ej: 12000"
+            />
+            {errors.precioOferta ? <small className="error">{errors.precioOferta}</small> : null}
+          </label>
+        )}
 
         <div className="actions full-width">
           <button type="submit" className="btn" disabled={hasErrors}>

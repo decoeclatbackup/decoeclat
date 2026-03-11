@@ -63,10 +63,11 @@ export const productosController = {
       if (body.descripcion !== undefined) updates.description = body.descripcion;
       if (body.categoryId !== undefined) updates.categoryId = body.categoryId;
       if (body.categoria_id !== undefined) updates.categoryId = body.categoria_id;
+      if (body.activo !== undefined) updates.activo = Boolean(body.activo);
 
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ 
-          error: "No se enviaron campos válidos para actualizar (nombre, descripcion, categoria_id)." 
+          error: "No se enviaron campos válidos para actualizar (nombre, descripcion, categoria_id, activo)." 
         });
       }
 

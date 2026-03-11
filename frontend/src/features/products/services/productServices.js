@@ -46,13 +46,28 @@ async function attachFirstVariant(product) {
 		variante_id: first?.variante_id || null,
 		size_id: first?.size_id || null,
 		tela_id: first?.tela_id || null,
+		stock: first?.stock ?? 0,
 		precio: first?.precio || 0,
-		Size: first?.Size || null,
+        precioOferta: first?.precio_oferta || null,
+        enOferta: first?.en_oferta || false,
+		Size: first?.size || first?.Size || null,
 		tela: first?.tela || null,
 	}
 }
 
 export const productServices = {
+	async listCategories() {
+		return request('/api/categorias')
+	},
+
+	async listTelas() {
+		return request('/api/telas')
+	},
+
+	async listSizes() {
+		return request('/api/sizes')
+	},
+
 	async list(filters) {
 		const products = await request('/api/products', {}, {
 			name: filters.name,
@@ -79,8 +94,10 @@ export const productServices = {
 				productoId: created.producto_id,
 				telaId: Number(payload.telaId),
 				sizeId: Number(payload.sizeId),
+                stock: 0,
 				precio: Number(payload.precio),
-				stock: 0,
+				precioOferta: Number(payload.precioOferta) || null,
+				enOferta: Boolean(payload.enOferta) || false,
 			}),
 		})
 
@@ -101,9 +118,12 @@ export const productServices = {
 			await request(`/api/variantes/${payload.variantId}`, {
 				method: 'PUT',
 				body: JSON.stringify({
+                    telaId: Number(payload.telaId),
 					sizeId: Number(payload.sizeId),
-					telaId: Number(payload.telaId),
+                    stock: Number(payload.stock),
 					precio: Number(payload.precio),
+					precioOferta: Number(payload.precioOferta) || null,
+					enOferta: Boolean(payload.enOferta) || false,
 				}),
 			})
 		}
@@ -112,6 +132,13 @@ export const productServices = {
 	async remove(productId) {
 		await request(`/api/products/${productId}`, {
 			method: 'DELETE',
+		})
+	},
+
+	async setActive(productId, active) {
+		return request(`/api/products/${productId}`, {
+			method: 'PUT',
+			body: JSON.stringify({ activo: Boolean(active) }),
 		})
 	},
 }

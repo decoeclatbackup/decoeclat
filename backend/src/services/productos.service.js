@@ -42,7 +42,8 @@ export const productosService = {
       "description",
       "descripcion",
       "categoryId",
-      "categoria_id"
+      "categoria_id",
+      "activo"
     ];
     
     const payload = {};
@@ -58,7 +59,6 @@ export const productosService = {
   },
 
   async removeProduct(id) {
-    // Desactivación lógica
-    return productosRepository.deactivate(id);
+    return productosRepository.deletePermanent(id);
   },
 };

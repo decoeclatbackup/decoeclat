@@ -5,6 +5,9 @@ import { useProductCatalog } from '../hooks/productHooks'
 export function ProductCatalogPage() {
   const {
     products,
+    categories,
+    telas,
+    sizes,
     filters,
     form,
     loading,
@@ -18,6 +21,7 @@ export function ProductCatalogPage() {
     startEdit,
     cancelEdit,
     removeProduct,
+    toggleProductActive,
   } = useProductCatalog()
 
   return (
@@ -33,10 +37,14 @@ export function ProductCatalogPage() {
         onChange={handleFormChange}
         onSubmit={submitForm}
         onCancel={cancelEdit}
+        categories={categories}
+        telas={telas}
+        sizes={sizes}
       />
 
       <ProductFilters
         filters={filters}
+        categories={categories}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
         onClear={clearFilters}
@@ -47,6 +55,7 @@ export function ProductCatalogPage() {
         loading={loading}
         onEdit={startEdit}
         onRemove={removeProduct}
+        onToggleActive={toggleProductActive}
       />
     </MainLayout>
   )

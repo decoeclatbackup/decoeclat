@@ -14,11 +14,17 @@ const emptyForm = {
 	sizeId: '',
 	telaId: '',
 	precio: '',
+	precioOferta: '',
+	enOferta: false,
+	stock: '',
 	description: '',
 }
 
 export function useProductCatalog() {
 	const [products, setProducts] = useState([])
+	const [categories, setCategories] = useState([])
+	const [telas, setTelas] = useState([])
+	const [sizes, setSizes] = useState([])
 	const [filters, setFilters] = useState(emptyFilters)
 	const [form, setForm] = useState(emptyForm)
 	const [loading, setLoading] = useState(false)
@@ -44,14 +50,34 @@ export function useProductCatalog() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [loadProducts])
 
+	useEffect(() => {
+		async function loadCatalogs() {
+			try {
+				const [categoriesData, telasData, sizesData] = await Promise.all([
+					productServices.listCategories(),
+					productServices.listTelas(),
+					productServices.listSizes(),
+				])
+
+				setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+				setTelas(Array.isArray(telasData) ? telasData : [])
+				setSizes(Array.isArray(sizesData) ? sizesData : [])
+			} catch (error) {
+				setMessage(`No se pudieron cargar catalogos: ${error.message}`)
+			}
+		}
+
+		loadCatalogs()
+	}, [])
+
 	function handleFilterChange(event) {
 		const { name, value } = event.target
 		setFilters((prev) => ({ ...prev, [name]: value }))
 	}
 
 	function handleFormChange(event) {
-		const { name, value } = event.target
-		setForm((prev) => ({ ...prev, [name]: value }))
+		const { name, value, type, checked } = event.target
+		setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
 	}
 
 	async function submitForm() {
@@ -83,6 +109,9 @@ export function useProductCatalog() {
 			sizeId: product.size_id || '',
 			telaId: product.tela_id || '',
 			precio: product.precio || '',
+			precioOferta: product.precioOferta || '',
+			enOferta: product.enOferta || false,
+			stock: product.stock || '',
 			description: product.descripcion || '',
 		})
 	}
@@ -93,14 +122,14 @@ export function useProductCatalog() {
 
 	async function removeProduct(product) {
 		const shouldContinue = window.confirm(
-			`Se dara de baja el producto "${product.nombre}". Queres continuar?`
+			`Se eliminara el producto "${product.nombre}". Queres continuar?`
 		)
 
 		if (!shouldContinue) return
 
 		try {
 			await productServices.remove(product.producto_id)
-			setMessage('Producto dado de baja correctamente')
+			setMessage('Producto eliminado correctamente')
 			if (form.productId === product.producto_id) {
 				setForm(emptyForm)
 			}
@@ -110,6 +139,16 @@ export function useProductCatalog() {
 		}
 	}
 
+	async function toggleProductActive(product) {
+		try {
+			setMessage('')
+			await productServices.setActive(product.producto_id, !product.activo)
+			setMessage(`Producto ${!product.activo ? 'activado' : 'desactivado'} correctamente`)
+			await loadProducts(filters)
+		} catch (error) {
+			setMessage(`No se pudo cambiar el estado: ${error.message}`)
+		}
+	}
 	async function handleSearch() {
 		await loadProducts(filters)
 	}
@@ -122,6 +161,9 @@ export function useProductCatalog() {
 
 	return {
 		products,
+		categories,
+		telas,
+		sizes,
 		filters,
 		form,
 		loading,
@@ -135,5 +177,6 @@ export function useProductCatalog() {
 		startEdit,
 		cancelEdit,
 		removeProduct,
+		toggleProductActive,
 	}
 }

@@ -26,7 +26,7 @@ export const productosRepository = {
       SELECT p.*, c.nombre AS categoria
       FROM productos p
       LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
-      WHERE p.activo = true
+      WHERE 1 = 1
     `;
     const values = [];
     let idx = 1;
@@ -105,5 +105,28 @@ export const productosRepository = {
       [id]
     );
     return rows[0];
+  },
+
+  async deletePermanent(id) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("DELETE FROM variantes_producto WHERE producto_id = $1", [id]);
+      await client.query("DELETE FROM productos_home WHERE producto_id = $1", [id]);
+      await client.query("DELETE FROM carousel_home WHERE producto_id = $1", [id]);
+
+      const { rows } = await client.query(
+        "DELETE FROM productos WHERE producto_id = $1 RETURNING *",
+        [id]
+      );
+
+      await client.query("COMMIT");
+      return rows[0];
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   },
 };

@@ -1,4 +1,4 @@
-export function ProductFilters({ filters, onFilterChange, onSearch, onClear }) {
+export function ProductFilters({ filters, categories = [], onFilterChange, onSearch, onClear }) {
   return (
     <section className="card">
       <h2>Consultar Producto</h2>
@@ -10,20 +10,24 @@ export function ProductFilters({ filters, onFilterChange, onSearch, onClear }) {
             name="name"
             value={filters.name}
             onChange={onFilterChange}
-            placeholder="Ej: Sillon Oslo"
+            placeholder="Ej: Almohadón"
           />
         </label>
 
         <label className="field">
-          <span>Categoria ID</span>
-          <input
-            type="number"
-            min="1"
+          <span>Categoría</span>
+          <select
             name="categoryId"
             value={filters.categoryId}
             onChange={onFilterChange}
-            placeholder="Ej: 2"
-          />
+          >
+            <option value="">Todas</option>
+            {categories.map((category) => (
+              <option key={category.categoria_id} value={category.categoria_id}>
+                {category.nombre}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
