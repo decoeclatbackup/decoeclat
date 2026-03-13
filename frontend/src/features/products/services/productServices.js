@@ -14,9 +14,10 @@ function buildUrl(path, query = {}) {
 }
 
 async function request(path, options = {}, query) {
+	const isFormData = options.body instanceof FormData
 	const response = await fetch(buildUrl(path, query), {
 		headers: {
-			'Content-Type': 'application/json',
+			...(isFormData ? {} : { 'Content-Type': 'application/json' }),
 			...(options.headers || {}),
 		},
 		...options,
@@ -35,6 +36,30 @@ async function request(path, options = {}, query) {
 
 	if (response.status === 204) return null
 	return response.json()
+}
+
+async function uploadProductImages(productId, images = []) {
+	if (!Array.isArray(images) || images.length === 0) return []
+
+	const orderedImages = [...images].sort((left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0))
+	const uploaded = []
+
+	for (const image of orderedImages) {
+		const formData = new FormData()
+		formData.append('producto_id', String(productId))
+		formData.append('principal', String(Boolean(image.principal)))
+		formData.append('orden', String(Number(image.orden ?? 0)))
+		formData.append('url', image.file)
+
+		uploaded.push(
+			await request('/api/imagenes', {
+				method: 'POST',
+				body: formData,
+			})
+		)
+	}
+
+	return uploaded
 }
 
 async function attachFirstVariant(product) {
@@ -79,29 +104,45 @@ export const productServices = {
 	},
 
 	async create(payload) {
-		const created = await request('/api/products', {
-			method: 'POST',
-			body: JSON.stringify({
-				name: payload.name,
-				categoryId: Number(payload.categoryId),
-				description: payload.description || null,
-			}),
-		})
+		let created = null
 
-		await request('/api/variantes', {
-			method: 'POST',
-			body: JSON.stringify({
-				productoId: created.producto_id,
-				telaId: Number(payload.telaId),
-				sizeId: Number(payload.sizeId),
-                stock: 0,
-				precio: Number(payload.precio),
-				precioOferta: Number(payload.precioOferta) || null,
-				enOferta: Boolean(payload.enOferta) || false,
-			}),
-		})
+		try {
+			created = await request('/api/products', {
+				method: 'POST',
+				body: JSON.stringify({
+					name: payload.name,
+					categoryId: Number(payload.categoryId),
+					description: payload.description || null,
+				}),
+			})
 
-		return created
+			await request('/api/variantes', {
+				method: 'POST',
+				body: JSON.stringify({
+					productoId: created.producto_id,
+					telaId: Number(payload.telaId),
+					sizeId: Number(payload.sizeId),
+                    stock: Number(payload.stock) || 0,
+					precio: Number(payload.precio),
+					precioOferta: Number(payload.precioOferta) || null,
+					enOferta: Boolean(payload.enOferta) || false,
+				}),
+			})
+
+			await uploadProductImages(created.producto_id, payload.images)
+			return created
+		} catch (error) {
+			if (created?.producto_id) {
+				try {
+					await request(`/api/products/${created.producto_id}`, {
+						method: 'DELETE',
+					})
+				} catch {
+					// Si falla la limpieza, devolvemos igual el error original.
+				}
+			}
+			throw error
+		}
 	},
 
 	async update(payload) {
@@ -127,6 +168,8 @@ export const productServices = {
 				}),
 			})
 		}
+
+		await uploadProductImages(payload.productId, payload.images)
 	},
 
 	async remove(productId) {

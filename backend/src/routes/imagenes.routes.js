@@ -1,22 +1,16 @@
 import express from "express";
 import { imagenesController } from "../controllers/imagenes.controller.js";
-import { verificarToken, esAdmin } from "../middlewares/auth.middlewares.js";
 import { upload } from "../middlewares/upload.middleware.js";
 const router = express.Router();
 
-// Subir imagen a una variante (requiere admin)
-router.post("/", verificarToken, esAdmin, upload.single('url'), imagenesController.uploadImage);
+router.post("/", upload.single('url'), imagenesController.uploadImage);
 
-// Obtener todas las imágenes de una variante
-router.get("/variante/:variante_id", imagenesController.getByVariante);
+router.get("/producto/:producto_id", imagenesController.getByProducto);
 
-// Actualizar imagen (requiere admin)
-router.put("/:img_id", verificarToken, esAdmin, imagenesController.updateImage);
+router.put("/:img_id", imagenesController.updateImage);
 
-// Establecer imagen como principal (requiere admin)
-router.put("/:img_id/principal", verificarToken, esAdmin, imagenesController.setImagemaPrincipal);
+router.put("/:img_id/principal", imagenesController.setImagemaPrincipal);
 
-// Eliminar imagen (requiere admin)
-router.delete("/:img_id", verificarToken, esAdmin, imagenesController.deleteImage);
+router.delete("/:img_id", imagenesController.deleteImage);
 
 export default router;

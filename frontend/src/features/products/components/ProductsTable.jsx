@@ -24,7 +24,7 @@ export function ProductsTable({ products, loading, onEdit, onRemove, onToggleAct
               <tr>
                 <th>Nombre</th>
                 <th>Categoria</th>
-                <th>Talle</th>
+                <th>Medida</th>
                 <th>Tipo Tela</th>
                 <th>Activo</th>
                 <th>Precio</th>

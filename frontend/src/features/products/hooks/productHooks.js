@@ -80,22 +80,24 @@ export function useProductCatalog() {
 		setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
 	}
 
-	async function submitForm() {
+	async function submitForm(images = []) {
 		try {
 			setMessage('')
 
 			if (isEditing) {
-				await productServices.update(form)
+				await productServices.update({ ...form, images })
 				setMessage('Producto actualizado correctamente')
 			} else {
-				await productServices.create(form)
+				await productServices.create({ ...form, images })
 				setMessage('Producto registrado correctamente')
 			}
 
 			setForm(emptyForm)
 			await loadProducts()
+			return true
 		} catch (error) {
 			setMessage(`Operacion no realizada: ${error.message}`)
+			return false
 		}
 	}
 

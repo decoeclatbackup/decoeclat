@@ -1,4 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 const initialFieldErrors = {
   name: '',
@@ -37,6 +40,35 @@ export function ProductForm({
 
   const [localParentId, setLocalParentId] = useState('')
   const [localSizeTypeId, setLocalSizeTypeId] = useState('')
+  const [selectedImages, setSelectedImages] = useState([])
+  const [imageError, setImageError] = useState('')
+  const selectedImagesRef = useRef([])
+
+  useEffect(() => {
+    selectedImagesRef.current = selectedImages
+  }, [selectedImages])
+
+  useEffect(() => {
+    return () => {
+      selectedImagesRef.current.forEach((image) => {
+        if (image.previewUrl) {
+          URL.revokeObjectURL(image.previewUrl)
+        }
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    setImageError('')
+    setSelectedImages((prev) => {
+      prev.forEach((image) => {
+        if (image.previewUrl) {
+          URL.revokeObjectURL(image.previewUrl)
+        }
+      })
+      return []
+    })
+  }, [form.productId])
 
   // Sincronizar el select padre cuando se carga una edicion o cambian las categorias
   useEffect(() => {
@@ -79,6 +111,63 @@ export function ProductForm({
     onChange({ target: { name: 'sizeId', value: '' } })
   }
 
+  function handleImagesChange(event) {
+    const files = Array.from(event.target.files || [])
+    if (files.length === 0) return
+
+    const invalidFile = files.find(
+      (file) => !ALLOWED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE
+    )
+
+    if (invalidFile) {
+      setImageError('Solo se permiten imágenes JPG, PNG o WEBP de hasta 5MB')
+      event.target.value = ''
+      return
+    }
+
+    setImageError('')
+    setSelectedImages((prev) => {
+      const nextOrderBase = prev.length
+      const nextImages = files.map((file, index) => ({
+        id: `${file.name}-${file.lastModified}-${index}`,
+        file,
+        name: file.name,
+        previewUrl: URL.createObjectURL(file),
+        principal: prev.length === 0 && index === 0,
+        orden: nextOrderBase + index,
+      }))
+      return [...prev, ...nextImages]
+    })
+
+    event.target.value = ''
+  }
+
+  function updateImageField(imageId, field, value) {
+    setSelectedImages((prev) =>
+      prev.map((image) => {
+        if (field === 'principal') {
+          return { ...image, principal: image.id === imageId }
+        }
+        return image.id === imageId ? { ...image, [field]: value } : image
+      })
+    )
+  }
+
+  function removeSelectedImage(imageId) {
+    setSelectedImages((prev) => {
+      const imageToRemove = prev.find((image) => image.id === imageId)
+      if (imageToRemove?.previewUrl) {
+        URL.revokeObjectURL(imageToRemove.previewUrl)
+      }
+
+      const nextImages = prev.filter((image) => image.id !== imageId)
+      if (nextImages.length > 0 && !nextImages.some((image) => image.principal)) {
+        nextImages[0] = { ...nextImages[0], principal: true }
+      }
+      return [...nextImages]
+    })
+  }
+
   return (
     <section className="card">
       <h2>{isEditing ? 'Modificar Producto' : 'Registrar Producto'}</h2>
@@ -87,7 +176,25 @@ export function ProductForm({
         className="grid three"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!hasErrors) onSubmit()
+          if (!hasErrors) {
+            onSubmit(
+              selectedImages.map((image) => ({
+                file: image.file,
+                principal: image.principal,
+                orden: Number(image.orden ?? 0),
+              }))
+            ).then((submitted) => {
+              if (submitted) {
+                selectedImages.forEach((image) => {
+                  if (image.previewUrl) {
+                    URL.revokeObjectURL(image.previewUrl)
+                  }
+                })
+                setSelectedImages([])
+                setImageError('')
+              }
+            })
+          }
         }}
       >
         <label className="field">
@@ -139,7 +246,7 @@ export function ProductForm({
         )}
 
         <label className="field">
-          <span>Tipo de Talle</span>
+          <span>Tipo de Medida</span>
           <select value={localSizeTypeId} onChange={handleSizeTypeChange} required>
             <option value="">Seleccionar tipo</option>
             {sizeTypes.map((type) => (
@@ -153,9 +260,9 @@ export function ProductForm({
 
         {sizesOfType.length > 0 && (
           <label className="field">
-            <span>Talle</span>
+            <span>Medida</span>
             <select name="sizeId" value={form.sizeId} onChange={onChange} required>
-              <option value="">Seleccionar talle</option>
+              <option value="">Seleccionar medida</option>
               {sizesOfType.map((size) => (
                 <option key={size.size_id} value={size.size_id}>
                   {size.valor}
@@ -241,6 +348,56 @@ export function ProductForm({
             {errors.precioOferta ? <small className="error">{errors.precioOferta}</small> : null}
           </label>
         )}
+
+        <div className="field full-width">
+          <span>Imágenes del producto</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={handleImagesChange}
+          />
+          <small>Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: 5MB.</small>
+          {imageError ? <small className="error">{imageError}</small> : null}
+        </div>
+
+        {selectedImages.length > 0 ? (
+          <div className="full-width image-preview-grid">
+            {selectedImages.map((image, index) => (
+              <article key={image.id} className="image-preview-card">
+                <img src={image.previewUrl} alt={`Preview ${index + 1}`} className="image-preview-thumb" />
+                <div className="image-preview-meta">
+                  <strong>{image.name}</strong>
+                  <label className="field image-order-field">
+                    <span>Orden</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={image.orden}
+                      onChange={(event) => updateImageField(image.id, 'orden', event.target.value)}
+                    />
+                  </label>
+                  <label className="image-principal-toggle">
+                    <input
+                      type="radio"
+                      name="principalImage"
+                      checked={image.principal}
+                      onChange={() => updateImageField(image.id, 'principal', true)}
+                    />
+                    Imagen principal
+                  </label>
+                  <button
+                    type="button"
+                    className="btn ghost tiny"
+                    onClick={() => removeSelectedImage(image.id)}
+                  >
+                    Quitar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
 
         <div className="actions full-width">
           <button type="submit" className="btn" disabled={hasErrors}>

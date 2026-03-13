@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { MainLayout } from '../../../layouts/layouts'
 import { ProductFilters, ProductForm, ProductsTable } from '../components/components'
 import { useProductCatalog } from '../hooks/productHooks'
 
 export function ProductCatalogPage() {
+  const [showCreateForm, setShowCreateForm] = useState(false)
+
   const {
     products,
     categories,
@@ -24,6 +27,34 @@ export function ProductCatalogPage() {
     toggleProductActive,
   } = useProductCatalog()
 
+  async function handleSubmit(images) {
+    const submitted = await submitForm(images)
+    if (submitted) {
+      setShowCreateForm(false)
+    }
+    return submitted
+  }
+
+  function handleAddProductClick() {
+    if (isEditing) return
+    if (showCreateForm) {
+      cancelEdit()
+      setShowCreateForm(false)
+      return
+    }
+    setShowCreateForm(true)
+  }
+
+  function handleEdit(product) {
+    startEdit(product)
+    setShowCreateForm(true)
+  }
+
+  function handleCancelForm() {
+    cancelEdit()
+    setShowCreateForm(false)
+  }
+
   return (
     <MainLayout
       title="Gestionar Catalogo de Productos (RG)"
@@ -31,32 +62,46 @@ export function ProductCatalogPage() {
     >
       {message ? <p className="alert">{message}</p> : null}
 
-      <ProductForm
-        form={form}
-        isEditing={isEditing}
-        onChange={handleFormChange}
-        onSubmit={submitForm}
-        onCancel={cancelEdit}
-        categories={categories}
-        telas={telas}
-        sizes={sizes}
-      />
+      <section className="card section-toolbar">
+        <div className="actions">
+          <button type="button" className="btn" onClick={handleAddProductClick}>
+            {showCreateForm && !isEditing ? 'Ocultar formulario' : '+ Agregar producto'}
+          </button>
+        </div>
+      </section>
 
-      <ProductFilters
-        filters={filters}
-        categories={categories}
-        onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
-        onClear={clearFilters}
-      />
+      {showCreateForm ? (
+        <ProductForm
+          form={form}
+          isEditing={isEditing}
+          onChange={handleFormChange}
+          onSubmit={handleSubmit}
+          onCancel={handleCancelForm}
+          categories={categories}
+          telas={telas}
+          sizes={sizes}
+        />
+      ) : null}
 
-      <ProductsTable
-        products={products}
-        loading={loading}
-        onEdit={startEdit}
-        onRemove={removeProduct}
-        onToggleActive={toggleProductActive}
-      />
+      {!showCreateForm ? (
+        <>
+          <ProductFilters
+            filters={filters}
+            categories={categories}
+            onFilterChange={handleFilterChange}
+            onSearch={handleSearch}
+            onClear={clearFilters}
+          />
+
+          <ProductsTable
+            products={products}
+            loading={loading}
+            onEdit={handleEdit}
+            onRemove={removeProduct}
+            onToggleActive={toggleProductActive}
+          />
+        </>
+      ) : null}
     </MainLayout>
   )
 }

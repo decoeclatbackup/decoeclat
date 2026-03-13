@@ -47,6 +47,12 @@
   font-size: 1.1rem;
 }
 
+.section-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 .grid {
   display: grid;
   gap: 0.8rem;
@@ -71,16 +77,23 @@
   color: #20363b;
 }
 
-.field input {
+.field input,
+.field select {
   border: 1px solid #b8c7cb;
   border-radius: 10px;
   padding: 0.62rem 0.75rem;
   font-size: 0.95rem;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   border-color: #1d5b63;
   outline: 2px solid #1d5b6330;
+}
+
+.field input[type='file'] {
+  padding: 0.45rem 0.55rem;
+  background: #f8fbfb;
 }
 
 .actions {
@@ -136,6 +149,46 @@
 
 .table-wrap {
   overflow-x: auto;
+}
+
+.image-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.image-preview-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #d8e1e2;
+  border-radius: 14px;
+  background: #f8fbfb;
+}
+
+.image-preview-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #d8e1e2;
+}
+
+.image-preview-meta {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.image-order-field {
+  max-width: 120px;
+}
+
+.image-principal-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #20363b;
 }
 
 table {

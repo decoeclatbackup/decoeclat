@@ -111,6 +111,7 @@ export const productosRepository = {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      await client.query("DELETE FROM imagenes_productos WHERE producto_id = $1", [id]);
       await client.query("DELETE FROM variantes_producto WHERE producto_id = $1", [id]);
       await client.query("DELETE FROM productos_home WHERE producto_id = $1", [id]);
       await client.query("DELETE FROM carousel_home WHERE producto_id = $1", [id]);

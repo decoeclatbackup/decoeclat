@@ -9,16 +9,17 @@ export const imagenesController = {
             }
 
             // 2. Extraer datos del body
-            const { variante_id, principal } = req.body;
+            const { producto_id, principal, orden } = req.body;
 
             // 3. Construir la URL del archivo para la base de datos
             // req.file.filename es el nombre único que generó el middleware
             const urlPath = `/uploads/productos/${req.file.filename}`;
 
             const newImage = await imagenesService.uploadImage({
-                variante_id: parseInt(variante_id), // Aseguramos que sea número
+                producto_id: parseInt(producto_id),
                 url: urlPath,
-                principal: principal === 'true' || principal === true // Convertir string de form-data a boolean
+                principal: principal === 'true' || principal === true,
+                orden: Number(orden ?? 0),
             });
 
             return res.status(201).json(newImage);
@@ -27,10 +28,10 @@ export const imagenesController = {
         }
     },
 
-    async getByVariante(req, res) {
+    async getByProducto(req, res) {
         try {
-            const { variante_id } = req.params;
-            const imagenes = await imagenesService.getImagenesByVariante(variante_id);
+            const { producto_id } = req.params;
+            const imagenes = await imagenesService.getImagenesByProducto(producto_id);
             return res.status(200).json(imagenes);
         } catch (error) {
             return res.status(400).json({ error: error.message });
@@ -65,8 +66,8 @@ export const imagenesController = {
     async setImagemaPrincipal(req, res) {
         try {
             const { img_id } = req.params;
-            const { variante_id } = req.body;
-            const updated = await imagenesService.setImagemaPrincipal(img_id, variante_id);
+            const { producto_id } = req.body;
+            const updated = await imagenesService.setImagemaPrincipal(img_id, producto_id);
             return res.status(200).json(updated);
         } catch (error) {
             return res.status(400).json({ error: error.message });

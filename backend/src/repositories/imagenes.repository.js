@@ -1,29 +1,29 @@
 import { pool } from "../config/db.js";
 
 export const imagenesRepository = {
-    async create({ variante_id, url, principal = false }) {
+    async create({ producto_id, url, principal = false, orden = 0 }) {
         const query = `
-            INSERT INTO imagenes_variantes (variante_id, url, principal)
-            VALUES ($1, $2, $3)
+            INSERT INTO imagenes_productos (producto_id, url, principal, orden)
+            VALUES ($1, $2, $3, $4)
             RETURNING *;
         `;
-        const { rows } = await pool.query(query, [variante_id, url, principal]);
+        const { rows } = await pool.query(query, [producto_id, url, principal, orden]);
         return rows[0];
     },
 
-    async getByVariante(variante_id) {
+    async getByProducto(producto_id) {
         const query = `
-            SELECT * FROM imagenes_variantes
-            WHERE variante_id = $1
-            ORDER BY principal DESC, img_id ASC;
+            SELECT * FROM imagenes_productos
+            WHERE producto_id = $1
+            ORDER BY orden ASC, principal DESC, img_id ASC;
         `;
-        const { rows } = await pool.query(query, [variante_id]);
+        const { rows } = await pool.query(query, [producto_id]);
         return rows;
     },
 
     async getById(img_id) {
         const query = `
-            SELECT * FROM imagenes_variantes
+            SELECT * FROM imagenes_productos
             WHERE img_id = $1;
         `;
         const { rows } = await pool.query(query, [img_id]);
@@ -37,7 +37,8 @@ export const imagenesRepository = {
 
         const columnMap = {
             url: "url",
-            principal: "principal"
+            principal: "principal",
+            orden: "orden"
         };
 
         for (const key in updates) {
@@ -52,7 +53,7 @@ export const imagenesRepository = {
 
         values.push(img_id);
         const query = `
-            UPDATE imagenes_variantes
+            UPDATE imagenes_productos
             SET ${sets.join(", ")}
             WHERE img_id = $${idx}
             RETURNING *;
@@ -63,7 +64,7 @@ export const imagenesRepository = {
 
     async delete(img_id) {
         const query = `
-            DELETE FROM imagenes_variantes
+            DELETE FROM imagenes_productos
             WHERE img_id = $1
             RETURNING *;
         `;
@@ -71,13 +72,13 @@ export const imagenesRepository = {
         return rows[0];
     },
 
-    async deleteByVariante(variante_id) {
+    async deleteByProducto(producto_id) {
         const query = `
-            DELETE FROM imagenes_variantes
-            WHERE variante_id = $1
+            DELETE FROM imagenes_productos
+            WHERE producto_id = $1
             RETURNING *;
         `;
-        const { rows } = await pool.query(query, [variante_id]);
+        const { rows } = await pool.query(query, [producto_id]);
         return rows;
     }
 };
