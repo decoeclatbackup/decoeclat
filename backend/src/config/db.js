@@ -3,6 +3,9 @@ import { envs } from "./env.js";
 
 export const pool = new Pool({
   connectionString: envs.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  },
   // Se aplica al iniciar la sesión, sin ejecutar queries manuales en el hook connect.
   options: "-c client_encoding=UTF8",
 });
