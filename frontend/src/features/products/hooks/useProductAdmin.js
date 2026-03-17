@@ -108,11 +108,11 @@ export function useProductAdmin() {
         setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     }
 
-    async function submitForm(images = []) {
+    async function submitForm(images = [], existingImageChanges = null) {
         try {
             setMessage('')
             if (isEditing) {
-                await productServices.update({ ...form, images })
+                await productServices.update({ ...form, images, existingImageChanges })
                 setMessage('Producto actualizado correctamente')
             } else {
                 await productServices.create({ ...form, images })
@@ -174,79 +174,6 @@ export function useProductAdmin() {
         }
     }
 
-    async function removeExistingImage(imageId) {
-        if (!imageId) return
-
-        try {
-            await productServices.deleteImage(imageId)
-            setExistingImages((prev) => sortImages(prev.filter((image) => image.img_id !== imageId)))
-            setMessage('Imagen eliminada correctamente')
-            await reload(filters)
-        } catch (error) {
-            setMessage(`Error al eliminar imagen: ${error.message}`)
-        }
-    }
-
-    async function updateExistingImageOrder(imageId, orderValue) {
-        if (!imageId && imageId !== 0) return
-
-        const parsed = Number(orderValue)
-        const normalizedOrder = Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : 0
-
-        try {
-            const updatedImage = await productServices.updateImage(imageId, { orden: normalizedOrder })
-
-            setExistingImages((prev) => sortImages(prev.map((image) => {
-                if (image.img_id !== imageId) return image
-                return {
-                    ...image,
-                    orden: Number(updatedImage?.orden ?? normalizedOrder),
-                }
-            })))
-
-            setMessage('Orden de imagen actualizado')
-        } catch (error) {
-            setMessage(`Error al actualizar orden: ${error.message}`)
-        }
-    }
-
-    async function reorderExistingImages(nextImages = []) {
-        if (!Array.isArray(nextImages) || nextImages.length === 0) return
-
-        const normalizedImages = nextImages.map((image, index) => ({
-            ...image,
-            orden: index,
-        }))
-
-        const previousOrderByImageId = new Map(
-            existingImages.map((image) => [image.img_id, Number(image.orden ?? 0)])
-        )
-
-        const changedImages = normalizedImages.filter((image) => {
-            if (image?.img_id == null) return false
-            return previousOrderByImageId.get(image.img_id) !== Number(image.orden ?? 0)
-        })
-
-        if (changedImages.length === 0) {
-            setExistingImages(sortImages(normalizedImages))
-            return
-        }
-
-        try {
-            await Promise.all(
-                changedImages.map((image) =>
-                    productServices.updateImage(image.img_id, { orden: Number(image.orden ?? 0) })
-                )
-            )
-
-            setExistingImages(sortImages(normalizedImages))
-            setMessage('Orden de imágenes actualizado')
-            await reload(filters)
-        } catch (error) {
-            setMessage(`Error al reordenar imágenes: ${error.message}`)
-        }
-    }
-
     async function handleClearFilters() {
         setMessage('')
         await clearFilters(emptyFilters)
@@ -270,9 +197,6 @@ export function useProductAdmin() {
         cancelEdit,
         removeProduct,
         toggleProductActive,
-        removeExistingImage,
-        updateExistingImageOrder,
-        reorderExistingImages,
         handleSearch,
         clearFilters: handleClearFilters,
     }

@@ -26,13 +26,10 @@ export function ProductAdminPage() {
     cancelEdit,
     removeProduct,
     toggleProductActive,
-    removeExistingImage,
-    updateExistingImageOrder,
-    reorderExistingImages,
   } = useProductAdmin()
 
-  async function handleSubmit(images) {
-    const submitted = await submitForm(images)
+  async function handleSubmit(images, existingImageChanges) {
+    const submitted = await submitForm(images, existingImageChanges)
     if (submitted) {
       setShowCreateForm(false)
     }
@@ -85,9 +82,6 @@ export function ProductAdminPage() {
           telas={telas}
           sizes={sizes}
           existingImages={existingImages}
-          onRemoveExistingImage={removeExistingImage}
-          onUpdateExistingImageOrder={updateExistingImageOrder}
-          onReorderExistingImages={reorderExistingImages}
         />
       ) : (
         <>

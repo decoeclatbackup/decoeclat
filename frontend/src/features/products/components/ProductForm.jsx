@@ -32,9 +32,6 @@ export function ProductForm({
   telas = [],
   sizes = [],
   existingImages = [],
-  onRemoveExistingImage,
-  onUpdateExistingImageOrder,
-  onReorderExistingImages,
 }) {
   const errors = validate(form)
   const hasErrors = Object.values(errors).some(Boolean)
@@ -46,10 +43,12 @@ export function ProductForm({
   const [localSizeTypeId, setLocalSizeTypeId] = useState('')
   const [selectedImages, setSelectedImages] = useState([])
   const [imageError, setImageError] = useState('')
+  const [existingImagesDraft, setExistingImagesDraft] = useState([])
+  const [removedExistingImageIds, setRemovedExistingImageIds] = useState([])
   const [existingOrderDrafts, setExistingOrderDrafts] = useState({})
-  const [isReorderingExistingImages, setIsReorderingExistingImages] = useState(false)
   const [draggingExistingImageId, setDraggingExistingImageId] = useState(null)
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const selectedImagesRef = useRef([])
 
   useEffect(() => {
@@ -69,6 +68,8 @@ export function ProductForm({
   useEffect(() => {
     setImageError('')
     setExistingOrderDrafts({})
+    setExistingImagesDraft([])
+    setRemovedExistingImageIds([])
     setSelectedImages((prev) => {
       prev.forEach((image) => {
         if (image.previewUrl) {
@@ -96,8 +97,14 @@ export function ProductForm({
   }, [form.sizeId, sizes])
 
   useEffect(() => {
+    const sortedImages = [...existingImages].sort(
+      (left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0)
+    )
+
+    setExistingImagesDraft(sortedImages)
+
     const nextDrafts = {}
-    existingImages.forEach((image) => {
+    sortedImages.forEach((image) => {
       if (image?.img_id != null) {
         nextDrafts[image.img_id] = String(Number(image.orden ?? 0))
       }
@@ -112,7 +119,7 @@ export function ProductForm({
     ? String(form.categoryId)
     : ''
 
-  const sortedExistingImages = [...existingImages].sort(
+  const sortedExistingImages = [...existingImagesDraft].sort(
     (left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0)
   )
 
@@ -198,12 +205,16 @@ export function ProductForm({
     }))
 
     if (normalizedOrder === currentOrder) return
-    onUpdateExistingImageOrder?.(image.img_id, normalizedOrder)
+    setExistingImagesDraft((prev) => prev.map((item) => {
+      if (item.img_id !== image.img_id) return item
+      return {
+        ...item,
+        orden: normalizedOrder,
+      }
+    }))
   }
 
-  async function persistExistingImagesOrder(reorderedImages = []) {
-    if (!onReorderExistingImages || isReorderingExistingImages) return
-
+  function persistExistingImagesOrder(reorderedImages = []) {
     const normalizedImages = reorderedImages.map((image, index) => ({
       ...image,
       orden: index,
@@ -217,17 +228,11 @@ export function ProductForm({
     }, {})
 
     setExistingOrderDrafts(nextDrafts)
-
-    try {
-      setIsReorderingExistingImages(true)
-      await onReorderExistingImages(normalizedImages)
-    } finally {
-      setIsReorderingExistingImages(false)
-    }
+    setExistingImagesDraft(normalizedImages)
   }
 
   function handleExistingImageDragStart(event, imageId) {
-    if (!imageId || isReorderingExistingImages) return
+    if (!imageId) return
     setDraggingExistingImageId(imageId)
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData('text/plain', String(imageId))
@@ -242,7 +247,7 @@ export function ProductForm({
     }
   }
 
-  async function handleExistingImageDrop(event, targetImageId) {
+  function handleExistingImageDrop(event, targetImageId) {
     event.preventDefault()
 
     const sourceImageId = draggingExistingImageId || Number(event.dataTransfer.getData('text/plain'))
@@ -267,7 +272,7 @@ export function ProductForm({
 
     setDragOverExistingImageId(null)
     setDraggingExistingImageId(null)
-    await persistExistingImagesOrder(reordered)
+    persistExistingImagesOrder(reordered)
   }
 
   function handleExistingImageDragEnd() {
@@ -275,8 +280,7 @@ export function ProductForm({
     setDragOverExistingImageId(null)
   }
 
-  async function moveExistingImage(imageId, direction) {
-    if (!onReorderExistingImages || isReorderingExistingImages) return
+  function moveExistingImage(imageId, direction) {
 
     const currentIndex = sortedExistingImages.findIndex((image) => image.img_id === imageId)
     const targetIndex = currentIndex + direction
@@ -287,7 +291,31 @@ export function ProductForm({
     const [movedImage] = reordered.splice(currentIndex, 1)
     reordered.splice(targetIndex, 0, movedImage)
 
-    await persistExistingImagesOrder(reordered)
+    persistExistingImagesOrder(reordered)
+  }
+
+  function removeExistingImage(image) {
+    if (!image?.img_id) return
+
+    setExistingImagesDraft((prev) => prev.filter((item) => item.img_id !== image.img_id))
+    setRemovedExistingImageIds((prev) => {
+      if (prev.includes(image.img_id)) return prev
+      return [...prev, image.img_id]
+    })
+    setExistingOrderDrafts((prev) => {
+      const next = { ...prev }
+      delete next[image.img_id]
+      return next
+    })
+  }
+
+  function normalizeExistingImagesForSave(images = []) {
+    return images
+      .filter((image) => image?.img_id != null)
+      .map((image, index) => ({
+        img_id: image.img_id,
+        orden: index,
+      }))
   }
 
   function updateImageField(imageId, field, value) {
@@ -322,26 +350,37 @@ export function ProductForm({
 
       <form
         className="grid three"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault()
-          if (!hasErrors) {
-            onSubmit(
+          if (hasErrors || isSubmitting) return
+
+          setIsSubmitting(true)
+
+          try {
+            const submitted = await onSubmit(
               selectedImages.map((image) => ({
                 file: image.file,
                 principal: image.principal,
                 orden: Number(image.orden ?? 0),
-              }))
-            ).then((submitted) => {
-              if (submitted) {
-                selectedImages.forEach((image) => {
-                  if (image.previewUrl) {
-                    URL.revokeObjectURL(image.previewUrl)
-                  }
-                })
-                setSelectedImages([])
-                setImageError('')
+              })),
+              {
+                existingImages: normalizeExistingImagesForSave(sortedExistingImages),
+                removedImageIds: [...removedExistingImageIds],
               }
-            })
+            )
+
+            if (submitted) {
+              selectedImages.forEach((image) => {
+                if (image.previewUrl) {
+                  URL.revokeObjectURL(image.previewUrl)
+                }
+              })
+              setSelectedImages([])
+              setImageError('')
+              setRemovedExistingImageIds([])
+            }
+          } finally {
+            setIsSubmitting(false)
           }
         }}
       >
@@ -506,7 +545,7 @@ export function ProductForm({
                 <article
                   key={image.img_id || `${image.url}-${index}`}
                   className={`image-preview-card draggable-image-card ${draggingExistingImageId === image.img_id ? 'dragging' : ''} ${dragOverExistingImageId === image.img_id ? 'drag-over' : ''}`}
-                  draggable={Boolean(image.img_id) && !isReorderingExistingImages}
+                  draggable={Boolean(image.img_id) && !isSubmitting}
                   onDragStart={(event) => handleExistingImageDragStart(event, image.img_id)}
                   onDragOver={(event) => handleExistingImageDragOver(event, image.img_id)}
                   onDrop={(event) => handleExistingImageDrop(event, image.img_id)}
@@ -528,6 +567,7 @@ export function ProductForm({
                         value={existingOrderDrafts[image.img_id] ?? String(Number(image.orden ?? 0))}
                         onChange={(event) => handleExistingOrderInputChange(image.img_id, event.target.value)}
                         onBlur={() => commitExistingOrder(image)}
+                        disabled={isSubmitting}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter') {
                             event.currentTarget.blur()
@@ -540,7 +580,7 @@ export function ProductForm({
                         type="button"
                         className="btn ghost tiny"
                         onClick={() => moveExistingImage(image.img_id, -1)}
-                        disabled={index === 0 || isReorderingExistingImages}
+                        disabled={index === 0 || isSubmitting}
                         aria-label="Mover imagen hacia arriba"
                       >
                         ↑
@@ -549,7 +589,7 @@ export function ProductForm({
                         type="button"
                         className="btn ghost tiny"
                         onClick={() => moveExistingImage(image.img_id, 1)}
-                        disabled={index === sortedExistingImages.length - 1 || isReorderingExistingImages}
+                        disabled={index === sortedExistingImages.length - 1 || isSubmitting}
                         aria-label="Mover imagen hacia abajo"
                       >
                         ↓
@@ -558,10 +598,11 @@ export function ProductForm({
                     <button
                       type="button"
                       className="btn ghost tiny"
+                      disabled={isSubmitting}
                       onClick={() => {
                         if (!image.img_id) return
                         if (!window.confirm('¿Eliminar esta imagen del producto?')) return
-                        onRemoveExistingImage?.(image.img_id)
+                        removeExistingImage(image)
                       }}
                     >
                       Eliminar
@@ -580,6 +621,7 @@ export function ProductForm({
             accept="image/jpeg,image/png,image/webp"
             multiple
             onChange={handleImagesChange}
+            disabled={isSubmitting}
           />
           <small>Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: 5MB.</small>
           {imageError ? <small className="error">{imageError}</small> : null}
@@ -599,6 +641,7 @@ export function ProductForm({
                       min="0"
                       value={image.orden}
                       onChange={(event) => updateImageField(image.id, 'orden', event.target.value)}
+                      disabled={isSubmitting}
                     />
                   </label>
                   <label className="image-principal-toggle">
@@ -607,12 +650,14 @@ export function ProductForm({
                       name="principalImage"
                       checked={image.principal}
                       onChange={() => updateImageField(image.id, 'principal', true)}
+                      disabled={isSubmitting}
                     />
                     Imagen principal
                   </label>
                   <button
                     type="button"
                     className="btn ghost tiny"
+                    disabled={isSubmitting}
                     onClick={() => removeSelectedImage(image.id)}
                   >
                     Quitar
@@ -624,11 +669,11 @@ export function ProductForm({
         ) : null}
 
         <div className="actions full-width">
-          <button type="submit" className="btn" disabled={hasErrors}>
-            {isEditing ? 'Guardar cambios' : 'Registrar'}
+          <button type="submit" className="btn" disabled={hasErrors || isSubmitting}>
+            {isSubmitting ? (isEditing ? 'Guardando...' : 'Registrando...') : (isEditing ? 'Guardar cambios' : 'Registrar')}
           </button>
           {isEditing ? (
-            <button type="button" className="btn ghost" onClick={onCancel}>
+            <button type="button" className="btn ghost" onClick={onCancel} disabled={isSubmitting}>
               Cancelar edicion
             </button>
           ) : null}

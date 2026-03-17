@@ -194,6 +194,40 @@ export const productServices = {
 			})
 		}
 
+		const existingImageChanges = payload.existingImageChanges || {}
+		const removedImageIds = Array.isArray(existingImageChanges.removedImageIds)
+			? [...new Set(existingImageChanges.removedImageIds)].filter(Boolean)
+			: []
+
+		if (removedImageIds.length > 0) {
+			await Promise.all(
+				removedImageIds.map((imageId) =>
+					request(`/api/imagenes/${imageId}`, {
+						method: 'DELETE',
+					})
+				)
+			)
+		}
+
+		const existingImages = Array.isArray(existingImageChanges.existingImages)
+			? existingImageChanges.existingImages
+			: []
+
+		if (existingImages.length > 0) {
+			await Promise.all(
+				existingImages
+					.filter((image) => image?.img_id != null)
+					.map((image, index) =>
+						request(`/api/imagenes/${image.img_id}`, {
+							method: 'PUT',
+							body: JSON.stringify({
+								orden: Number(image.orden ?? index),
+							}),
+						})
+					)
+			)
+		}
+
 		await uploadProductImages(payload.variantId, payload.images)
 	},
 
