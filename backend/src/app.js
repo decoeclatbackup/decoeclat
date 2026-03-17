@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import productosRoutes from "./routes/productos.routes.js";
 import variantesRoutes from "./routes/variantes.routes.js";
 import clienteRoutes from "./routes/cliente.routes.js";
@@ -13,6 +14,12 @@ import sizesRoutes from "./routes/sizes.routes.js";
 import path from "path";
 
 export const app = express();
+
+app.use(cors({
+  origin: "https://decoeclat.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+}));
 
 app.use(express.json());
 
