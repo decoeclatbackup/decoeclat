@@ -3,21 +3,18 @@ import { imagenesService } from "../services/imagenes.service.js";
 export const imagenesController = {
     async uploadImage(req, res) {
         try {
-            // 1. Validar que Multer haya procesado un archivo
             if (!req.file) {
                 return res.status(400).json({ error: "Debe subir un archivo de imagen" });
             }
 
-            // 2. Extraer datos del body
-            const { producto_id, principal, orden } = req.body;
-
-            // 3. Construir la URL del archivo para la base de datos
-            // req.file.filename es el nombre único que generó el middleware
-            const urlPath = `/uploads/productos/${req.file.filename}`;
+            const { variante_id, producto_id, principal, orden } = req.body;
+            const cloudinaryUrl = req.file.path || req.file.secure_url;
+            const cloudinaryPublicId = req.file.filename;
 
             const newImage = await imagenesService.uploadImage({
-                producto_id: parseInt(producto_id),
-                url: urlPath,
+                variante_id: parseInt(variante_id || producto_id),
+                url: cloudinaryUrl,
+                public_id: cloudinaryPublicId,
                 principal: principal === 'true' || principal === true,
                 orden: Number(orden ?? 0),
             });

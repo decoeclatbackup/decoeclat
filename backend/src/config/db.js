@@ -12,8 +12,13 @@ export const pool = new Pool({
 
 async function ensureImageSchema() {
   await pool.query(`
-    ALTER TABLE IF EXISTS imagenes_productos
+    ALTER TABLE IF EXISTS imagenes_variantes
     ADD COLUMN IF NOT EXISTS orden integer DEFAULT 0
+  `);
+
+  await pool.query(`
+    ALTER TABLE IF EXISTS imagenes_variantes
+    ADD COLUMN IF NOT EXISTS public_id text
   `);
 }
 

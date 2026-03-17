@@ -38,11 +38,56 @@ export const productosRepository = {
       idx++;
     }
     
-    // Filtro por categoría
+    // Filtro por categoría (puede ser un ID único, un array de IDs, o una cadena separada por comas)
     if (filters.categoryId || filters.categoria_id) {
-      query += ` AND p.categoria_id = $${idx}`;
-      values.push(filters.categoryId || filters.categoria_id);
+      let categoryValue = filters.categoryId || filters.categoria_id;
+      
+      // Si es una cadena con comas, convertir a array de números
+      if (typeof categoryValue === 'string' && categoryValue.includes(',')) {
+        categoryValue = categoryValue.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id));
+      }
+      
+      // Si es un array con elementos
+      if (Array.isArray(categoryValue) && categoryValue.length > 0) {
+        query += ` AND p.categoria_id = ANY($${idx}::int[])`;
+        values.push(categoryValue);
+      } else if (!Array.isArray(categoryValue) && categoryValue) {
+        // Si es un número simple
+        query += ` AND p.categoria_id = $${idx}`;
+        values.push(Number(categoryValue));
+      }
       idx++;
+    }
+
+    const variantConditions = [`v.producto_id = p.producto_id`, `v.activo = true`];
+
+    if (filters.telaId || filters.tela_id) {
+      variantConditions.push(`v.tela_id = $${idx}`);
+      values.push(filters.telaId || filters.tela_id);
+      idx++;
+    }
+
+    if (filters.sizeId || filters.size_id) {
+      variantConditions.push(`v.size_id = $${idx}`);
+      values.push(filters.sizeId || filters.size_id);
+      idx++;
+    }
+
+    if (filters.sizeTypeId || filters.size_type_id || filters.type_id) {
+      variantConditions.push(`s.type_id = $${idx}`);
+      values.push(filters.sizeTypeId || filters.size_type_id || filters.type_id);
+      idx++;
+    }
+
+    if (variantConditions.length > 2) {
+      query += `
+        AND EXISTS (
+          SELECT 1
+          FROM variantes_producto v
+          JOIN sizes s ON s.size_id = v.size_id
+          WHERE ${variantConditions.join(" AND ")}
+        )
+      `;
     }
 
     const { rows } = await pool.query(query, values);
@@ -111,7 +156,13 @@ export const productosRepository = {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      await client.query("DELETE FROM imagenes_productos WHERE producto_id = $1", [id]);
+      await client.query(
+        `DELETE FROM imagenes_variantes iv
+         USING variantes_producto vp
+         WHERE iv.variante_id = vp.variante_id
+         AND vp.producto_id = $1`,
+        [id]
+      );
       await client.query("DELETE FROM variantes_producto WHERE producto_id = $1", [id]);
       await client.query("DELETE FROM productos_home WHERE producto_id = $1", [id]);
       await client.query("DELETE FROM carousel_home WHERE producto_id = $1", [id]);

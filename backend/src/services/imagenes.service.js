@@ -1,14 +1,16 @@
 import { imagenesRepository } from "../repositories/imagenes.repository.js";
+import { deleteFromCloudinary } from "../config/cloudinary.js";
 
 export const imagenesService = {
     async uploadImage(data) {
-        if (!data.producto_id || !data.url) {
-            throw new Error("producto_id y url son obligatorios");
+        if (!data.variante_id || !data.url) {
+            throw new Error("variante_id y url son obligatorios");
         }
 
         return await imagenesRepository.create({
-            producto_id: data.producto_id,
+            variante_id: data.variante_id,
             url: data.url,
+            public_id: data.public_id ?? null,
             principal: data.principal || false,
             orden: data.orden ?? 0,
         });
@@ -43,6 +45,8 @@ export const imagenesService = {
         if (!imagen) {
             throw new Error("Imagen no encontrada");
         }
+
+        await deleteFromCloudinary(imagen.public_id);
 
         return await imagenesRepository.delete(img_id);
     },

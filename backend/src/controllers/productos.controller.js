@@ -29,6 +29,9 @@ export const productosController = {
       const filters = {
         name: req.query.name || req.query.nombre,
         categoryId: req.query.categoryId || req.query.categoria_id,
+        sizeId: req.query.sizeId || req.query.size_id,
+        sizeTypeId: req.query.sizeTypeId || req.query.size_type_id || req.query.type_id,
+        telaId: req.query.telaId || req.query.tela_id,
       };
       const products = await productosService.getProducts(filters);
       res.json(products);
