@@ -1,4 +1,11 @@
-export function ProductFilters({ filters, categories = [], onFilterChange, onSearch, onClear }) {
+export function ProductFilters({
+  filters,
+  categories = [],
+  onFilterChange,
+  onSearch,
+  onClear,
+  categoryLocked = false,
+}) {
   return (
     <section className="card">
       <h2>Consultar Producto</h2>
@@ -20,6 +27,7 @@ export function ProductFilters({ filters, categories = [], onFilterChange, onSea
             name="categoryId"
             value={filters.categoryId}
             onChange={onFilterChange}
+            disabled={categoryLocked}
           >
             <option value="">Todas</option>
             {categories.map((category) => (

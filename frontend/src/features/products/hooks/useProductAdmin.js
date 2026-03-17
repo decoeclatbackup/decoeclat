@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { productServices } from '../services/productServices'
 import { useProducts } from './useProducts'
 
@@ -18,12 +18,18 @@ const emptyForm = {
     description: '',
 }
 
-export function useProductCatalog() {
-    // 1. Reutilizamos la lógica de listado
-    const [filters, setFilters] = useState(emptyFilters)
-    const { products, loading, reload } = useProducts(filters)
+export function useProductAdmin() {
+    const {
+        products,
+        loading,
+        error,
+        filters,
+        handleFilterChange,
+        handleSearch,
+        clearFilters,
+        reload,
+    } = useProducts()
 
-    // 2. Estados de datos auxiliares y formulario
     const [categories, setCategories] = useState([])
     const [telas, setTelas] = useState([])
     const [sizes, setSizes] = useState([])
@@ -32,7 +38,6 @@ export function useProductCatalog() {
 
     const isEditing = useMemo(() => Boolean(form.productId), [form.productId])
 
-    // Carga de selectores (Categorías, talles, etc)
     useEffect(() => {
         async function loadCatalogs() {
             try {
@@ -51,11 +56,11 @@ export function useProductCatalog() {
         loadCatalogs()
     }, [])
 
-    // Funciones de gestión
-    function handleFilterChange(event) {
-        const { name, value } = event.target
-        setFilters((prev) => ({ ...prev, [name]: value }))
-    }
+    useEffect(() => {
+        if (error) {
+            setMessage(`Error: ${error}`)
+        }
+    }, [error])
 
     function handleFormChange(event) {
         const { name, value, type, checked } = event.target
@@ -73,7 +78,7 @@ export function useProductCatalog() {
                 setMessage('Producto registrado correctamente')
             }
             setForm(emptyForm)
-            await reload()
+            await reload(filters)
             return true
         } catch (error) {
             setMessage(`Operación fallida: ${error.message}`)
@@ -105,7 +110,10 @@ export function useProductCatalog() {
         try {
             await productServices.remove(product.producto_id)
             setMessage('Eliminado correctamente')
-            await reload()
+            if (form.productId === product.producto_id) {
+                setForm(emptyForm)
+            }
+            await reload(filters)
         } catch (error) {
             setMessage(`Error: ${error.message}`)
         }
@@ -115,17 +123,35 @@ export function useProductCatalog() {
         try {
             await productServices.setActive(product.producto_id, !product.activo)
             setMessage('Estado actualizado')
-            await reload()
+            await reload(filters)
         } catch (error) {
             setMessage(`Error: ${error.message}`)
         }
     }
 
+    async function handleClearFilters() {
+        setMessage('')
+        await clearFilters(emptyFilters)
+    }
+
     return {
-        products, categories, telas, sizes, filters, form, loading, message, isEditing,
-        handleFilterChange, handleFormChange, submitForm, startEdit, cancelEdit,
-        removeProduct, toggleProductActive, 
-        handleSearch: reload,
-        clearFilters: () => { setFilters(emptyFilters); reload(); }
+        products,
+        categories,
+        telas,
+        sizes,
+        filters,
+        form,
+        loading,
+        message,
+        isEditing,
+        handleFilterChange,
+        handleFormChange,
+        submitForm,
+        startEdit,
+        cancelEdit,
+        removeProduct,
+        toggleProductActive,
+        handleSearch,
+        clearFilters: handleClearFilters,
     }
 }
