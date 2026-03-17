@@ -1,5 +1,9 @@
 import "dotenv/config";
 
+const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim().toLowerCase();
+const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY?.trim();
+const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+
 export const envs = {
   PORT: process.env.PORT || 4000,
   NODE_ENV: process.env.NODE_ENV || "development",
@@ -14,9 +18,9 @@ export const envs = {
   RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL || "http://localhost:5173/reset-password",
 
   // Cloudinary configuration
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+  CLOUDINARY_CLOUD_NAME: cloudinaryCloudName,
+  CLOUDINARY_API_KEY: cloudinaryApiKey,
+  CLOUDINARY_API_SECRET: cloudinaryApiSecret,
   CLOUDINARY_FOLDER: process.env.CLOUDINARY_FOLDER || "decoeclat/productos",
 };
 
