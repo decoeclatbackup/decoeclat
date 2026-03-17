@@ -23,9 +23,18 @@ export const productosRepository = {
 
   async find(filters = {}) {
     let query = `
-      SELECT p.*, c.nombre AS categoria
+      SELECT p.*, c.nombre AS categoria, img.imagen_principal
       FROM productos p
       LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
+      LEFT JOIN LATERAL (
+        SELECT iv.url AS imagen_principal
+        FROM variantes_producto vp
+        JOIN imagenes_variantes iv ON iv.variante_id = vp.variante_id
+        WHERE vp.producto_id = p.producto_id
+          AND vp.activo = true
+        ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC
+        LIMIT 1
+      ) img ON true
       WHERE 1 = 1
     `;
     const values = [];
@@ -96,9 +105,18 @@ export const productosRepository = {
 
   async findById(id) {
     const query = `
-      SELECT p.*, c.nombre AS categoria
+      SELECT p.*, c.nombre AS categoria, img.imagen_principal
       FROM productos p
       LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
+      LEFT JOIN LATERAL (
+        SELECT iv.url AS imagen_principal
+        FROM variantes_producto vp
+        JOIN imagenes_variantes iv ON iv.variante_id = vp.variante_id
+        WHERE vp.producto_id = p.producto_id
+          AND vp.activo = true
+        ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC
+        LIMIT 1
+      ) img ON true
       WHERE p.producto_id = $1
     `;
     const { rows } = await pool.query(query, [id]);

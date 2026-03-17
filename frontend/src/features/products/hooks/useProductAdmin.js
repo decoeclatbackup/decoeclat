@@ -34,6 +34,7 @@ export function useProductAdmin() {
     const [telas, setTelas] = useState([])
     const [sizes, setSizes] = useState([])
     const [form, setForm] = useState(emptyForm)
+    const [existingImages, setExistingImages] = useState([])
     const [message, setMessage] = useState('')
 
     const isEditing = useMemo(() => Boolean(form.productId), [form.productId])
@@ -62,6 +63,34 @@ export function useProductAdmin() {
         }
     }, [error])
 
+    useEffect(() => {
+        let cancelled = false
+
+        async function loadExistingImages() {
+            if (!form.productId) {
+                setExistingImages([])
+                return
+            }
+
+            try {
+                const images = await productServices.listImagesByProduct(form.productId)
+                if (!cancelled) {
+                    setExistingImages(Array.isArray(images) ? images : [])
+                }
+            } catch {
+                if (!cancelled) {
+                    setExistingImages([])
+                }
+            }
+        }
+
+        loadExistingImages()
+
+        return () => {
+            cancelled = true
+        }
+    }, [form.productId])
+
     function handleFormChange(event) {
         const { name, value, type, checked } = event.target
         setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
@@ -78,6 +107,7 @@ export function useProductAdmin() {
                 setMessage('Producto registrado correctamente')
             }
             setForm(emptyForm)
+            setExistingImages([])
             await reload(filters)
             return true
         } catch (error) {
@@ -103,7 +133,10 @@ export function useProductAdmin() {
         })
     }
 
-    function cancelEdit() { setForm(emptyForm) }
+    function cancelEdit() {
+        setForm(emptyForm)
+        setExistingImages([])
+    }
 
     async function removeProduct(product) {
         if (!window.confirm(`¿Eliminar "${product.nombre}"?`)) return
@@ -139,6 +172,7 @@ export function useProductAdmin() {
         categories,
         telas,
         sizes,
+        existingImages,
         filters,
         form,
         loading,

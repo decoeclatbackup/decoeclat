@@ -83,6 +83,11 @@ async function attachFirstVariant(product) {
 }
 
 export const productServices = {
+	async listImagesByProduct(productId) {
+		if (!productId) return []
+		return request(`/api/imagenes/producto/${productId}`)
+	},
+
 	async listCategories() {
 		return request('/api/categorias')
 	},

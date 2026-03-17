@@ -31,6 +31,7 @@ export function ProductForm({
   categories = [],
   telas = [],
   sizes = [],
+  existingImages = [],
 }) {
   const errors = validate(form)
   const hasErrors = Object.values(errors).some(Boolean)
@@ -348,6 +349,27 @@ export function ProductForm({
             {errors.precioOferta ? <small className="error">{errors.precioOferta}</small> : null}
           </label>
         )}
+
+        {isEditing && existingImages.length > 0 ? (
+          <div className="field full-width">
+            <span>Imágenes actuales</span>
+            <div className="image-preview-grid">
+              {existingImages.map((image, index) => (
+                <article key={image.img_id || `${image.url}-${index}`} className="image-preview-card">
+                  <img
+                    src={image.url}
+                    alt={`Imagen actual ${index + 1}`}
+                    className="image-preview-thumb"
+                  />
+                  <div className="image-preview-meta">
+                    <strong>{image.principal ? 'Imagen principal' : `Imagen ${index + 1}`}</strong>
+                    <small>Orden: {Number(image.orden ?? 0)}</small>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="field full-width">
           <span>Imágenes del producto</span>

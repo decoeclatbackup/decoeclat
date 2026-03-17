@@ -11,6 +11,7 @@ export function ProductAdminPage() {
     categories,
     telas,
     sizes,
+    existingImages,
     filters,
     form,
     loading,
@@ -80,6 +81,7 @@ export function ProductAdminPage() {
           categories={categories}
           telas={telas}
           sizes={sizes}
+          existingImages={existingImages}
         />
       ) : (
         <>
