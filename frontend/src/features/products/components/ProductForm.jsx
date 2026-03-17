@@ -33,6 +33,8 @@ export function ProductForm({
   sizes = [],
   existingImages = [],
   onRemoveExistingImage,
+  onUpdateExistingImageOrder,
+  onReorderExistingImages,
 }) {
   const errors = validate(form)
   const hasErrors = Object.values(errors).some(Boolean)
@@ -44,6 +46,10 @@ export function ProductForm({
   const [localSizeTypeId, setLocalSizeTypeId] = useState('')
   const [selectedImages, setSelectedImages] = useState([])
   const [imageError, setImageError] = useState('')
+  const [existingOrderDrafts, setExistingOrderDrafts] = useState({})
+  const [isReorderingExistingImages, setIsReorderingExistingImages] = useState(false)
+  const [draggingExistingImageId, setDraggingExistingImageId] = useState(null)
+  const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
   const selectedImagesRef = useRef([])
 
   useEffect(() => {
@@ -62,6 +68,7 @@ export function ProductForm({
 
   useEffect(() => {
     setImageError('')
+    setExistingOrderDrafts({})
     setSelectedImages((prev) => {
       prev.forEach((image) => {
         if (image.previewUrl) {
@@ -88,7 +95,31 @@ export function ProductForm({
     setLocalSizeTypeId(String(size.type_id))
   }, [form.sizeId, sizes])
 
+  useEffect(() => {
+    const nextDrafts = {}
+    existingImages.forEach((image) => {
+      if (image?.img_id != null) {
+        nextDrafts[image.img_id] = String(Number(image.orden ?? 0))
+      }
+    })
+    setExistingOrderDrafts(nextDrafts)
+  }, [existingImages])
+
   const childrenOfParent = childCategories.filter((c) => c.parent_id == localParentId)
+  const selectedSubcategoryValue = childrenOfParent.some(
+    (child) => String(child.categoria_id) === String(form.categoryId)
+  )
+    ? String(form.categoryId)
+    : ''
+
+  const sortedExistingImages = [...existingImages].sort(
+    (left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0)
+  )
+
+  const sortedSelectedImages = [...selectedImages].sort(
+    (left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0)
+  )
+
   const sizeTypes = Array.from(
     new Map(sizes.map((size) => [String(size.type_id), size.type_nombre])).entries()
   ).map(([type_id, type_nombre]) => ({ type_id, type_nombre }))
@@ -142,6 +173,121 @@ export function ProductForm({
     })
 
     event.target.value = ''
+  }
+
+  function handleExistingOrderInputChange(imageId, value) {
+    setExistingOrderDrafts((prev) => ({
+      ...prev,
+      [imageId]: value,
+    }))
+  }
+
+  function commitExistingOrder(image) {
+    if (!image?.img_id) return
+
+    const currentOrder = Number(image.orden ?? 0)
+    const rawValue = existingOrderDrafts[image.img_id]
+    const parsedValue = Number(rawValue)
+    const normalizedOrder = Number.isFinite(parsedValue) && parsedValue >= 0
+      ? Math.trunc(parsedValue)
+      : currentOrder
+
+    setExistingOrderDrafts((prev) => ({
+      ...prev,
+      [image.img_id]: String(normalizedOrder),
+    }))
+
+    if (normalizedOrder === currentOrder) return
+    onUpdateExistingImageOrder?.(image.img_id, normalizedOrder)
+  }
+
+  async function persistExistingImagesOrder(reorderedImages = []) {
+    if (!onReorderExistingImages || isReorderingExistingImages) return
+
+    const normalizedImages = reorderedImages.map((image, index) => ({
+      ...image,
+      orden: index,
+    }))
+
+    const nextDrafts = normalizedImages.reduce((acc, image) => {
+      if (image?.img_id != null) {
+        acc[image.img_id] = String(Number(image.orden ?? 0))
+      }
+      return acc
+    }, {})
+
+    setExistingOrderDrafts(nextDrafts)
+
+    try {
+      setIsReorderingExistingImages(true)
+      await onReorderExistingImages(normalizedImages)
+    } finally {
+      setIsReorderingExistingImages(false)
+    }
+  }
+
+  function handleExistingImageDragStart(event, imageId) {
+    if (!imageId || isReorderingExistingImages) return
+    setDraggingExistingImageId(imageId)
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(imageId))
+  }
+
+  function handleExistingImageDragOver(event, imageId) {
+    if (!draggingExistingImageId || draggingExistingImageId === imageId) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    if (dragOverExistingImageId !== imageId) {
+      setDragOverExistingImageId(imageId)
+    }
+  }
+
+  async function handleExistingImageDrop(event, targetImageId) {
+    event.preventDefault()
+
+    const sourceImageId = draggingExistingImageId || Number(event.dataTransfer.getData('text/plain'))
+    if (!sourceImageId || sourceImageId === targetImageId) {
+      setDraggingExistingImageId(null)
+      setDragOverExistingImageId(null)
+      return
+    }
+
+    const sourceIndex = sortedExistingImages.findIndex((image) => image.img_id === sourceImageId)
+    const targetIndex = sortedExistingImages.findIndex((image) => image.img_id === targetImageId)
+
+    if (sourceIndex < 0 || targetIndex < 0) {
+      setDraggingExistingImageId(null)
+      setDragOverExistingImageId(null)
+      return
+    }
+
+    const reordered = [...sortedExistingImages]
+    const [movedImage] = reordered.splice(sourceIndex, 1)
+    reordered.splice(targetIndex, 0, movedImage)
+
+    setDragOverExistingImageId(null)
+    setDraggingExistingImageId(null)
+    await persistExistingImagesOrder(reordered)
+  }
+
+  function handleExistingImageDragEnd() {
+    setDraggingExistingImageId(null)
+    setDragOverExistingImageId(null)
+  }
+
+  async function moveExistingImage(imageId, direction) {
+    if (!onReorderExistingImages || isReorderingExistingImages) return
+
+    const currentIndex = sortedExistingImages.findIndex((image) => image.img_id === imageId)
+    const targetIndex = currentIndex + direction
+
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= sortedExistingImages.length) return
+
+    const reordered = [...sortedExistingImages]
+    const [movedImage] = reordered.splice(currentIndex, 1)
+    reordered.splice(targetIndex, 0, movedImage)
+
+    await persistExistingImagesOrder(reordered)
   }
 
   function updateImageField(imageId, field, value) {
@@ -231,8 +377,9 @@ export function ProductForm({
           <label className="field">
             <span>Subcategoria</span>
             <select
+              key={localParentId || 'no-parent'}
               name="categoryId"
-              value={form.categoryId}
+              value={selectedSubcategoryValue}
               onChange={onChange}
               required
             >
@@ -351,20 +498,63 @@ export function ProductForm({
           </label>
         )}
 
-        {isEditing && existingImages.length > 0 ? (
+        {isEditing && sortedExistingImages.length > 0 ? (
           <div className="field full-width">
             <span>Imágenes actuales</span>
             <div className="image-preview-grid">
-              {existingImages.map((image, index) => (
-                <article key={image.img_id || `${image.url}-${index}`} className="image-preview-card">
+              {sortedExistingImages.map((image, index) => (
+                <article
+                  key={image.img_id || `${image.url}-${index}`}
+                  className={`image-preview-card draggable-image-card ${draggingExistingImageId === image.img_id ? 'dragging' : ''} ${dragOverExistingImageId === image.img_id ? 'drag-over' : ''}`}
+                  draggable={Boolean(image.img_id) && !isReorderingExistingImages}
+                  onDragStart={(event) => handleExistingImageDragStart(event, image.img_id)}
+                  onDragOver={(event) => handleExistingImageDragOver(event, image.img_id)}
+                  onDrop={(event) => handleExistingImageDrop(event, image.img_id)}
+                  onDragEnd={handleExistingImageDragEnd}
+                >
                   <img
                     src={image.url}
                     alt={`Imagen actual ${index + 1}`}
                     className="image-preview-thumb"
                   />
                   <div className="image-preview-meta">
+                    <small>Arrastrar para reordenar</small>
                     <strong>{image.principal ? 'Imagen principal' : `Imagen ${index + 1}`}</strong>
-                    <small>Orden: {Number(image.orden ?? 0)}</small>
+                    <label className="field image-order-field">
+                      <span>Orden</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={existingOrderDrafts[image.img_id] ?? String(Number(image.orden ?? 0))}
+                        onChange={(event) => handleExistingOrderInputChange(image.img_id, event.target.value)}
+                        onBlur={() => commitExistingOrder(image)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.currentTarget.blur()
+                          }
+                        }}
+                      />
+                    </label>
+                    <div className="image-order-actions">
+                      <button
+                        type="button"
+                        className="btn ghost tiny"
+                        onClick={() => moveExistingImage(image.img_id, -1)}
+                        disabled={index === 0 || isReorderingExistingImages}
+                        aria-label="Mover imagen hacia arriba"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="btn ghost tiny"
+                        onClick={() => moveExistingImage(image.img_id, 1)}
+                        disabled={index === sortedExistingImages.length - 1 || isReorderingExistingImages}
+                        aria-label="Mover imagen hacia abajo"
+                      >
+                        ↓
+                      </button>
+                    </div>
                     <button
                       type="button"
                       className="btn ghost tiny"
@@ -395,9 +585,9 @@ export function ProductForm({
           {imageError ? <small className="error">{imageError}</small> : null}
         </div>
 
-        {selectedImages.length > 0 ? (
+        {sortedSelectedImages.length > 0 ? (
           <div className="full-width image-preview-grid">
-            {selectedImages.map((image, index) => (
+            {sortedSelectedImages.map((image, index) => (
               <article key={image.id} className="image-preview-card">
                 <img src={image.previewUrl} alt={`Preview ${index + 1}`} className="image-preview-thumb" />
                 <div className="image-preview-meta">

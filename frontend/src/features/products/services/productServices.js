@@ -88,6 +88,14 @@ export const productServices = {
 		return request(`/api/imagenes/producto/${productId}`)
 	},
 
+	async updateImage(imageId, updates = {}) {
+		if (!imageId) return null
+		return request(`/api/imagenes/${imageId}`, {
+			method: 'PUT',
+			body: JSON.stringify(updates),
+		})
+	},
+
 	async deleteImage(imageId) {
 		if (!imageId) return null
 		return request(`/api/imagenes/${imageId}`, {

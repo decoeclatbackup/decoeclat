@@ -27,6 +27,8 @@ export function ProductAdminPage() {
     removeProduct,
     toggleProductActive,
     removeExistingImage,
+    updateExistingImageOrder,
+    reorderExistingImages,
   } = useProductAdmin()
 
   async function handleSubmit(images) {
@@ -84,6 +86,8 @@ export function ProductAdminPage() {
           sizes={sizes}
           existingImages={existingImages}
           onRemoveExistingImage={removeExistingImage}
+          onUpdateExistingImageOrder={updateExistingImageOrder}
+          onReorderExistingImages={reorderExistingImages}
         />
       ) : (
         <>

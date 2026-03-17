@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 function buildCategoryTree(categories) {
@@ -31,22 +31,54 @@ export default function Navbar({
 	const categoryTree = useMemo(() => buildCategoryTree(categories), [categories])
 	const [openCategoryId, setOpenCategoryId] = useState(null)
 	const [draftSearchValue, setDraftSearchValue] = useState(searchValue || '')
+	const [isMobileViewport, setIsMobileViewport] = useState(() => {
+		if (typeof window === 'undefined') return false
+		return window.matchMedia('(max-width: 900px)').matches
+	})
 
-	const selectedParentId = useMemo(() => {
-		const selectedParent = categoryTree.find((category) =>
-			category.children.some((child) => child.id === String(selectedCategoryId))
-		)
+	useEffect(() => {
+		setOpenCategoryId(null)
+	}, [selectedCategoryId])
 
-		return selectedParent?.id || null
-	}, [categoryTree, selectedCategoryId])
+	useEffect(() => {
+		if (typeof window === 'undefined') return undefined
+
+		const mediaQuery = window.matchMedia('(max-width: 900px)')
+		const handleChange = (event) => {
+			setIsMobileViewport(event.matches)
+			if (!event.matches) {
+				setOpenCategoryId(null)
+			}
+		}
+
+		setIsMobileViewport(mediaQuery.matches)
+		if (mediaQuery.addEventListener) {
+			mediaQuery.addEventListener('change', handleChange)
+			return () => mediaQuery.removeEventListener('change', handleChange)
+		}
+
+		mediaQuery.addListener(handleChange)
+		return () => mediaQuery.removeListener(handleChange)
+	}, [])
 
 	function handleSubmit(event) {
 		event.preventDefault()
 		onSearchSubmit(draftSearchValue)
 	}
 
-	function toggleCategory(categoryId) {
-		setOpenCategoryId((current) => (current === categoryId ? null : categoryId))
+	function handleParentCategoryClick(event, categoryId, hasChildren) {
+		if (!hasChildren || !isMobileViewport) {
+			setOpenCategoryId(null)
+			return
+		}
+
+		if (openCategoryId !== categoryId) {
+			event.preventDefault()
+			setOpenCategoryId(categoryId)
+			return
+		}
+
+		setOpenCategoryId(null)
 	}
 
 	return (
@@ -54,6 +86,7 @@ export default function Navbar({
 			<div className="catalog-navbar-links">
 				<NavLink
 					to="/catalogo"
+					onClick={() => setOpenCategoryId(null)}
 					className={({ isActive }) => `catalog-nav-link ${isActive && !selectedCategoryId ? 'active' : ''}`}
 				>
 					Todos
@@ -63,13 +96,14 @@ export default function Navbar({
 					const hasChildren = category.children.length > 0
 					const isParentActive = String(selectedCategoryId) === category.id
 					const isChildActive = category.children.some((child) => child.id === String(selectedCategoryId))
-					const isOpen = openCategoryId === category.id || (openCategoryId == null && selectedParentId === category.id) || isChildActive
+					const isOpen = isMobileViewport && openCategoryId === category.id
 
 					if (!hasChildren) {
 						return (
 							<NavLink
 								key={category.id}
 								to={`/categoria/${category.id}`}
+								onClick={() => setOpenCategoryId(null)}
 								className={() => `catalog-nav-link ${isParentActive ? 'active' : ''}`}
 							>
 								{category.name}
@@ -85,19 +119,11 @@ export default function Navbar({
 							<div className="catalog-nav-parent-row">
 								<NavLink
 									to={`/categoria/${category.id}`}
+									onClick={(event) => handleParentCategoryClick(event, category.id, hasChildren)}
 									className={() => `catalog-nav-link ${isParentActive || isChildActive ? 'active' : ''}`}
 								>
 									{category.name}
 								</NavLink>
-								<button
-									type="button"
-									className="catalog-nav-toggle"
-									onClick={() => toggleCategory(category.id)}
-									aria-expanded={isOpen}
-									aria-label={`Mostrar subcategorias de ${category.name}`}
-								>
-									▾
-								</button>
 							</div>
 
 							<div className="catalog-submenu">
@@ -105,6 +131,7 @@ export default function Navbar({
 									<NavLink
 										key={child.id}
 										to={`/categoria/${child.id}`}
+										onClick={() => setOpenCategoryId(null)}
 										className={() => `catalog-submenu-link ${String(selectedCategoryId) === child.id ? 'active' : ''}`}
 									>
 										{child.name}

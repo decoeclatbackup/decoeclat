@@ -94,29 +94,8 @@
 }
 
 .catalog-nav-parent-row {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-}
-
-.catalog-nav-parent-row .catalog-nav-link {
-  padding-right: 0.75rem;
-}
-
-.catalog-nav-toggle {
-  border: none;
-  min-width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  cursor: pointer;
-  background: #eef4f3;
-  color: #17363b;
-  font-size: 1rem;
-}
-
-.catalog-nav-group.open .catalog-nav-toggle,
-.catalog-nav-toggle:hover {
-  background: #dbe9e7;
 }
 
 .catalog-submenu {
@@ -137,6 +116,13 @@
 
 .catalog-nav-group.open .catalog-submenu {
   display: grid;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .catalog-nav-group:hover .catalog-submenu,
+  .catalog-nav-group:focus-within .catalog-submenu {
+    display: grid;
+  }
 }
 
 .catalog-submenu-link {
@@ -327,7 +313,7 @@
 
 .image-preview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.8rem;
 }
 
@@ -340,9 +326,24 @@
   background: #f8fbfb;
 }
 
+.draggable-image-card {
+  cursor: grab;
+}
+
+.draggable-image-card.dragging {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+
+.draggable-image-card.drag-over {
+  outline: 2px dashed;
+  outline-offset: 2px;
+}
+
 .image-preview-thumb {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
+  max-height: 180px;
   object-fit: cover;
   border-radius: 12px;
   border: 1px solid #d8e1e2;
@@ -355,6 +356,16 @@
 
 .image-order-field {
   max-width: 120px;
+}
+
+.image-order-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.image-order-actions .btn.tiny {
+  min-width: 2rem;
+  padding: 0.35rem 0.55rem;
 }
 
 .image-principal-toggle {
@@ -542,7 +553,8 @@ th {
 
 .catalog-card-image {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
+  max-height: 260px;
   object-fit: cover;
   background: #d7dbdf;
 }
@@ -635,10 +647,10 @@ th {
 
   .catalog-nav-parent-row {
     width: 100%;
+    display: flex;
   }
 
   .catalog-nav-parent-row .catalog-nav-link,
-  .catalog-nav-toggle,
   .catalog-nav-link {
     width: 100%;
     justify-content: center;

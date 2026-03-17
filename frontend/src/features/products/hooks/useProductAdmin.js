@@ -18,6 +18,18 @@ const emptyForm = {
     description: '',
 }
 
+function sortImages(images = []) {
+    return [...images].sort((left, right) => {
+        const orderDiff = Number(left.orden ?? 0) - Number(right.orden ?? 0)
+        if (orderDiff !== 0) return orderDiff
+
+        const principalDiff = Number(Boolean(right.principal)) - Number(Boolean(left.principal))
+        if (principalDiff !== 0) return principalDiff
+
+        return Number(left.img_id ?? 0) - Number(right.img_id ?? 0)
+    })
+}
+
 export function useProductAdmin() {
     const {
         products,
@@ -75,7 +87,7 @@ export function useProductAdmin() {
             try {
                 const images = await productServices.listImagesByProduct(form.productId)
                 if (!cancelled) {
-                    setExistingImages(Array.isArray(images) ? images : [])
+                    setExistingImages(sortImages(Array.isArray(images) ? images : []))
                 }
             } catch {
                 if (!cancelled) {
@@ -167,11 +179,71 @@ export function useProductAdmin() {
 
         try {
             await productServices.deleteImage(imageId)
-            setExistingImages((prev) => prev.filter((image) => image.img_id !== imageId))
+            setExistingImages((prev) => sortImages(prev.filter((image) => image.img_id !== imageId)))
             setMessage('Imagen eliminada correctamente')
             await reload(filters)
         } catch (error) {
             setMessage(`Error al eliminar imagen: ${error.message}`)
+        }
+    }
+
+    async function updateExistingImageOrder(imageId, orderValue) {
+        if (!imageId && imageId !== 0) return
+
+        const parsed = Number(orderValue)
+        const normalizedOrder = Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : 0
+
+        try {
+            const updatedImage = await productServices.updateImage(imageId, { orden: normalizedOrder })
+
+            setExistingImages((prev) => sortImages(prev.map((image) => {
+                if (image.img_id !== imageId) return image
+                return {
+                    ...image,
+                    orden: Number(updatedImage?.orden ?? normalizedOrder),
+                }
+            })))
+
+            setMessage('Orden de imagen actualizado')
+        } catch (error) {
+            setMessage(`Error al actualizar orden: ${error.message}`)
+        }
+    }
+
+    async function reorderExistingImages(nextImages = []) {
+        if (!Array.isArray(nextImages) || nextImages.length === 0) return
+
+        const normalizedImages = nextImages.map((image, index) => ({
+            ...image,
+            orden: index,
+        }))
+
+        const previousOrderByImageId = new Map(
+            existingImages.map((image) => [image.img_id, Number(image.orden ?? 0)])
+        )
+
+        const changedImages = normalizedImages.filter((image) => {
+            if (image?.img_id == null) return false
+            return previousOrderByImageId.get(image.img_id) !== Number(image.orden ?? 0)
+        })
+
+        if (changedImages.length === 0) {
+            setExistingImages(sortImages(normalizedImages))
+            return
+        }
+
+        try {
+            await Promise.all(
+                changedImages.map((image) =>
+                    productServices.updateImage(image.img_id, { orden: Number(image.orden ?? 0) })
+                )
+            )
+
+            setExistingImages(sortImages(normalizedImages))
+            setMessage('Orden de imágenes actualizado')
+            await reload(filters)
+        } catch (error) {
+            setMessage(`Error al reordenar imágenes: ${error.message}`)
         }
     }
 
@@ -199,6 +271,8 @@ export function useProductAdmin() {
         removeProduct,
         toggleProductActive,
         removeExistingImage,
+        updateExistingImageOrder,
+        reorderExistingImages,
         handleSearch,
         clearFilters: handleClearFilters,
     }
