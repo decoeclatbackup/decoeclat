@@ -45,7 +45,7 @@ export function CatalogSidebar({
       ) : null}
 
       <div className="catalog-filter-block">
-        <p className="catalog-filter-label">Tipo de tela</p>
+        <p className="catalog-filter-label">Diseño</p>
         <div className="catalog-filter-buttons">
           <button
             type="button"

@@ -3,7 +3,7 @@ import { deleteFromCloudinary } from "../config/cloudinary.js";
 
 export const imagenesService = {
     async uploadImage(data) {
-        if (!data.variante_id || !data.url) {
+        if (!Number.isInteger(data.variante_id) || data.variante_id <= 0 || !data.url) {
             throw new Error("variante_id y url son obligatorios");
         }
 

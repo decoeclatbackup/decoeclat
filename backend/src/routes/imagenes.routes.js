@@ -1,9 +1,9 @@
 import express from "express";
 import { imagenesController } from "../controllers/imagenes.controller.js";
-import { upload } from "../middlewares/upload.middleware.js";
+import { uploadProductImage } from "../middlewares/upload.middleware.js";
 const router = express.Router();
 
-router.post("/", upload.single('url'), imagenesController.uploadImage);
+router.post("/", uploadProductImage, imagenesController.uploadImage);
 
 router.get("/producto/:producto_id", imagenesController.getByProducto);
 

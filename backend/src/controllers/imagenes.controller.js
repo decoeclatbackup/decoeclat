@@ -7,12 +7,18 @@ export const imagenesController = {
                 return res.status(400).json({ error: "Debe subir un archivo de imagen" });
             }
 
-            const { variante_id, producto_id, principal, orden } = req.body;
+            const { variante_id, principal, orden } = req.body;
+            const varianteId = Number.parseInt(variante_id, 10);
+
+            if (!Number.isInteger(varianteId) || varianteId <= 0) {
+                return res.status(400).json({ error: "variante_id es obligatorio y debe ser un número válido" });
+            }
+
             const cloudinaryUrl = req.file.path || req.file.secure_url;
-            const cloudinaryPublicId = req.file.filename;
+            const cloudinaryPublicId = req.file.filename || req.file.public_id || null;
 
             const newImage = await imagenesService.uploadImage({
-                variante_id: parseInt(variante_id || producto_id),
+                variante_id: varianteId,
                 url: cloudinaryUrl,
                 public_id: cloudinaryPublicId,
                 principal: principal === 'true' || principal === true,
