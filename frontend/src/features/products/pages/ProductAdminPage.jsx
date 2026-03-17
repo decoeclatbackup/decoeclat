@@ -26,6 +26,7 @@ export function ProductAdminPage() {
     cancelEdit,
     removeProduct,
     toggleProductActive,
+    removeExistingImage,
   } = useProductAdmin()
 
   async function handleSubmit(images) {
@@ -82,6 +83,7 @@ export function ProductAdminPage() {
           telas={telas}
           sizes={sizes}
           existingImages={existingImages}
+          onRemoveExistingImage={removeExistingImage}
         />
       ) : (
         <>

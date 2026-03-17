@@ -162,6 +162,19 @@ export function useProductAdmin() {
         }
     }
 
+    async function removeExistingImage(imageId) {
+        if (!imageId) return
+
+        try {
+            await productServices.deleteImage(imageId)
+            setExistingImages((prev) => prev.filter((image) => image.img_id !== imageId))
+            setMessage('Imagen eliminada correctamente')
+            await reload(filters)
+        } catch (error) {
+            setMessage(`Error al eliminar imagen: ${error.message}`)
+        }
+    }
+
     async function handleClearFilters() {
         setMessage('')
         await clearFilters(emptyFilters)
@@ -185,6 +198,7 @@ export function useProductAdmin() {
         cancelEdit,
         removeProduct,
         toggleProductActive,
+        removeExistingImage,
         handleSearch,
         clearFilters: handleClearFilters,
     }

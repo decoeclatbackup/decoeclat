@@ -32,6 +32,7 @@ export function ProductForm({
   telas = [],
   sizes = [],
   existingImages = [],
+  onRemoveExistingImage,
 }) {
   const errors = validate(form)
   const hasErrors = Object.values(errors).some(Boolean)
@@ -364,6 +365,17 @@ export function ProductForm({
                   <div className="image-preview-meta">
                     <strong>{image.principal ? 'Imagen principal' : `Imagen ${index + 1}`}</strong>
                     <small>Orden: {Number(image.orden ?? 0)}</small>
+                    <button
+                      type="button"
+                      className="btn ghost tiny"
+                      onClick={() => {
+                        if (!image.img_id) return
+                        if (!window.confirm('¿Eliminar esta imagen del producto?')) return
+                        onRemoveExistingImage?.(image.img_id)
+                      }}
+                    >
+                      Eliminar
+                    </button>
                   </div>
                 </article>
               ))}

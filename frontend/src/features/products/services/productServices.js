@@ -88,6 +88,13 @@ export const productServices = {
 		return request(`/api/imagenes/producto/${productId}`)
 	},
 
+	async deleteImage(imageId) {
+		if (!imageId) return null
+		return request(`/api/imagenes/${imageId}`, {
+			method: 'DELETE',
+		})
+	},
+
 	async listCategories() {
 		return request('/api/categorias')
 	},
