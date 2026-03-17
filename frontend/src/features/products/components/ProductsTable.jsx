@@ -6,7 +6,14 @@ function formatMoney(value) {
   }).format(Number(value || 0))
 }
 
-export function ProductsTable({ products, loading, onEdit, onRemove, onToggleActive }) {
+export function ProductsTable({
+  products,
+  loading,
+  onEdit,
+  onRemove,
+  onToggleActive,
+  isClient = false,
+}) {
   return (
     <section className="card">
       <h2>Listado de Productos</h2>
@@ -26,12 +33,12 @@ export function ProductsTable({ products, loading, onEdit, onRemove, onToggleAct
                 <th>Categoria</th>
                 <th>Medida</th>
                 <th>Tipo Tela</th>
-                <th>Activo</th>
+                {!isClient ? <th>Activo</th> : null}
                 <th>Precio</th>
                 <th>En Oferta</th>
                 <th>Precio Oferta</th>
                 <th>Stock</th>
-                <th>Acciones</th>
+                {!isClient ? <th>Acciones</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -41,39 +48,43 @@ export function ProductsTable({ products, loading, onEdit, onRemove, onToggleAct
                   <td>{product.categoria || `${product.categoria_id}`}</td>
                   <td>{product.Size || '-'}</td>
                   <td>{product.tela || `${product.tela_id || '-'}`}</td>
-                  <td>
-                    <div className="accion activo">
+                  {!isClient ? (
+                    <td>
+                      <div className="accion activo">
                         <button
                           type="button"
                           className={`btn tiny ${product.activo ? 'success' : 'danger'}`}
-                          onClick={() => onToggleActive(product)}
+                          onClick={() => onToggleActive?.(product)}
                         >
-                            {product.activo ? 'Activo' : 'Inactivo'}
+                          {product.activo ? 'Activo' : 'Inactivo'}
                         </button>
-                    </div>
+                      </div>
                     </td>
+                  ) : null}
                   <td>{formatMoney(product.precio)}</td>
                   <td>{product.enOferta ? 'Si' : 'No'}</td>
                   <td>{product.enOferta ? formatMoney(product.precioOferta) : '-'}</td>
                   <td>{Number(product.stock ?? 0)}</td>
-                  <td>
-                    <div className="actions compact">
-                      <button
-                        type="button"
-                        className="btn tiny"
-                        onClick={() => onEdit(product)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn danger tiny"
-                        onClick={() => onRemove(product)}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
+                  {!isClient ? (
+                    <td>
+                      <div className="actions compact">
+                        <button
+                          type="button"
+                          className="btn tiny"
+                          onClick={() => onEdit?.(product)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn danger tiny"
+                          onClick={() => onRemove?.(product)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

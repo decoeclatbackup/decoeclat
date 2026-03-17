@@ -1,17 +1,17 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { ProductCatalogPage } from '../features/products/pages/ProductCatalogPage'
+import { ProductAdminPage, ProductCatalogPage } from '../features/products/pages/pages'
 
 export function AppRoutes() {
   return (
     <Routes>
       {/* 1. La vista del Admin */}
-      <Route path="/admin/productos" element={<ProductCatalogPage isClient={false} />} />
+      <Route path="/admin/productos" element={<ProductAdminPage />} />
 
       {/* 2. La vista del Cliente (Catálogo General) */}
-      <Route path="/catalogo" element={<ProductCatalogPage isClient={true} />} />
+      <Route path="/catalogo" element={<ProductCatalogPage />} />
       
       {/* 3. Las 7 categorías (Ruta dinámica) */}
-      <Route path="/categoria/:categoryId" element={<ProductCatalogPage isClient={true} />} />
+      <Route path="/categoria/:categoryId" element={<ProductCatalogPage />} />
 
       {/* Redirección por defecto */}
       <Route path="*" element={<Navigate replace to="/catalogo" />} />

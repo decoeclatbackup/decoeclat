@@ -1,3 +1,5 @@
 export { ProductFilters } from './ProductFilters'
 export { ProductForm } from './ProductForm'
 export { ProductsTable } from './ProductsTable'
+export { CatalogSidebar } from './CatalogSidebar'
+export { CatalogProductGrid } from './CatalogProductGrid'

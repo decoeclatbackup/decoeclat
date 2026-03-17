@@ -1,107 +1,65 @@
-import { useState } from 'react'
 import { MainLayout } from '../../../layouts/layouts'
-import { ProductFilters, ProductForm, ProductsTable } from '../components/components'
-import { useProductCatalog } from '../hooks/productHooks'
+import { CatalogProductGrid, CatalogSidebar } from '../components/components'
+import { useProductCatalog } from '../hooks/useProductCatalog'
 
 export function ProductCatalogPage() {
-  const [showCreateForm, setShowCreateForm] = useState(false)
-
   const {
     products,
-    categories,
-    telas,
-    sizes,
+    categoryLinks,
+    currentCategory,
+    selectedCategoryId,
     filters,
-    form,
     loading,
     message,
-    isEditing,
     handleFilterChange,
-    handleFormChange,
     handleSearch,
-    clearFilters,
-    submitForm,
-    startEdit,
-    cancelEdit,
-    removeProduct,
-    toggleProductActive,
+    handleClearFilters,
+    sortOrder,
+    setSortOrder,
   } = useProductCatalog()
 
-  async function handleSubmit(images) {
-    const submitted = await submitForm(images)
-    if (submitted) {
-      setShowCreateForm(false)
-    }
-    return submitted
-  }
+  const pageTitle = currentCategory
+    ? `Catalogo: ${currentCategory.nombre}`
+    : 'Catalogo de Productos'
 
-  function handleAddProductClick() {
-    if (isEditing) return
-    if (showCreateForm) {
-      cancelEdit()
-      setShowCreateForm(false)
-      return
-    }
-    setShowCreateForm(true)
-  }
-
-  function handleEdit(product) {
-    startEdit(product)
-    setShowCreateForm(true)
-  }
-
-  function handleCancelForm() {
-    cancelEdit()
-    setShowCreateForm(false)
-  }
+  const pageSubtitle = 'Explora productos activos por categoria o nombre'
 
   return (
     <MainLayout
-      title="Gestionar Catalogo de Productos (RG)"
-      subtitle="Modelo base para registrar, consultar, modificar y dar de baja productos"
+      title={pageTitle}
+      subtitle={pageSubtitle}
     >
       {message ? <p className="alert">{message}</p> : null}
 
-      <section className="card section-toolbar">
+      <section className="card catalog-search-bar">
+        <label className="field">
+          <span>Buscar por nombre</span>
+          <input
+            type="text"
+            name="name"
+            value={filters.name}
+            onChange={handleFilterChange}
+            placeholder="Buscar productos..."
+          />
+        </label>
         <div className="actions">
-          <button type="button" className="btn" onClick={handleAddProductClick}>
-            {showCreateForm && !isEditing ? 'Ocultar formulario' : '+ Agregar producto'}
+          <button type="button" className="btn" onClick={() => handleSearch()}>
+            Buscar
           </button>
         </div>
       </section>
 
-      {showCreateForm ? (
-        <ProductForm
-          form={form}
-          isEditing={isEditing}
-          onChange={handleFormChange}
-          onSubmit={handleSubmit}
-          onCancel={handleCancelForm}
-          categories={categories}
-          telas={telas}
-          sizes={sizes}
+      <section className="catalog-layout">
+        <CatalogSidebar
+          categoryLinks={categoryLinks}
+          selectedCategoryId={selectedCategoryId}
+          sortOrder={sortOrder}
+          onSortChange={setSortOrder}
+          onClear={handleClearFilters}
         />
-      ) : null}
 
-      {!showCreateForm ? (
-        <>
-          <ProductFilters
-            filters={filters}
-            categories={categories}
-            onFilterChange={handleFilterChange}
-            onSearch={handleSearch}
-            onClear={clearFilters}
-          />
-
-          <ProductsTable
-            products={products}
-            loading={loading}
-            onEdit={handleEdit}
-            onRemove={removeProduct}
-            onToggleActive={toggleProductActive}
-          />
-        </>
-      ) : null}
+        <CatalogProductGrid products={products} loading={loading} />
+      </section>
     </MainLayout>
   )
 }
