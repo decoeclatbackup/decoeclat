@@ -5,7 +5,9 @@ function buildUrl(path, query = {}) {
 
 	Object.entries(query).forEach(([key, value]) => {
 		if (value !== undefined && value !== null && value !== '') {
-			params.append(key, value)
+			// Si es un array, convertir a cadena separada por comas
+			const paramValue = Array.isArray(value) ? value.join(',') : value
+			params.append(key, paramValue)
 		}
 	})
 
@@ -38,7 +40,7 @@ async function request(path, options = {}, query) {
 	return response.json()
 }
 
-async function uploadProductImages(productId, images = []) {
+async function uploadProductImages(variantId, images = []) {
 	if (!Array.isArray(images) || images.length === 0) return []
 
 	const orderedImages = [...images].sort((left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0))
@@ -46,7 +48,7 @@ async function uploadProductImages(productId, images = []) {
 
 	for (const image of orderedImages) {
 		const formData = new FormData()
-		formData.append('producto_id', String(productId))
+		formData.append('variante_id', String(variantId))
 		formData.append('principal', String(Boolean(image.principal)))
 		formData.append('orden', String(Number(image.orden ?? 0)))
 		formData.append('url', image.file)
@@ -97,6 +99,9 @@ export const productServices = {
 		const products = await request('/api/products', {}, {
 			name: filters.name,
 			categoryId: filters.categoryId,
+			sizeId: filters.sizeId,
+			sizeTypeId: filters.sizeTypeId,
+			telaId: filters.telaId,
 		})
 
 		if (!Array.isArray(products) || products.length === 0) return []
@@ -116,7 +121,7 @@ export const productServices = {
 				}),
 			})
 
-			await request('/api/variantes', {
+			const createdVariant = await request('/api/variantes', {
 				method: 'POST',
 				body: JSON.stringify({
 					productoId: created.producto_id,
@@ -129,7 +134,7 @@ export const productServices = {
 				}),
 			})
 
-			await uploadProductImages(created.producto_id, payload.images)
+			await uploadProductImages(createdVariant.variante_id, payload.images)
 			return created
 		} catch (error) {
 			if (created?.producto_id) {
@@ -169,7 +174,7 @@ export const productServices = {
 			})
 		}
 
-		await uploadProductImages(payload.productId, payload.images)
+		await uploadProductImages(payload.variantId, payload.images)
 	},
 
 	async remove(productId) {

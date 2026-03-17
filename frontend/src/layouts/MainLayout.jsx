@@ -1,12 +1,10 @@
-export function MainLayout({ title, subtitle, children }) {
+export function MainLayout({navbar, children }) {
   return (
-    <main className="app-shell">
-      <header className="hero">
-        <p className="kicker">DECO ECLAT</p>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </header>
-      <section className="content">{children}</section>
-    </main>
+    <>
+      {navbar ? <div className="app-topbar">{navbar}</div> : null}
+      <main className="app-shell">
+        <section className="content">{children}</section>
+      </main>
+    </>
   )
 }

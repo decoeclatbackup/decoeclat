@@ -40,11 +40,16 @@ export function CatalogProductGrid({ products, loading }) {
             <div className="catalog-card-body">
               <h3>{product.nombre}</h3>
               <p className="catalog-card-category">{product.categoria || 'Categoria general'}</p>
-              <p className="catalog-card-price">
-                {product.enOferta && product.precioOferta
-                  ? formatMoney(product.precioOferta)
-                  : formatMoney(product.precio)}
-              </p>
+              <div className="catalog-card-price">
+                {product.enOferta && product.precioOferta ? (
+                  <div className="price-discount">
+                    <span className="price-original">{formatMoney(product.precio)}</span>
+                    <span className="price-current">{formatMoney(product.precioOferta)}</span>
+                  </div>
+                ) : (
+                  <span className="price-current">{formatMoney(product.precio)}</span>
+                )}
+              </div>
             </div>
           </article>
         )

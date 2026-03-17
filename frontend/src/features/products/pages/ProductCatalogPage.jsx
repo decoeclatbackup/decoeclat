@@ -1,18 +1,22 @@
 import { MainLayout } from '../../../layouts/layouts'
 import { CatalogProductGrid, CatalogSidebar } from '../components/components'
 import { useProductCatalog } from '../hooks/useProductCatalog'
+import Navbar from '../../../shared/components/Navbar'
 
 export function ProductCatalogPage() {
   const {
     products,
-    categoryLinks,
+    categories,
+    sizes,
+    telas,
+    isFundasCategory,
     currentCategory,
     selectedCategoryId,
     filters,
     loading,
     message,
     handleFilterChange,
-    handleSearch,
+    handleNavbarSearch,
     handleClearFilters,
     sortOrder,
     setSortOrder,
@@ -28,37 +32,42 @@ export function ProductCatalogPage() {
     <MainLayout
       title={pageTitle}
       subtitle={pageSubtitle}
+      navbar={(
+        <Navbar
+          key={`${selectedCategoryId}-${filters.name}`}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          searchValue={filters.name}
+          onSearchSubmit={handleNavbarSearch}
+        />
+      )}
     >
       {message ? <p className="alert">{message}</p> : null}
 
-      <section className="card catalog-search-bar">
-        <label className="field">
-          <span>Buscar por nombre</span>
-          <input
-            type="text"
-            name="name"
-            value={filters.name}
-            onChange={handleFilterChange}
-            placeholder="Buscar productos..."
-          />
-        </label>
-        <div className="actions">
-          <button type="button" className="btn" onClick={() => handleSearch()}>
-            Buscar
-          </button>
-        </div>
-      </section>
-
       <section className="catalog-layout">
         <CatalogSidebar
-          categoryLinks={categoryLinks}
-          selectedCategoryId={selectedCategoryId}
-          sortOrder={sortOrder}
-          onSortChange={setSortOrder}
+          filters={filters}
+          sizes={sizes}
+          telas={telas}
+          isFundasCategory={isFundasCategory}
+          onFilterChange={handleFilterChange}
           onClear={handleClearFilters}
         />
 
-        <CatalogProductGrid products={products} loading={loading} />
+        <section className="catalog-results">
+          <div className="catalog-results-toolbar">
+            <label className="catalog-sort-control">
+              <span>Ordenar por precio</span>
+              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
+                <option value="none">Sin orden</option>
+                <option value="price-asc">Menor a mayor</option>
+                <option value="price-desc">Mayor a menor</option>
+              </select>
+            </label>
+          </div>
+
+          <CatalogProductGrid products={products} loading={loading} />
+        </section>
       </section>
     </MainLayout>
   )

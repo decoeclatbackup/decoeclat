@@ -6,12 +6,17 @@ import { useProducts } from './useProducts'
 const emptyFilters = {
     name: '',
     categoryId: '',
+    sizeTypeId: '',
+    sizeId: '',
+    telaId: '',
 }
 
 export function useProductCatalog() {
     const { categoryId: routeCategoryId } = useParams()
     const selectedCategoryId = routeCategoryId || ''
     const [categories, setCategories] = useState([])
+    const [sizes, setSizes] = useState([])
+    const [telas, setTelas] = useState([])
     const [sortOrder, setSortOrder] = useState('none')
 
     const {
@@ -29,50 +34,109 @@ export function useProductCatalog() {
     })
 
     useEffect(() => {
-        async function loadCategories() {
+        async function loadCatalogFilters() {
             try {
-                const categoriesData = await productServices.listCategories()
+                const [categoriesData, sizesData, telasData] = await Promise.all([
+                    productServices.listCategories(),
+                    productServices.listSizes(),
+                    productServices.listTelas(),
+                ])
+
                 setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+                setSizes(Array.isArray(sizesData) ? sizesData : [])
+                setTelas(Array.isArray(telasData) ? telasData : [])
             } catch {
                 setCategories([])
+                setSizes([])
+                setTelas([])
             }
         }
 
-        loadCategories()
+        loadCatalogFilters()
     }, [setCategories])
 
     useEffect(() => {
         setFilters((prev) => {
+            // Calcular los IDs de categoría a incluir
+            let categoryIds = selectedCategoryId
+            
+            if (selectedCategoryId && categories.length > 0) {
+                const selected = categories.find(
+                    (cat) => String(cat.categoria_id) === String(selectedCategoryId)
+                )
+                
+                if (selected) {
+                    // Buscar todas las subcategorías de la categoría actual
+                    const children = categories.filter(
+                        (cat) => String(cat.parent_id) === String(selected.categoria_id)
+                    )
+                    
+                    // Si hay subcategorías, incluir la categoría padre + todas las hijas
+                    if (children.length > 0) {
+                        const childIds = children.map((cat) => Number(cat.categoria_id))
+                        categoryIds = [Number(selectedCategoryId), ...childIds]
+                    }
+                }
+            }
+
             const next = {
                 name: prev?.name || '',
-                categoryId: selectedCategoryId,
+                categoryId: categoryIds,
+                sizeTypeId: prev?.sizeTypeId || '',
+                sizeId: prev?.sizeId || '',
+                telaId: prev?.telaId || '',
             }
 
             if (
                 String(prev?.name || '') === String(next.name || '') &&
-                String(prev?.categoryId || '') === String(next.categoryId || '')
+                String(prev?.categoryId?.toString() || '') === String(next.categoryId?.toString() || '') &&
+                String(prev?.sizeTypeId || '') === String(next.sizeTypeId || '') &&
+                String(prev?.sizeId || '') === String(next.sizeId || '') &&
+                String(prev?.telaId || '') === String(next.telaId || '')
             ) {
                 return prev
             }
 
             return next
         })
-    }, [selectedCategoryId, setFilters])
-
-    const categoryLinks = useMemo(() => {
-        const parentCategories = categories.filter((category) => category.parent_id == null)
-        const source = parentCategories.length > 0 ? parentCategories : categories
-
-        return source.map((category) => ({
-            id: String(category.categoria_id),
-            name: category.nombre,
-        }))
-    }, [categories])
+    }, [selectedCategoryId, categories, setFilters])
 
     const currentCategory = useMemo(
         () => categories.find((category) => String(category.categoria_id) === String(selectedCategoryId)),
         [categories, selectedCategoryId]
     )
+
+    const isFundasCategory = useMemo(() => {
+        if (!currentCategory) return false
+
+        const currentName = String(currentCategory.nombre || '').toLowerCase().trim()
+        if (currentName !== 'fundas') return false
+
+        if (currentCategory.parent_id == null) return true
+        const parentCategory = categories.find(
+            (category) => String(category.categoria_id) === String(currentCategory.parent_id)
+        )
+        const parentName = String(parentCategory?.nombre || '').toLowerCase().trim()
+        return parentName === 'textiles'
+    }, [categories, currentCategory])
+
+    const fundasSizes = useMemo(() => {
+        const withDimensions = sizes.filter((size) => /\d+\s*x\s*\d+/i.test(String(size.valor || '')))
+        return withDimensions.length > 0 ? withDimensions : sizes
+    }, [sizes])
+
+    const visibleSizes = isFundasCategory ? fundasSizes : []
+
+    useEffect(() => {
+        if (isFundasCategory) return
+        if (!filters.sizeId && !filters.sizeTypeId) return
+
+        setFilters((prev) => ({
+            ...prev,
+            sizeId: '',
+            sizeTypeId: '',
+        }))
+    }, [filters.sizeId, filters.sizeTypeId, isFundasCategory, setFilters])
 
     const sortedProducts = useMemo(() => {
         if (sortOrder === 'none') return products
@@ -88,17 +152,48 @@ export function useProductCatalog() {
         return items
     }, [products, sortOrder])
 
+    const getCategoryIdsForFilter = (categoryId) => {
+        if (!categoryId) return categoryId
+        
+        const selected = categories.find(
+            (cat) => String(cat.categoria_id) === String(categoryId)
+        )
+        
+        if (selected) {
+            const children = categories.filter(
+                (cat) => String(cat.parent_id) === String(selected.categoria_id)
+            )
+            
+            if (children.length > 0) {
+                const childIds = children.map((cat) => Number(cat.categoria_id))
+                return [Number(categoryId), ...childIds]
+            }
+        }
+        
+        return categoryId
+    }
+
     async function handleClearFilters() {
+        const categoryIds = getCategoryIdsForFilter(selectedCategoryId)
         await clearFilters({
             ...emptyFilters,
-            categoryId: selectedCategoryId,
+            categoryId: categoryIds,
+        })
+    }
+
+    async function handleNavbarSearch(name) {
+        await handleSearch({
+            ...filters,
+            name,
         })
     }
 
     return {
         products: sortedProducts,
         categories,
-        categoryLinks,
+        sizes: visibleSizes,
+        telas,
+        isFundasCategory,
         currentCategory,
         selectedCategoryId,
         filters,
@@ -107,6 +202,7 @@ export function useProductCatalog() {
         setSortOrder,
         message: error ? `Error: ${error}` : '',
         handleFilterChange,
+        handleNavbarSearch,
         handleSearch,
         handleClearFilters,
     }

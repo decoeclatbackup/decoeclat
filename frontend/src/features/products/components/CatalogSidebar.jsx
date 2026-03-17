@@ -1,44 +1,70 @@
-import { Link } from 'react-router-dom'
-
 export function CatalogSidebar({
-  categoryLinks,
-  selectedCategoryId,
-  sortOrder,
-  onSortChange,
+  filters,
+  sizes,
+  telas,
+  isFundasCategory,
+  onFilterChange,
   onClear,
 }) {
+  function applyFilter(name, value) {
+    onFilterChange({
+      target: {
+        name,
+        value,
+      },
+    })
+  }
+
   return (
     <aside className="catalog-sidebar">
       <h3>Filtros</h3>
 
-      <div className="catalog-filter-block">
-        <p className="catalog-filter-label">Categoria</p>
-        <div className="catalog-category-list">
-          <Link
-            to="/catalogo"
-            className={`catalog-chip ${selectedCategoryId ? '' : 'active'}`}
-          >
-            Todas
-          </Link>
-          {categoryLinks.map((category) => (
-            <Link
-              key={category.id}
-              to={`/categoria/${category.id}`}
-              className={`catalog-chip ${selectedCategoryId === category.id ? 'active' : ''}`}
+      {isFundasCategory ? (
+        <div className="catalog-filter-block">
+          <p className="catalog-filter-label">Medidas</p>
+          <div className="catalog-filter-buttons">
+            <button
+              type="button"
+              className={`catalog-filter-btn ${!filters.sizeId ? 'active' : ''}`}
+              onClick={() => applyFilter('sizeId', '')}
             >
-              {category.name}
-            </Link>
-          ))}
+              Todos
+            </button>
+            {sizes.map((size) => (
+              <button
+                key={size.size_id}
+                type="button"
+                className={`catalog-filter-btn ${String(filters.sizeId) === String(size.size_id) ? 'active' : ''}`}
+                onClick={() => applyFilter('sizeId', String(size.size_id))}
+              >
+                {size.valor}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="catalog-filter-block">
-        <p className="catalog-filter-label">Ordenar por precio</p>
-        <select value={sortOrder} onChange={(event) => onSortChange(event.target.value)}>
-          <option value="none">Sin orden</option>
-          <option value="price-asc">Menor a mayor</option>
-          <option value="price-desc">Mayor a menor</option>
-        </select>
+        <p className="catalog-filter-label">Tipo de tela</p>
+        <div className="catalog-filter-buttons">
+          <button
+            type="button"
+            className={`catalog-filter-btn ${!filters.telaId ? 'active' : ''}`}
+            onClick={() => applyFilter('telaId', '')}
+          >
+            Todas
+          </button>
+          {telas.map((tela) => (
+            <button
+              key={tela.tela_id}
+              type="button"
+              className={`catalog-filter-btn ${String(filters.telaId) === String(tela.tela_id) ? 'active' : ''}`}
+              onClick={() => applyFilter('telaId', String(tela.tela_id))}
+            >
+              {tela.nombre}
+            </button>
+          ))}
+        </div>
       </div>
 
       <button type="button" className="btn ghost" onClick={onClear}>

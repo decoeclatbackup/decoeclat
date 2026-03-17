@@ -4,6 +4,9 @@ import { productServices } from '../services/productServices'
 const emptyFilters = {
     name: '',
     categoryId: '',
+    sizeTypeId: '',
+    sizeId: '',
+    telaId: '',
 }
 
 export function useProducts(options = {}) {
@@ -43,7 +46,10 @@ export function useProducts(options = {}) {
         const mergedFilters = { ...filters, ...nextFilters }
         const hasChanged =
             String(filters.name || '') !== String(mergedFilters.name || '') ||
-            String(filters.categoryId || '') !== String(mergedFilters.categoryId || '')
+            String(filters.categoryId || '') !== String(mergedFilters.categoryId || '') ||
+            String(filters.sizeTypeId || '') !== String(mergedFilters.sizeTypeId || '') ||
+            String(filters.sizeId || '') !== String(mergedFilters.sizeId || '') ||
+            String(filters.telaId || '') !== String(mergedFilters.telaId || '')
 
         if (hasChanged) {
             setFilters(mergedFilters)
