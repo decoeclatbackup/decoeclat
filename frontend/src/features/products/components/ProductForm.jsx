@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
@@ -22,6 +22,14 @@ function validate(form) {
   return errors
 }
 
+function normalizeStockValue(rawValue, fallback = 0) {
+  const parsed = Number(rawValue)
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return Math.max(0, Math.trunc(Number(fallback) || 0))
+  }
+  return Math.trunc(parsed)
+}
+
 export function ProductForm({
   form,
   isEditing,
@@ -35,6 +43,7 @@ export function ProductForm({
 }) {
   const errors = validate(form)
   const hasErrors = Object.values(errors).some(Boolean)
+  const title = isEditing ? `Editar producto #${form.productId}` : 'Registrar producto'
 
   const parentCategories = categories.filter((category) => category.parent_id == null)
   const childCategories = categories.filter((category) => category.parent_id != null)
@@ -46,6 +55,7 @@ export function ProductForm({
   const [existingImagesDraft, setExistingImagesDraft] = useState([])
   const [removedExistingImageIds, setRemovedExistingImageIds] = useState([])
   const [existingOrderDrafts, setExistingOrderDrafts] = useState({})
+  const [multiSizeStocks, setMultiSizeStocks] = useState({})
   const [draggingExistingImageId, setDraggingExistingImageId] = useState(null)
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -127,10 +137,49 @@ export function ProductForm({
     (left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0)
   )
 
-  const sizeTypes = Array.from(
-    new Map(sizes.map((size) => [String(size.type_id), size.type_nombre])).entries()
-  ).map(([type_id, type_nombre]) => ({ type_id, type_nombre }))
-  const sizesOfType = sizes.filter((size) => String(size.type_id) === localSizeTypeId)
+  const sizeTypes = useMemo(
+    () => Array.from(
+      new Map(sizes.map((size) => [String(size.type_id), size.type_nombre])).entries()
+    ).map(([type_id, type_nombre]) => ({ type_id, type_nombre })),
+    [sizes]
+  )
+
+  const sizesOfType = useMemo(
+    () => sizes.filter((size) => String(size.type_id) === localSizeTypeId),
+    [sizes, localSizeTypeId]
+  )
+  const selectedSizeType = sizeTypes.find((type) => String(type.type_id) === String(localSizeTypeId))
+  const isPillowSizeType = String(selectedSizeType?.type_nombre || '').toLowerCase().includes('almohad')
+
+  useEffect(() => {
+    if (!isPillowSizeType) {
+      setMultiSizeStocks({})
+      return
+    }
+
+    const variantStocks = Array.isArray(form.variantStocks) ? form.variantStocks : []
+    const stockBySizeId = new Map(
+      variantStocks
+        .map((item) => ({
+          sizeId: Number(item?.sizeId ?? item?.size_id),
+          stock: normalizeStockValue(item?.stock, 0),
+        }))
+        .filter((item) => Number.isInteger(item.sizeId) && item.sizeId > 0)
+        .map((item) => [item.sizeId, item.stock])
+    )
+
+    const nextStocks = {}
+    sizesOfType.forEach((size) => {
+      const sizeId = Number(size.size_id)
+      if (stockBySizeId.has(sizeId)) {
+        nextStocks[size.size_id] = String(stockBySizeId.get(sizeId))
+      } else {
+        nextStocks[size.size_id] = ''
+      }
+    })
+
+    setMultiSizeStocks(nextStocks)
+  }, [form.productId, form.variantStocks, isPillowSizeType, sizesOfType])
 
   function handleParentChange(e) {
     const pid = e.target.value
@@ -149,6 +198,23 @@ export function ProductForm({
     const selectedTypeId = e.target.value
     setLocalSizeTypeId(selectedTypeId)
     onChange({ target: { name: 'sizeId', value: '' } })
+    onChange({ target: { name: 'stock', value: '' } })
+  }
+
+  function handleMultiSizeStockChange(sizeId, value) {
+    setMultiSizeStocks((prev) => ({
+      ...prev,
+      [sizeId]: value,
+    }))
+  }
+
+  function buildVariantStocksPayload() {
+    if (!isPillowSizeType) return []
+
+    return sizesOfType.map((size) => ({
+      sizeId: Number(size.size_id),
+      stock: normalizeStockValue(multiSizeStocks[size.size_id], 0),
+    }))
   }
 
   function handleImagesChange(event) {
@@ -345,11 +411,11 @@ export function ProductForm({
   }
 
   return (
-    <section className="card">
-      <h2>{isEditing ? 'Modificar Producto' : 'Registrar Producto'}</h2>
+    <section className="card product-form-card">
+      <h2 className="product-form-title">{title}</h2>
 
       <form
-        className="grid three"
+        className={`grid three product-form-grid ${isEditing ? 'is-editing' : ''}`}
         onSubmit={async (event) => {
           event.preventDefault()
           if (hasErrors || isSubmitting) return
@@ -357,6 +423,7 @@ export function ProductForm({
           setIsSubmitting(true)
 
           try {
+            const variantStocks = buildVariantStocksPayload()
             const submitted = await onSubmit(
               selectedImages.map((image) => ({
                 file: image.file,
@@ -366,6 +433,9 @@ export function ProductForm({
               {
                 existingImages: normalizeExistingImagesForSave(sortedExistingImages),
                 removedImageIds: [...removedExistingImageIds],
+              },
+              {
+                variantStocks,
               }
             )
 
@@ -433,8 +503,19 @@ export function ProductForm({
           </label>
         )}
 
+        <label className="field full-width">
+          <span>Descripción</span>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={onChange}
+            placeholder="Opcional"
+            rows={4}
+          />
+        </label>
+
         <label className="field">
-          <span>Tipo de Medida</span>
+          <span>Tipo de medida</span>
           <select value={localSizeTypeId} onChange={handleSizeTypeChange} required>
             <option value="">Seleccionar tipo</option>
             {sizeTypes.map((type) => (
@@ -446,7 +527,7 @@ export function ProductForm({
           {errors.sizeId && !localSizeTypeId ? <small className="error">{errors.sizeId}</small> : null}
         </label>
 
-        {sizesOfType.length > 0 && (
+        {sizesOfType.length > 0 && !isPillowSizeType ? (
           <label className="field">
             <span>Medida</span>
             <select name="sizeId" value={form.sizeId} onChange={onChange} required>
@@ -459,10 +540,31 @@ export function ProductForm({
             </select>
             {errors.sizeId ? <small className="error">{errors.sizeId}</small> : null}
           </label>
-        )}
+        ) : null}
+
+        {sizesOfType.length > 0 && isPillowSizeType ? (
+          <div className="field full-width">
+            <span>Medidas y stock</span>
+            <div className="size-stock-grid">
+              {sizesOfType.map((size) => (
+                <label key={size.size_id} className="field size-stock-item">
+                  <span>{size.valor}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={multiSizeStocks[size.size_id] ?? ''}
+                    onChange={(event) => handleMultiSizeStockChange(size.size_id, event.target.value)}
+                    placeholder="Ej: 10"
+                    disabled={isSubmitting}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <label className="field">
-          <span>Tipo Tela</span>
+          <span>Tipo de tela</span>
           <select name="telaId" value={form.telaId} onChange={onChange} required>
             <option value="">Seleccionar tela</option>
             {telas.map((tela) => (
@@ -488,29 +590,20 @@ export function ProductForm({
           {errors.precio ? <small className="error">{errors.precio}</small> : null}
         </label>
 
-        <label className="field">
-          <span>Stock</span>
-          <input
-            type="number"
-            min="0"
-            name="stock"
-            value={form.stock}
-            onChange={onChange}
-            placeholder="Ej: 20"
-          />
-          {errors.stock ? <small className="error">{errors.stock}</small> : null}
-        </label>
-
-        <label className="field">
-          <span>Descripción</span>
-          <input
-            type="text"
-            name="description"
-            value={form.description}
-            onChange={onChange}
-            placeholder="Opcional"
-          />
-        </label>
+        {!isPillowSizeType ? (
+          <label className="field">
+            <span>Stock</span>
+            <input
+              type="number"
+              min="0"
+              name="stock"
+              value={form.stock}
+              onChange={onChange}
+              placeholder="Ej: 20"
+            />
+            {errors.stock ? <small className="error">{errors.stock}</small> : null}
+          </label>
+        ) : null}
 
         <label className="field">
           <span>En Oferta</span>
@@ -615,7 +708,7 @@ export function ProductForm({
         ) : null}
 
         <div className="field full-width">
-          <span>Imágenes del producto</span>
+          <span>Agregar nuevas imágenes</span>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"

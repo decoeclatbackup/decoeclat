@@ -1,12 +1,17 @@
 :root {
+  --color-hueso: #F5F5DC;
+  --color-avellana: #C2A385;
+  --color-azul-aero: var(--color-avellana);
+  --color-texto: #4A4A4A;
+
   font-family: Manrope, 'Segoe UI', sans-serif;
   line-height: 1.45;
   font-weight: 400;
-  color: #112126;
+  color: var(--color-texto);
   background:
-    radial-gradient(circle at 10% 0%, #d7ece7 0%, transparent 35%),
-    radial-gradient(circle at 95% 15%, #f6d9b4 0%, transparent 33%),
-    #f1f6f6;
+    radial-gradient(circle at 10% 0%, rgba(194, 163, 133, 0.22) 0%, transparent 35%),
+    radial-gradient(circle at 95% 15%, rgba(194, 163, 133, 0.2) 0%, transparent 33%),
+    var(--color-hueso);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -20,4 +25,6 @@
 body {
   margin: 0;
   min-width: 320px;
+  background: var(--color-hueso);
+  color: var(--color-texto);
 }

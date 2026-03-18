@@ -48,6 +48,10 @@ export const variantesRepository = {
         let idx = 1;
 
         const columnMap = {
+            telaId: "tela_id",
+            tela_id: "tela_id",
+            sizeId: "size_id",
+            size_id: "size_id",
             stock: "stock",
             precio: "precio",
             precioOferta: "precio_oferta",

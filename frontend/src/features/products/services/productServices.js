@@ -41,7 +41,7 @@ async function request(path, options = {}, query) {
 }
 
 async function uploadProductImages(variantId, images = []) {
-	if (!Array.isArray(images) || images.length === 0) return []
+	if (!variantId || !Array.isArray(images) || images.length === 0) return []
 
 	const orderedImages = [...images].sort((left, right) => Number(left.orden ?? 0) - Number(right.orden ?? 0))
 	const uploaded = []
@@ -64,6 +64,25 @@ async function uploadProductImages(variantId, images = []) {
 	return uploaded
 }
 
+function normalizeStockValue(rawValue, fallback = 0) {
+	const parsed = Number(rawValue)
+	if (!Number.isFinite(parsed) || parsed < 0) {
+		return Math.max(0, Math.trunc(Number(fallback) || 0))
+	}
+	return Math.trunc(parsed)
+}
+
+function normalizeVariantStocks(variantStocks = []) {
+	if (!Array.isArray(variantStocks)) return []
+
+	return variantStocks
+		.map((variant) => ({
+			sizeId: Number(variant?.sizeId ?? variant?.size_id),
+			stock: normalizeStockValue(variant?.stock, 0),
+		}))
+		.filter((variant) => Number.isInteger(variant.sizeId) && variant.sizeId > 0)
+}
+
 async function attachFirstVariant(product) {
 	const variants = await request('/api/variantes', {}, { productoId: product.producto_id })
 	const first = Array.isArray(variants) ? variants[0] : null
@@ -83,6 +102,16 @@ async function attachFirstVariant(product) {
 }
 
 export const productServices = {
+	async getById(productId) {
+		if (!productId) return null
+		return request(`/api/products/${productId}`)
+	},
+
+	async listVariantsByProduct(productId) {
+		if (!productId) return []
+		return request('/api/variantes', {}, { productoId: productId })
+	},
+
 	async listImagesByProduct(productId) {
 		if (!productId) return []
 		return request(`/api/imagenes/producto/${productId}`)
@@ -141,20 +170,46 @@ export const productServices = {
 				}),
 			})
 
-			const createdVariant = await request('/api/variantes', {
-				method: 'POST',
-				body: JSON.stringify({
-					productoId: created.producto_id,
-					telaId: Number(payload.telaId),
-					sizeId: Number(payload.sizeId),
-                    stock: Number(payload.stock) || 0,
-					precio: Number(payload.precio),
-					precioOferta: Number(payload.precioOferta) || null,
-					enOferta: Boolean(payload.enOferta) || false,
-				}),
-			})
+			const normalizedVariantStocks = normalizeVariantStocks(payload.variantStocks)
+			const commonVariantPayload = {
+				productoId: created.producto_id,
+				telaId: Number(payload.telaId),
+				precio: Number(payload.precio),
+				precioOferta: Number(payload.precioOferta) || null,
+				enOferta: Boolean(payload.enOferta) || false,
+			}
 
-			await uploadProductImages(createdVariant.variante_id, payload.images)
+			let uploadVariantId = null
+
+			if (normalizedVariantStocks.length > 0) {
+				for (const variantStock of normalizedVariantStocks) {
+					const createdVariant = await request('/api/variantes', {
+						method: 'POST',
+						body: JSON.stringify({
+							...commonVariantPayload,
+							sizeId: variantStock.sizeId,
+							stock: variantStock.stock,
+						}),
+					})
+
+					if (!uploadVariantId || variantStock.stock > 0) {
+						uploadVariantId = createdVariant.variante_id
+					}
+				}
+			} else {
+				const createdVariant = await request('/api/variantes', {
+					method: 'POST',
+					body: JSON.stringify({
+						...commonVariantPayload,
+						sizeId: Number(payload.sizeId),
+						stock: normalizeStockValue(payload.stock, 0),
+					}),
+				})
+
+				uploadVariantId = createdVariant.variante_id
+			}
+
+			await uploadProductImages(uploadVariantId, payload.images)
 			return created
 		} catch (error) {
 			if (created?.producto_id) {
@@ -180,16 +235,65 @@ export const productServices = {
 			}),
 		})
 
-		if (payload.variantId) {
+
+		const normalizedVariantStocks = normalizeVariantStocks(payload.variantStocks)
+		const commonVariantUpdate = {
+			telaId: Number(payload.telaId),
+			precio: Number(payload.precio),
+			precioOferta: Number(payload.precioOferta) || null,
+			enOferta: Boolean(payload.enOferta) || false,
+		}
+
+		let uploadVariantId = payload.variantId || null
+
+		if (normalizedVariantStocks.length > 0) {
+			const existingVariants = await request('/api/variantes', {}, { productoId: payload.productId })
+			const existingBySizeId = new Map(
+				(Array.isArray(existingVariants) ? existingVariants : []).map((variant) => [
+					Number(variant.size_id),
+					variant,
+				])
+			)
+
+			for (const variantStock of normalizedVariantStocks) {
+				const existingVariant = existingBySizeId.get(variantStock.sizeId)
+
+				if (existingVariant?.variante_id) {
+					await request(`/api/variantes/${existingVariant.variante_id}`, {
+						method: 'PUT',
+						body: JSON.stringify({
+							...commonVariantUpdate,
+							stock: variantStock.stock,
+						}),
+					})
+
+					if (!uploadVariantId || variantStock.stock > 0) {
+						uploadVariantId = existingVariant.variante_id
+					}
+					continue
+				}
+
+				const createdVariant = await request('/api/variantes', {
+					method: 'POST',
+					body: JSON.stringify({
+						productoId: Number(payload.productId),
+						sizeId: variantStock.sizeId,
+						stock: variantStock.stock,
+						...commonVariantUpdate,
+					}),
+				})
+
+				if (!uploadVariantId || variantStock.stock > 0) {
+					uploadVariantId = createdVariant.variante_id
+				}
+			}
+		} else if (payload.variantId) {
 			await request(`/api/variantes/${payload.variantId}`, {
 				method: 'PUT',
 				body: JSON.stringify({
-                    telaId: Number(payload.telaId),
+					...commonVariantUpdate,
 					sizeId: Number(payload.sizeId),
-                    stock: Number(payload.stock),
-					precio: Number(payload.precio),
-					precioOferta: Number(payload.precioOferta) || null,
-					enOferta: Boolean(payload.enOferta) || false,
+					stock: normalizeStockValue(payload.stock, 0),
 				}),
 			})
 		}
@@ -228,7 +332,7 @@ export const productServices = {
 			)
 		}
 
-		await uploadProductImages(payload.variantId, payload.images)
+		await uploadProductImages(uploadVariantId, payload.images)
 	},
 
 	async remove(productId) {

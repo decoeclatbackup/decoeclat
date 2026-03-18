@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 function formatMoney(value) {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency',
@@ -30,28 +32,30 @@ export function CatalogProductGrid({ products, loading }) {
       {products.map((product) => {
         const productImage = resolveImage(product)
         return (
-          <article key={product.producto_id} className="catalog-card">
-            {productImage ? (
-              <img src={productImage} alt={product.nombre} className="catalog-card-image" />
-            ) : (
-              <div className="catalog-card-image placeholder">Sin imagen</div>
-            )}
+          <Link key={product.producto_id} to={`/producto/${product.producto_id}`} className="catalog-card-link">
+            <article className="catalog-card">
+              {productImage ? (
+                <img src={productImage} alt={product.nombre} className="catalog-card-image" />
+              ) : (
+                <div className="catalog-card-image placeholder">Sin imagen</div>
+              )}
 
-            <div className="catalog-card-body">
-              <h3>{product.nombre}</h3>
-              <p className="catalog-card-category">{product.categoria || 'Categoria general'}</p>
-              <div className="catalog-card-price">
-                {product.enOferta && product.precioOferta ? (
-                  <div className="price-discount">
-                    <span className="price-original">{formatMoney(product.precio)}</span>
-                    <span className="price-current">{formatMoney(product.precioOferta)}</span>
-                  </div>
-                ) : (
-                  <span className="price-current">{formatMoney(product.precio)}</span>
-                )}
+              <div className="catalog-card-body">
+                <h3>{product.nombre}</h3>
+                <p className="catalog-card-category">{product.categoria || 'Categoria general'}</p>
+                <div className="catalog-card-price">
+                  {product.enOferta && product.precioOferta ? (
+                    <div className="price-discount">
+                      <span className="price-original">{formatMoney(product.precio)}</span>
+                      <span className="price-current">{formatMoney(product.precioOferta)}</span>
+                    </div>
+                  ) : (
+                    <span className="price-current">{formatMoney(product.precio)}</span>
+                  )}
+                </div>
               </div>
-            </div>
-          </article>
+            </article>
+          </Link>
         )
       })}
     </section>

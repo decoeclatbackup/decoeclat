@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { ProductAdminPage, ProductCatalogPage } from '../features/products/pages/pages'
+import { ProductAdminPage, ProductCatalogPage, ProductDetailPage } from '../features/products/pages/pages'
 
 export function AppRoutes() {
   return (
@@ -12,6 +12,9 @@ export function AppRoutes() {
       
       {/* 3. Las 7 categorías (Ruta dinámica) */}
       <Route path="/categoria/:categoryId" element={<ProductCatalogPage />} />
+
+      {/* 4. Detalle individual de producto */}
+      <Route path="/producto/:productId" element={<ProductDetailPage />} />
 
       {/* Redirección por defecto */}
       <Route path="*" element={<Navigate replace to="/catalogo" />} />

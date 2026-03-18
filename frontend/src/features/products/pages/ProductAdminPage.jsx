@@ -28,8 +28,8 @@ export function ProductAdminPage() {
     toggleProductActive,
   } = useProductAdmin()
 
-  async function handleSubmit(images, existingImageChanges) {
-    const submitted = await submitForm(images, existingImageChanges)
+  async function handleSubmit(images, existingImageChanges, variantConfig) {
+    const submitted = await submitForm(images, existingImageChanges, variantConfig)
     if (submitted) {
       setShowCreateForm(false)
     }
@@ -46,8 +46,8 @@ export function ProductAdminPage() {
     setShowCreateForm(true)
   }
 
-  function handleEdit(product) {
-    startEdit(product)
+  async function handleEdit(product) {
+    await startEdit(product)
     setShowCreateForm(true)
   }
 

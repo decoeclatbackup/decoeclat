@@ -16,6 +16,18 @@ const emptyForm = {
     enOferta: false,
     stock: '',
     description: '',
+    variantStocks: [],
+}
+
+function normalizeVariantStocks(variants = []) {
+    return [...variants]
+        .map((variant) => ({
+            varianteId: Number(variant?.variante_id),
+            sizeId: Number(variant?.size_id),
+            stock: Number(variant?.stock ?? 0),
+        }))
+        .filter((variant) => Number.isInteger(variant.sizeId) && variant.sizeId > 0)
+        .sort((left, right) => left.sizeId - right.sizeId)
 }
 
 function sortImages(images = []) {
@@ -108,14 +120,18 @@ export function useProductAdmin() {
         setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     }
 
-    async function submitForm(images = [], existingImageChanges = null) {
+    async function submitForm(images = [], existingImageChanges = null, variantConfig = null) {
         try {
             setMessage('')
+            const variantStocks = Array.isArray(variantConfig?.variantStocks)
+                ? variantConfig.variantStocks
+                : []
+
             if (isEditing) {
-                await productServices.update({ ...form, images, existingImageChanges })
+                await productServices.update({ ...form, images, existingImageChanges, variantStocks })
                 setMessage('Producto actualizado correctamente')
             } else {
-                await productServices.create({ ...form, images })
+                await productServices.create({ ...form, images, variantStocks })
                 setMessage('Producto registrado correctamente')
             }
             setForm(emptyForm)
@@ -128,21 +144,46 @@ export function useProductAdmin() {
         }
     }
 
-    function startEdit(product) {
+    async function startEdit(product) {
         setMessage('')
-        setForm({
-            productId: product.producto_id,
-            variantId: product.variante_id,
-            name: product.nombre || '',
-            categoryId: product.categoria_id || '',
-            sizeId: product.size_id || '',
-            telaId: product.tela_id || '',
-            precio: product.precio || '',
-            precioOferta: product.precioOferta || '',
-            enOferta: product.enOferta || false,
-            stock: product.stock || '',
-            description: product.descripcion || '',
-        })
+        try {
+            const variants = await productServices.listVariantsByProduct(product.producto_id)
+            const safeVariants = Array.isArray(variants) ? variants : []
+            const activeVariant = safeVariants.find(
+                (variant) => Number(variant.variante_id) === Number(product.variante_id)
+            ) || safeVariants[0] || null
+
+            setForm({
+                productId: product.producto_id,
+                variantId: activeVariant?.variante_id || product.variante_id || null,
+                name: product.nombre || '',
+                categoryId: product.categoria_id || '',
+                sizeId: activeVariant?.size_id || product.size_id || '',
+                telaId: activeVariant?.tela_id || product.tela_id || '',
+                precio: activeVariant?.precio || product.precio || '',
+                precioOferta: activeVariant?.precio_oferta ?? product.precioOferta ?? '',
+                enOferta: activeVariant?.en_oferta ?? product.enOferta ?? false,
+                stock: activeVariant?.stock ?? product.stock ?? '',
+                description: product.descripcion || '',
+                variantStocks: normalizeVariantStocks(safeVariants),
+            })
+        } catch (error) {
+            setMessage(`No se pudieron cargar las medidas del producto: ${error.message}`)
+            setForm({
+                productId: product.producto_id,
+                variantId: product.variante_id,
+                name: product.nombre || '',
+                categoryId: product.categoria_id || '',
+                sizeId: product.size_id || '',
+                telaId: product.tela_id || '',
+                precio: product.precio || '',
+                precioOferta: product.precioOferta || '',
+                enOferta: product.enOferta || false,
+                stock: product.stock || '',
+                description: product.descripcion || '',
+                variantStocks: [],
+            })
+        }
     }
 
     function cancelEdit() {
