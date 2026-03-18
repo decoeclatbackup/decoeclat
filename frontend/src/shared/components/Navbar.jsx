@@ -30,6 +30,7 @@ export default function Navbar({
 }) {
 	const categoryTree = useMemo(() => buildCategoryTree(categories), [categories])
 	const [openCategoryId, setOpenCategoryId] = useState(null)
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 	const [draftSearchValue, setDraftSearchValue] = useState(searchValue || '')
 	const [isMobileViewport, setIsMobileViewport] = useState(() => {
 		if (typeof window === 'undefined') return false
@@ -38,6 +39,9 @@ export default function Navbar({
 
 	useEffect(() => {
 		setOpenCategoryId(null)
+		if (isMobileViewport) {
+			setIsMobileMenuOpen(false)
+		}
 	}, [selectedCategoryId])
 
 	useEffect(() => {
@@ -48,6 +52,7 @@ export default function Navbar({
 			setIsMobileViewport(event.matches)
 			if (!event.matches) {
 				setOpenCategoryId(null)
+				setIsMobileMenuOpen(false)
 			}
 		}
 
@@ -64,11 +69,20 @@ export default function Navbar({
 	function handleSubmit(event) {
 		event.preventDefault()
 		onSearchSubmit(draftSearchValue)
+		if (isMobileViewport) {
+			setIsMobileMenuOpen(false)
+		}
+	}
+
+	function closeMenuOnMobile() {
+		if (!isMobileViewport) return
+		setOpenCategoryId(null)
+		setIsMobileMenuOpen(false)
 	}
 
 	function handleParentCategoryClick(event, categoryId, hasChildren) {
 		if (!hasChildren || !isMobileViewport) {
-			setOpenCategoryId(null)
+			closeMenuOnMobile()
 			return
 		}
 
@@ -79,14 +93,33 @@ export default function Navbar({
 		}
 
 		setOpenCategoryId(null)
+		setIsMobileMenuOpen(false)
 	}
 
 	return (
-		<nav className="catalog-navbar">
+		<nav className={`catalog-navbar ${isMobileViewport && isMobileMenuOpen ? 'menu-open' : ''}`}>
+			<button
+				type="button"
+				className="catalog-mobile-menu-btn"
+				onClick={() => {
+					setIsMobileMenuOpen((prev) => {
+						const nextValue = !prev
+						if (!nextValue) {
+							setOpenCategoryId(null)
+						}
+						return nextValue
+					})
+				}}
+				aria-expanded={isMobileMenuOpen}
+				aria-label={isMobileMenuOpen ? 'Cerrar categorías' : 'Abrir categorías'}
+			>
+				<span className="catalog-mobile-menu-btn-icon" aria-hidden="true">☰</span>
+			</button>
+
 			<div className="catalog-navbar-links">
 				<NavLink
 					to="/catalogo"
-					onClick={() => setOpenCategoryId(null)}
+					onClick={closeMenuOnMobile}
 					className={({ isActive }) => `catalog-nav-link ${isActive && !selectedCategoryId ? 'active' : ''}`}
 				>
 					Todos
@@ -103,7 +136,7 @@ export default function Navbar({
 							<NavLink
 								key={category.id}
 								to={`/categoria/${category.id}`}
-								onClick={() => setOpenCategoryId(null)}
+								onClick={closeMenuOnMobile}
 								className={() => `catalog-nav-link ${isParentActive ? 'active' : ''}`}
 							>
 								{category.name}
@@ -122,7 +155,10 @@ export default function Navbar({
 									onClick={(event) => handleParentCategoryClick(event, category.id, hasChildren)}
 									className={() => `catalog-nav-link ${isParentActive || isChildActive ? 'active' : ''}`}
 								>
-									{category.name}
+									<span>{category.name}</span>
+									<span className={`catalog-nav-chevron ${isOpen ? 'open' : ''}`} aria-hidden="true">
+										▾
+									</span>
 								</NavLink>
 							</div>
 
@@ -131,7 +167,7 @@ export default function Navbar({
 									<NavLink
 										key={child.id}
 										to={`/categoria/${child.id}`}
-										onClick={() => setOpenCategoryId(null)}
+										onClick={closeMenuOnMobile}
 										className={() => `catalog-submenu-link ${String(selectedCategoryId) === child.id ? 'active' : ''}`}
 									>
 										{child.name}
