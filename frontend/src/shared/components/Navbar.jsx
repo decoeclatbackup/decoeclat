@@ -125,6 +125,14 @@ export default function Navbar({
 					Todos
 				</NavLink>
 
+				<NavLink
+					to="/carrito"
+					onClick={closeMenuOnMobile}
+					className={({ isActive }) => `catalog-nav-link ${isActive ? 'active' : ''}`}
+				>
+					Carrito
+				</NavLink>
+
 				{categoryTree.map((category) => {
 					const hasChildren = category.children.length > 0
 					const isParentActive = String(selectedCategoryId) === category.id

@@ -1,5 +1,10 @@
 import { clienteRepository } from "../repositories/cliente.repository.js";
 
+function generarEmailTemporal() {
+    const random = Math.random().toString(36).slice(2, 8);
+    return `temp_${Date.now()}_${random}@mail.com`;
+}
+
 export const clienteService = {
     async registerCliente(data) {
        if (!data) {
@@ -13,9 +18,8 @@ export const clienteService = {
         }
     }
 
-    const clientesExistentes =
-     await clienteRepository.find({ email: data.email });
-     if (clientesExistentes.length>0) {
+    const clienteConEmail = await clienteRepository.findByEmailExact(data.email);
+     if (clienteConEmail) {
         throw new Error ("El correo electronico ya está registrado");
      }
 
@@ -24,16 +28,51 @@ export const clienteService = {
 
 async crearclienteTemporal() {
   try {
-    const random = Math.random().toString(36).substring(2, 8)
-
     return await clienteRepository.create({
       nombre: 'invitado',
-      email: `temp_${random}@mail.com`,
+      email: generarEmailTemporal(),
       telefono: null,
     })
   } catch (error) {
     throw new Error(error.message)
   }
+},
+
+async completarClienteTemporal(id, data) {
+    try {
+        if (!id) {
+            throw new Error("El cliente_id es obligatorio");
+        }
+
+        if (!data) {
+            throw new Error("No se recibieron datos para actualizar el cliente temporal");
+        }
+
+        const clienteExistente = await clienteRepository.findById(id);
+        if (!clienteExistente) {
+            throw new Error("Cliente no encontrado");
+        }
+
+        const updates = {};
+        if (data.nombre !== undefined) updates.nombre = data.nombre;
+        if (data.email !== undefined) updates.email = data.email;
+        if (data.telefono !== undefined) updates.telefono = data.telefono;
+
+        if (Object.keys(updates).length === 0) {
+            throw new Error("No se enviaron campos para actualizar");
+        }
+
+        if (updates.email) {
+            const clienteConEmail = await clienteRepository.findByEmailExact(updates.email);
+            if (clienteConEmail && Number(clienteConEmail.cliente_id) !== Number(id)) {
+                throw new Error("El correo electronico ya está registrado por otro usuario");
+            }
+        }
+
+        return await clienteRepository.update(id, updates);
+    } catch (error) {
+        throw new Error(error.message);
+    }
 },
 
 async getCliente(filters) {

@@ -1,5 +1,6 @@
 import { pool } from "../config/db.js";
 
+
 export const clienteRepository = {
     async create({ nombre, telefono, email }) {
   const query = `
@@ -10,9 +11,20 @@ export const clienteRepository = {
 
   const values = [nombre, telefono, email]
 
-  const result = await db.query(query, values)
+  const result = await pool.query(query, values)
   return result.rows[0]
 },
+
+    async findByEmailExact(email) {
+        const query = `
+        SELECT *
+        FROM clientes
+        WHERE LOWER(email) = LOWER($1)
+        LIMIT 1
+        `;
+        const { rows } = await pool.query(query, [email]);
+        return rows[0];
+    },
 
     async find(filters={}){
         let query = `

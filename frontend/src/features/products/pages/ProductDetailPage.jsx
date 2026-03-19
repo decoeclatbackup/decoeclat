@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import { productServices } from '../services/productServices'
+import { useCarrito } from '../../carrito/hooks/useCarrito'
 import Navbar from '../../../shared/components/Navbar'
 
 function formatMoney(value) {
@@ -18,9 +19,13 @@ function getVariantSizeLabel(variant) {
 
 export function ProductDetailPage() {
   const { productId } = useParams()
+  const { handleAddToCart } = useCarrito()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [cartMessage, setCartMessage] = useState('')
+  const [cartError, setCartError] = useState('')
+  const [addingToCart, setAddingToCart] = useState(false)
   const [product, setProduct] = useState(null)
   const [categories, setCategories] = useState([])
   const [variants, setVariants] = useState([])
@@ -137,6 +142,23 @@ export function ProductDetailPage() {
   const isOnOffer = Boolean(selectedVariant?.en_oferta) && offerPrice > 0
   const productDescription = String(product?.descripcion || '').trim()
 
+  async function onAddToCartClick() {
+    if (!selectedVariantId || !hasStock) return
+
+    try {
+      setAddingToCart(true)
+      setCartMessage('')
+      setCartError('')
+
+      await handleAddToCart(selectedVariantId, quantity)
+      setCartMessage('Producto agregado al carrito.')
+    } catch (err) {
+      setCartError(err?.message || 'No se pudo agregar el producto al carrito')
+    } finally {
+      setAddingToCart(false)
+    }
+  }
+
   return (
     <MainLayout
       navbar={(
@@ -244,9 +266,17 @@ export function ProductDetailPage() {
                 </div>
               </section>
 
-              <button type="button" className="product-detail-add-btn" disabled={!hasStock}>
-                Agregar al carrito
+              <button
+                type="button"
+                className="product-detail-add-btn"
+                onClick={onAddToCartClick}
+                disabled={!hasStock || addingToCart}
+              >
+                {addingToCart ? 'Agregando...' : 'Agregar al carrito'}
               </button>
+
+              {cartMessage ? <p className="product-detail-feedback success">{cartMessage}</p> : null}
+              {cartError ? <p className="product-detail-feedback error">{cartError}</p> : null}
             </section>
           </article>
         </section>

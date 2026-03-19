@@ -35,25 +35,23 @@ export function useProductCatalog() {
 
     useEffect(() => {
         async function loadCatalogFilters() {
-            try {
-                const [categoriesData, sizesData, telasData] = await Promise.all([
-                    productServices.listCategories(),
-                    productServices.listSizes(),
-                    productServices.listTelas(),
-                ])
+            const [categoriesResult, sizesResult, telasResult] = await Promise.allSettled([
+                productServices.listCategories(),
+                productServices.listSizes(),
+                productServices.listTelas(),
+            ])
 
-                setCategories(Array.isArray(categoriesData) ? categoriesData : [])
-                setSizes(Array.isArray(sizesData) ? sizesData : [])
-                setTelas(Array.isArray(telasData) ? telasData : [])
-            } catch {
-                setCategories([])
-                setSizes([])
-                setTelas([])
-            }
+            const categoriesData = categoriesResult.status === 'fulfilled' ? categoriesResult.value : []
+            const sizesData = sizesResult.status === 'fulfilled' ? sizesResult.value : []
+            const telasData = telasResult.status === 'fulfilled' ? telasResult.value : []
+
+            setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+            setSizes(Array.isArray(sizesData) ? sizesData : [])
+            setTelas(Array.isArray(telasData) ? telasData : [])
         }
 
         loadCatalogFilters()
-    }, [setCategories])
+    }, [])
 
     useEffect(() => {
         setFilters((prev) => {

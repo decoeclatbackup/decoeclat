@@ -19,6 +19,16 @@ export const clienteController = {
   }
 },
 
+        async completarClienteTemporal(req, res) {
+                try {
+                        const { id } = req.params;
+                        const cliente = await clienteService.completarClienteTemporal(id, req.body);
+                        res.status(200).json(cliente);
+                } catch (error) {
+                        res.status(400).json({ error: error.message });
+                }
+        },
+
     async list(req, res) {
         try {
             const filters = {
