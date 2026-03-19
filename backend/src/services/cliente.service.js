@@ -22,6 +22,20 @@ export const clienteService = {
     return await clienteRepository.create(data);
 },
 
+async crearclienteTemporal() {
+  try {
+    const random = Math.random().toString(36).substring(2, 8)
+
+    return await clienteRepository.create({
+      nombre: 'invitado',
+      email: `temp_${random}@mail.com`,
+      telefono: null,
+    })
+  } catch (error) {
+    throw new Error(error.message)
+  }
+},
+
 async getCliente(filters) {
     return await clienteRepository.find(filters);
 },

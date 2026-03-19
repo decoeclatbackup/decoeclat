@@ -10,6 +10,15 @@ export const clienteController = {
         }
     },
 
+    async crearclienteTemporal(req, res) {
+  try {
+    const cliente = await clienteService.crearclienteTemporal()
+    res.status(201).json(cliente)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+},
+
     async list(req, res) {
         try {
             const filters = {

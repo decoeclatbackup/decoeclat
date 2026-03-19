@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Endpoints para clientes
 router.post("/clientes", clienteController.create);
+router.post("/clientes/temporal", clienteController.crearclienteTemporal);
 router.get("/clientes", clienteController.list);
 router.get("/clientes/:id", clienteController.get);
 router.put("/clientes/:id", clienteController.update);

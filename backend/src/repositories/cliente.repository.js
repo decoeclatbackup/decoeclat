@@ -1,16 +1,18 @@
 import { pool } from "../config/db.js";
 
 export const clienteRepository = {
-    async create({nombre, telefono, email}) {
-        const text= `
-        INSERT INTO clientes (nombre, telefono, email)
-        VALUES ($1, $2, $3)
-        RETURNING *
-        `;
-        const values = [nombre, telefono, email];
-        const { rows } = await pool.query(text, values);
-        return rows[0];
-    },
+    async create({ nombre, telefono, email }) {
+  const query = `
+    INSERT INTO clientes (nombre, telefono, email)
+    VALUES ($1, $2, $3)
+    RETURNING *
+  `
+
+  const values = [nombre, telefono, email]
+
+  const result = await db.query(query, values)
+  return result.rows[0]
+},
 
     async find(filters={}){
         let query = `
