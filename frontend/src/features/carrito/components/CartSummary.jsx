@@ -25,6 +25,7 @@ export function CartSummary({
             <div className="cart-summary-actions">
                 <button
                     type="button"
+                    className="btn ghost"
                     onClick={() => onVaciar?.()}
                     disabled={disabled || totalNumber <= 0}
                 >
@@ -32,6 +33,7 @@ export function CartSummary({
                 </button>
                 <button
                     type="button"
+                    className="btn"
                     onClick={() => onFinalizar?.()}
                     disabled={disabled || !canFinalize}
                 >

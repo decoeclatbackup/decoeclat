@@ -34,7 +34,7 @@ export function CartPage() {
         <header className="cart-page-header">
           <h1>Tu carrito</h1>
           <p>Revisa productos, cantidades y total antes de finalizar la compra.</p>
-          <Link to="/catalogo">Seguir comprando</Link>
+          <Link to="/catalogo" className="btn ghost cart-page-back-link">Seguir comprando</Link>
         </header>
 
         {checkoutMessage ? <p className="alert">{checkoutMessage}</p> : null}

@@ -1342,3 +1342,223 @@ th {
   background: linear-gradient(90deg, var(--color-azul-aero) 0%, var(--color-avellana) 100%);
   color: var(--color-hueso);
 }
+
+.cart-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.cart-page-header {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 1px solid rgba(194, 163, 133, 0.66);
+  border-radius: 16px;
+  background: linear-gradient(130deg, rgba(245, 245, 220, 0.92) 0%, rgba(194, 163, 133, 0.24) 100%);
+}
+
+.cart-page-header h1 {
+  margin: 0;
+  color: var(--color-texto);
+  font-size: clamp(1.35rem, 1.2rem + 0.75vw, 1.9rem);
+}
+
+.cart-page-header p {
+  margin: 0;
+  color: rgba(74, 74, 74, 0.86);
+}
+
+.cart-page-back-link {
+  width: fit-content;
+  text-decoration: none;
+}
+
+.cart {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 320px);
+  align-items: start;
+  gap: 1rem;
+}
+
+.cart-items {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cart-item {
+  display: grid;
+  grid-template-columns: 98px minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid rgba(194, 163, 133, 0.62);
+  border-radius: 14px;
+  background: rgba(245, 245, 220, 0.92);
+  box-shadow: 0 8px 16px rgba(74, 74, 74, 0.08);
+}
+
+.cart-item-media {
+  width: 98px;
+  height: 98px;
+}
+
+.cart-item-image,
+.cart-item-image-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(194, 163, 133, 0.62);
+}
+
+.cart-item-image {
+  object-fit: cover;
+  display: block;
+  background: rgba(194, 163, 133, 0.2);
+}
+
+.cart-item-image-placeholder {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(74, 74, 74, 0.72);
+  background: rgba(194, 163, 133, 0.2);
+}
+
+.cart-item-info {
+  min-width: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.cart-item-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-texto);
+}
+
+.cart-item-variant,
+.cart-item-meta,
+.cart-item-price,
+.cart-item-subtotal {
+  margin: 0;
+  color: rgba(74, 74, 74, 0.86);
+  font-size: 0.9rem;
+}
+
+.cart-item-qty-value {
+  display: inline-block;
+  min-width: 1.2rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.cart-item-qty.is-updating,
+.cart-item-subtotal.is-updating {
+  animation: cart-value-pulse 0.42s ease;
+}
+
+@keyframes cart-value-pulse {
+  0% {
+    transform: translateY(0);
+    color: rgba(74, 74, 74, 0.86);
+  }
+
+  35% {
+    transform: translateY(-2px);
+    color: var(--color-azul-aero);
+  }
+
+  100% {
+    transform: translateY(0);
+    color: var(--color-texto);
+  }
+}
+
+.cart-item-subtotal {
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+.cart-item-actions {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: stretch;
+}
+
+.cart-summary {
+  border: 1px solid rgba(194, 163, 133, 0.68);
+  border-radius: 16px;
+  background: rgba(245, 245, 220, 0.96);
+  box-shadow: 0 10px 22px rgba(74, 74, 74, 0.12);
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.cart-summary h2 {
+  margin: 0;
+  color: var(--color-texto);
+  font-size: 1.15rem;
+}
+
+.cart-summary p {
+  margin: 0;
+  color: var(--color-texto);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cart-summary-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.cart-error {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(169, 51, 51, 0.45);
+  background: rgba(169, 51, 51, 0.12);
+  color: #7f2323;
+}
+
+@media (max-width: 900px) {
+  .cart {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-summary {
+    position: static;
+  }
+
+  .cart-item {
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .cart-item-media {
+    width: 82px;
+    height: 82px;
+  }
+
+  .cart-item-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cart-item-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-item-qty.is-updating,
+  .cart-item-subtotal.is-updating {
+    animation: none;
+  }
+}

@@ -18,7 +18,14 @@ function toInteger(value, fieldName) {
 
 function normalizeItems(items = []) {
   return items.map((item) => ({
+    item_id: Number(item.item_id),
     variante_id: Number(item.variante_id),
+    producto_id: Number(item.producto_id),
+    producto_nombre: item.producto_nombre ?? null,
+    size_id: item.size_id != null ? Number(item.size_id) : null,
+    size_valor: item.size_valor ?? null,
+    tela_nombre: item.tela_nombre ?? null,
+    imagen_url: item.imagen_url ?? null,
     cantidad: Number(item.cantidad),
     precio: Number(item.precio),
     subtotal: Number(item.subtotal),

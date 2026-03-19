@@ -105,6 +105,12 @@ export const carritoRepository = {
       SELECT
         ci.item_id,
         ci.variante_id,
+        vp.producto_id,
+        p.nombre AS producto_nombre,
+        vp.size_id,
+        s.valor AS size_valor,
+        t.nombre AS tela_nombre,
+        COALESCE(img_var.url, img_prod.url) AS imagen_url,
         ci.cantidad,
         CASE
           WHEN vp.en_oferta = true AND vp.precio_oferta IS NOT NULL THEN vp.precio_oferta
@@ -119,6 +125,24 @@ export const carritoRepository = {
         ) AS subtotal
       FROM carrito_items ci
       JOIN variantes_producto vp ON vp.variante_id = ci.variante_id
+      JOIN productos p ON p.producto_id = vp.producto_id
+      LEFT JOIN sizes s ON s.size_id = vp.size_id
+      LEFT JOIN tela t ON t.tela_id = vp.tela_id
+      LEFT JOIN LATERAL (
+        SELECT iv.url
+        FROM imagenes_variantes iv
+        WHERE iv.variante_id = ci.variante_id
+        ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC
+        LIMIT 1
+      ) img_var ON true
+      LEFT JOIN LATERAL (
+        SELECT iv2.url
+        FROM imagenes_variantes iv2
+        JOIN variantes_producto vp2 ON vp2.variante_id = iv2.variante_id
+        WHERE vp2.producto_id = vp.producto_id
+        ORDER BY iv2.principal DESC, iv2.orden ASC, iv2.img_id ASC
+        LIMIT 1
+      ) img_prod ON true
       WHERE ci.carrito_id = $1
       ORDER BY ci.item_id ASC
     `;
