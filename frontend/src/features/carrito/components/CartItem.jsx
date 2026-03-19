@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-
 function formatPrice(value) {
     const amount = Number(value) || 0;
     return new Intl.NumberFormat("es-AR", {
@@ -24,47 +22,19 @@ function resolveImageUrl(rawUrl) {
 
 // Muestra un item del carrito y botones para modificar cantidad o eliminarlo.
 export function CartItem({ item, onRemove, onUpdate, disabled = false }) {
-    if (!item) return null;
+    const safeItem = item || {};
 
-    const varianteId = Number(item.variante_id);
-    const cantidad = Number(item.cantidad) || 0;
-    const subtotal = Number(item.subtotal) || 0;
-    const productoNombre = item.producto_nombre || `Producto #${item.producto_id || "-"}`;
-    const medida = item.size_valor || item.Size || item.size || null;
-    const imagen = resolveImageUrl(item.imagen_url);
+    const varianteId = Number(safeItem.variante_id);
+    const cantidad = Number(safeItem.cantidad) || 0;
+    const subtotal = Number(safeItem.subtotal) || 0;
+    const productoNombre = safeItem.producto_nombre || `Producto #${safeItem.producto_id || "-"}`;
+    const medida = safeItem.size_valor || safeItem.Size || safeItem.size || null;
+    const imagen = resolveImageUrl(safeItem.imagen_url);
     const canDecrease = !disabled && cantidad > 1;
     const canIncrease = !disabled;
     const canRemove = !disabled && typeof onRemove === "function";
-    const previousCantidadRef = useRef(cantidad);
-    const previousSubtotalRef = useRef(subtotal);
-    const [cantidadUpdating, setCantidadUpdating] = useState(false);
-    const [subtotalUpdating, setSubtotalUpdating] = useState(false);
 
-    useEffect(() => {
-        if (previousCantidadRef.current === cantidad) return undefined;
-
-        previousCantidadRef.current = cantidad;
-        setCantidadUpdating(true);
-
-        const timer = setTimeout(() => {
-            setCantidadUpdating(false);
-        }, 360);
-
-        return () => clearTimeout(timer);
-    }, [cantidad]);
-
-    useEffect(() => {
-        if (previousSubtotalRef.current === subtotal) return undefined;
-
-        previousSubtotalRef.current = subtotal;
-        setSubtotalUpdating(true);
-
-        const timer = setTimeout(() => {
-            setSubtotalUpdating(false);
-        }, 420);
-
-        return () => clearTimeout(timer);
-    }, [subtotal]);
+    if (!item) return null;
 
     return (
         <article className="cart-item">
@@ -78,14 +48,14 @@ export function CartItem({ item, onRemove, onUpdate, disabled = false }) {
 
             <div className="cart-item-info">
                 <h3>{productoNombre}</h3>
-                <p className="cart-item-variant">Variante #{Number.isFinite(varianteId) ? varianteId : item.variante_id}</p>
-                <p className={`cart-item-meta cart-item-qty ${cantidadUpdating ? "is-updating" : ""}`}>
-                    Cantidad: <span className="cart-item-qty-value">{cantidad}</span>
+                <p className="cart-item-variant">Variante #{Number.isFinite(varianteId) ? varianteId : safeItem.variante_id}</p>
+                <p className="cart-item-meta cart-item-qty">
+                    Cantidad: <span key={`qty-${cantidad}`} className="cart-item-qty-value cart-item-value-animated">{cantidad}</span>
                 </p>
                 {medida ? <p className="cart-item-meta">Medida: {medida}</p> : null}
-                <p className="cart-item-price">Precio unitario: {formatPrice(item.precio)}</p>
-                <p className={`cart-item-subtotal ${subtotalUpdating ? "is-updating" : ""}`}>
-                    Subtotal: {formatPrice(subtotal)}
+                <p className="cart-item-price">Precio unitario: {formatPrice(safeItem.precio)}</p>
+                <p className="cart-item-subtotal">
+                    Subtotal: <span key={`subtotal-${subtotal}`} className="cart-item-value-animated">{formatPrice(subtotal)}</span>
                 </p>
             </div>
 

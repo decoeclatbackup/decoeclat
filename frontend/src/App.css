@@ -1455,8 +1455,8 @@ th {
   font-weight: 700;
 }
 
-.cart-item-qty.is-updating,
-.cart-item-subtotal.is-updating {
+.cart-item-value-animated {
+  display: inline-block;
   animation: cart-value-pulse 0.42s ease;
 }
 
@@ -1527,6 +1527,84 @@ th {
   color: #7f2323;
 }
 
+.checkout-step {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.checkout-step-header {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.checkout-step-header h2 {
+  margin: 0;
+  color: var(--color-texto);
+  font-size: 1.15rem;
+}
+
+.checkout-step-header p {
+  margin: 0;
+  color: rgba(74, 74, 74, 0.86);
+}
+
+.checkout-step-resumen {
+  border: 1px dashed rgba(194, 163, 133, 0.78);
+  border-radius: 12px;
+  padding: 0.65rem 0.85rem;
+  background: rgba(194, 163, 133, 0.14);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  color: var(--color-texto);
+}
+
+.checkout-step-resumen strong {
+  font-size: 1.02rem;
+}
+
+.checkout-client-form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.checkout-step-actions {
+  justify-content: flex-start;
+}
+
+.checkout-notice {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(194, 163, 133, 0.7);
+  background: rgba(194, 163, 133, 0.16);
+  color: var(--color-texto);
+  font-weight: 600;
+}
+
+.checkout-notice-success {
+  border-color: rgba(45, 138, 77, 0.55);
+  background: rgba(45, 138, 77, 0.14);
+  color: #1f6738;
+}
+
+.checkout-notice-error {
+  border-color: rgba(169, 51, 51, 0.5);
+  background: rgba(169, 51, 51, 0.14);
+  color: #7f2323;
+}
+
+.checkout-next-hint {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid rgba(194, 163, 133, 0.85);
+  background: rgba(194, 163, 133, 0.12);
+  border-radius: 0 10px 10px 0;
+  color: rgba(74, 74, 74, 0.9);
+}
+
 @media (max-width: 900px) {
   .cart {
     grid-template-columns: 1fr;
@@ -1554,11 +1632,23 @@ th {
   .cart-item-actions .btn {
     width: 100%;
   }
+
+  .checkout-step-resumen {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .checkout-step-actions {
+    width: 100%;
+  }
+
+  .checkout-step-actions .btn {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cart-item-qty.is-updating,
-  .cart-item-subtotal.is-updating {
+  .cart-item-value-animated {
     animation: none;
   }
 }
