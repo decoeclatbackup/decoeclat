@@ -7,13 +7,15 @@ export const ventasRepository = {
     try {
         await client.query('BEGIN');
 
+        const estadoPendienteId = Number(ventaData?.estado_id) || 1;
+
         // 1. Insertar la venta (ponemos total 0 inicialmente, lo actualizaremos al final)
         const ventaQuery = `
             INSERT INTO ventas (total, metodo_id, cliente_id, estado_id)
             VALUES ($1, $2, $3, $4)
             RETURNING venta_id;
         `;
-        const { rows: ventaRows } = await client.query(ventaQuery, [0, ventaData.metodo_id, ventaData.cliente_id, 1]);
+        const { rows: ventaRows } = await client.query(ventaQuery, [0, ventaData.metodo_id, ventaData.cliente_id, estadoPendienteId]);
         const idGenerado = ventaRows[0].venta_id;
 
         let totalCalculado = 0;
@@ -41,7 +43,14 @@ export const ventasRepository = {
         await client.query(`UPDATE ventas SET total = $1 WHERE venta_id = $2`, [totalCalculado, idGenerado]);
 
         await client.query('COMMIT');
-        return { id: idGenerado, total: totalCalculado, ...ventaData, items };
+        return {
+            id: idGenerado,
+            total: totalCalculado,
+            ...ventaData,
+            estado_id: estadoPendienteId,
+            estado: 'pendiente',
+            items,
+        };
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;

@@ -4,6 +4,7 @@ export const ventasService = {
     async registrarPedidoWeb(datosVenta) {
 
         const { cliente_id, metodo_id,items } = datosVenta;
+        const ESTADO_PENDIENTE_ID = 1;
 
         if (!items|| items.length === 0) {
             throw new Error("El pedido debe contener al menos un item");
@@ -20,6 +21,7 @@ export const ventasService = {
         const nuevaVentaData= {
             cliente_id,
             metodo_id,
+            estado_id: ESTADO_PENDIENTE_ID,
         };
 
         return await ventasRepository.CreateVenta(nuevaVentaData, items);

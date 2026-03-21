@@ -5,11 +5,64 @@ import Navbar from '../../../shared/components/Navbar'
 import { Cart } from '../components/Cart'
 import { CheckoutCustomerStep } from '../components/CheckoutCustomerStep'
 import { useCarrito } from '../hooks/useCarrito'
+import { useVentas } from '../../ventas/hooks/useVentas'
 
 const INITIAL_CLIENT_FORM = {
   nombre: '',
   email: '',
   telefono: '',
+}
+
+const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '')
+
+function formatPrice(value) {
+  const amount = Number(value) || 0
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 2,
+  }).format(amount)
+}
+
+function buildWhatsAppMessage({ cliente, carrito, ventaId }) {
+  const items = Array.isArray(carrito?.items) ? carrito.items : []
+  const total = Number(carrito?.total) || 0
+  const lines = [
+    'Hola! Quiero finalizar mi compra.',
+    '',
+    `Pedido: #${ventaId || '-'}`,
+    'Estado: pendiente',
+    '',
+    `Nombre: ${cliente?.nombre || '-'}`,
+    `Email: ${cliente?.email || '-'}`,
+    `Telefono: ${cliente?.telefono || '-'}`,
+    '',
+    'Productos:',
+  ]
+
+  if (items.length === 0) {
+    lines.push('- (sin productos en carrito)')
+  } else {
+    items.forEach((item) => {
+      const nombre = item?.producto_nombre || `Producto #${item?.producto_id || '-'}`
+      const cantidad = Number(item?.cantidad) || 0
+      const subtotal = Number(item?.subtotal) || 0
+
+      const variantParts = []
+      if (item?.size_valor) variantParts.push(`Medida: ${item.size_valor}`)
+      if (item?.tela_nombre) variantParts.push(`Tela: ${item.tela_nombre}`)
+
+      const variantText = variantParts.length > 0
+        ? ` | ${variantParts.join(' | ')}`
+        : ''
+
+      lines.push(`- ${nombre} x${cantidad}${variantText} (${formatPrice(subtotal)})`)
+    })
+  }
+
+  lines.push('')
+  lines.push(`Total: ${formatPrice(total)}`)
+  return lines.join('\n')
 }
 
 export function CartPage() {
@@ -19,6 +72,7 @@ export function CartPage() {
     carrito,
     loading,
     error,
+    getClienteTemporalId,
     getOrCreateClienteTemporalId,
     completarDatosClienteTemporal,
     handleGetCarrito,
@@ -26,6 +80,8 @@ export function CartPage() {
     handleUpdateCantidad,
     handleVaciarCarrito,
   } = useCarrito()
+
+  const { registrarVentaWeb } = useVentas()
 
   const [checkoutStep, setCheckoutStep] = useState('carrito')
   const [clientForm, setClientForm] = useState(INITIAL_CLIENT_FORM)
@@ -68,9 +124,17 @@ export function CartPage() {
     setCheckoutNotice({ type: '', text: '' })
   }
 
-  const handleSubmitCliente = async (event) => {
+  const handleGoToWhatsApp = async (event) => {
     event.preventDefault()
     setCheckoutNotice({ type: '', text: '' })
+
+    if (!WHATSAPP_NUMBER) {
+      setCheckoutNotice({
+        type: 'error',
+        text: 'Falta configurar VITE_WHATSAPP_NUMBER en el frontend.',
+      })
+      return
+    }
 
     const payload = {
       nombre: clientForm.nombre.trim(),
@@ -98,14 +162,44 @@ export function CartPage() {
     try {
       const clienteActualizado = await completarDatosClienteTemporal(payload)
       setClienteGuardado(clienteActualizado)
+
+      const carritoSnapshot = {
+        ...carrito,
+        items: Array.isArray(carrito?.items) ? [...carrito.items] : [],
+      }
+
+      const ventaRegistrada = await registrarVentaWeb({
+        clienteId: getClienteTemporalId(),
+        items: carrito?.items || [],
+      })
+
+      const ventaId = ventaRegistrada?.venta_id || ventaRegistrada?.id || null
+
       setCheckoutNotice({
         type: 'success',
-        text: 'Datos del cliente guardados correctamente.',
+        text: ventaId
+          ? `Pedido #${ventaId} generado correctamente en estado pendiente.`
+          : 'Pedido generado correctamente en estado pendiente.',
       })
+
+      try {
+        await handleVaciarCarrito()
+      } catch {
+        // Si falla el vaciado no bloqueamos el flujo de WhatsApp.
+      }
+
+      const message = buildWhatsAppMessage({
+        cliente: clienteActualizado,
+        carrito: carritoSnapshot,
+        ventaId,
+      })
+
+      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
+      window.open(url, '_blank', 'noopener,noreferrer')
     } catch (err) {
       setCheckoutNotice({
         type: 'error',
-        text: err?.message || 'No se pudieron guardar los datos del cliente.',
+        text: err?.message || 'No se pudieron guardar los datos del cliente para continuar por WhatsApp.',
       })
     }
   }
@@ -154,7 +248,7 @@ export function CartPage() {
           <CheckoutCustomerStep
             formData={clientForm}
             onChange={handleClientChange}
-            onSubmit={handleSubmitCliente}
+            onSubmit={handleGoToWhatsApp}
             onBack={handleBackToCart}
             loading={loading}
             itemsCount={itemsCount}

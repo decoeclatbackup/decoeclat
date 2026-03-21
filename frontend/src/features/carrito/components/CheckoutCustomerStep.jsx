@@ -59,7 +59,7 @@ export function CheckoutCustomerStep({
             name="email"
             value={formData.email}
             onChange={onChange}
-            placeholder="tuemail@dominio.com"
+            placeholder="tuemail@gmail.com"
             autoComplete="email"
             required
             disabled={loading}
@@ -73,7 +73,7 @@ export function CheckoutCustomerStep({
             name="telefono"
             value={formData.telefono}
             onChange={onChange}
-            placeholder="Opcional"
+            placeholder="Ej: 3512345678"
             autoComplete="tel"
             disabled={loading}
           />
@@ -90,7 +90,7 @@ export function CheckoutCustomerStep({
           </button>
 
           <button type="submit" className="btn" disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar datos'}
+            {loading ? 'Procesando...' : 'Comprar'}
           </button>
         </div>
       </form>
@@ -99,7 +99,7 @@ export function CheckoutCustomerStep({
 
       {clienteGuardado ? (
         <p className="checkout-next-hint">
-          Datos guardados correctamente. El siguiente paso es confirmar y generar la venta.
+          Datos guardados correctamente.
         </p>
       ) : null}
     </section>
