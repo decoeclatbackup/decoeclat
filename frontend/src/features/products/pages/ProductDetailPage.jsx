@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import { productServices } from '../services/productServices'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
-import Navbar from '../../../shared/components/Navbar'
+import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 
 function formatMoney(value) {
   return new Intl.NumberFormat('es-AR', {
@@ -19,6 +19,7 @@ function getVariantSizeLabel(variant) {
 
 export function ProductDetailPage() {
   const { productId } = useParams()
+  const navigate = useNavigate()
   const { handleAddToCart } = useCarrito()
 
   const [loading, setLoading] = useState(false)
@@ -159,14 +160,21 @@ export function ProductDetailPage() {
     }
   }
 
+  function handleNavbarSearch(searchValue) {
+    const query = new URLSearchParams()
+    if (searchValue?.trim()) {
+      query.set('name', searchValue.trim())
+    }
+    navigate(`/catalogo${query.toString() ? `?${query.toString()}` : ''}`)
+  }
+
   return (
     <MainLayout
       navbar={(
-        <Navbar
+        <HomePublicNavbar
           categories={categories}
-          selectedCategoryId={product?.categoria_id || ''}
           searchValue=""
-          onSearchSubmit={() => {}}
+          onSearchSubmit={handleNavbarSearch}
         />
       )}
     >

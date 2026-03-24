@@ -2,11 +2,13 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProductAdminPage, ProductCatalogPage, ProductDetailPage } from '../features/products/pages/pages'
 import { CartPage } from '../features/carrito/pages/pages'
 import { VentasAdminPage } from '../features/ventas/pages/pages'
-import { HomeAdminPage } from '../features/home/pages/pages'
+import { HomeAdminPage, HomePublicPage } from '../features/home/pages/pages'
 
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<HomePublicPage />} />
+
       {/* 1. La vista del Admin */}
       <Route path="/admin/home" element={<HomeAdminPage />} />
       <Route path="/admin/productos" element={<ProductAdminPage />} />
@@ -25,7 +27,7 @@ export function AppRoutes() {
       <Route path="/carrito" element={<CartPage />} />
 
       {/* Redirección por defecto */}
-      <Route path="*" element={<Navigate replace to="/catalogo" />} />
+      <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
-import Navbar from '../../../shared/components/Navbar'
+import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { Cart } from '../components/Cart'
 import { CheckoutCustomerStep } from '../components/CheckoutCustomerStep'
 import { useCarrito } from '../hooks/useCarrito'
@@ -238,9 +238,7 @@ export function CartPage() {
   return (
     <MainLayout
       navbar={
-        <Navbar
-          categories={[]}
-          selectedCategoryId={null}
+        <HomePublicNavbar
           searchValue=""
           onSearchSubmit={handleNavbarSearch}
         />

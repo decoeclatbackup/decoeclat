@@ -1,0 +1,113 @@
+import { useEffect, useMemo, useState } from 'react'
+import { homePublicService } from '../services/homePublicService'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+
+function resolveImageUrl(url) {
+  if (!url) return null
+  if (/^https?:\/\//i.test(url)) return url
+  if (API_BASE_URL) return `${API_BASE_URL}${url}`
+  if (url.startsWith('/uploads')) return `http://localhost:4000${url}`
+  return url
+}
+
+export function useHomePublic() {
+  const [banners, setBanners] = useState([])
+  const [productosDestacados, setProductosDestacados] = useState([])
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(max-width: 768px)').matches
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const mediaQuery = window.matchMedia('(max-width: 768px)')
+    const handleChange = (event) => {
+      setIsMobileViewport(event.matches)
+    }
+
+    setIsMobileViewport(mediaQuery.matches)
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+
+    mediaQuery.addListener(handleChange)
+    return () => mediaQuery.removeListener(handleChange)
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadData() {
+      setLoading(true)
+      setError('')
+
+      try {
+        const [homeData, categoriesData] = await Promise.all([
+          homePublicService.getHomeData(),
+          homePublicService.listCategories(),
+        ])
+
+        if (!isMounted) return
+
+        setBanners(Array.isArray(homeData?.banners) ? homeData.banners : [])
+        setProductosDestacados(
+          Array.isArray(homeData?.productosDestacados) ? homeData.productosDestacados : []
+        )
+        setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+      } catch (err) {
+        if (!isMounted) return
+        setError(err?.message || 'No se pudo cargar el home')
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const bannersWithImage = useMemo(
+    () =>
+      banners
+        .map((banner) => {
+          const mobileImage = resolveImageUrl(banner?.img_mobile_url)
+          const desktopImage = resolveImageUrl(banner?.img_desktop_url)
+
+          return {
+            ...banner,
+            imageUrl: isMobileViewport ? mobileImage || desktopImage : desktopImage || mobileImage,
+          }
+        })
+        .filter((banner) => Boolean(banner.imageUrl)),
+    [banners, isMobileViewport]
+  )
+
+  const featuredProducts = useMemo(
+    () =>
+      productosDestacados.map((item) => ({
+        ...item,
+        imagenPrincipal: resolveImageUrl(item?.imagen_principal),
+      })),
+    [productosDestacados]
+  )
+
+  return {
+    banners: bannersWithImage,
+    featuredProducts,
+    categories,
+    loading,
+    error,
+  }
+}

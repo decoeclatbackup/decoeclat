@@ -118,6 +118,14 @@ export default function Navbar({
 
 			<div className="catalog-navbar-links">
 				<NavLink
+					to="/"
+					onClick={closeMenuOnMobile}
+					className={({ isActive }) => `catalog-nav-link ${isActive ? 'active' : ''}`}
+				>
+					Inicio
+				</NavLink>
+
+				<NavLink
 					to="/catalogo"
 					onClick={closeMenuOnMobile}
 					className={({ isActive }) => `catalog-nav-link ${isActive && !selectedCategoryId ? 'active' : ''}`}

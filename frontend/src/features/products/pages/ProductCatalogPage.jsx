@@ -1,7 +1,7 @@
 import { MainLayout } from '../../../layouts/layouts'
 import { CatalogProductGrid, CatalogSidebar } from '../components/components'
 import { useProductCatalog } from '../hooks/useProductCatalog'
-import Navbar from '../../../shared/components/Navbar'
+import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 
 export function ProductCatalogPage() {
   const {
@@ -33,10 +33,8 @@ export function ProductCatalogPage() {
       title={pageTitle}
       subtitle={pageSubtitle}
       navbar={(
-        <Navbar
-          key={`${selectedCategoryId}-${filters.name}`}
+        <HomePublicNavbar
           categories={categories}
-          selectedCategoryId={selectedCategoryId}
           searchValue={filters.name}
           onSearchSubmit={handleNavbarSearch}
         />
