@@ -2,8 +2,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Directorio para banners
-const bannersDir = './uploads/banners';
+// Directorio para banners dentro de carpeta publica servida por /uploads
+const bannersDir = './public/uploads/banners';
 
 // Crear carpeta si no existe
 if (!fs.existsSync(bannersDir)){
@@ -14,7 +14,7 @@ if (!fs.existsSync(bannersDir)){
 // Configuración de almacenamiento para banners
 const bannersStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/banners/');
+        cb(null, 'public/uploads/banners/');
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -32,8 +32,8 @@ const imageFilter = (req, file, cb) => {
     }
 };
 
-// Middleware para subir banners (desktop y mobile)
-export const uploadBanners = multer({
+// Middleware base de multer para banners (desktop y mobile)
+const uploadBannersMulter = multer({
     storage: bannersStorage,
     fileFilter: imageFilter,
     limits: { fileSize: 1024 * 1024 * 5 } // 5MB límite
@@ -41,3 +41,16 @@ export const uploadBanners = multer({
     { name: 'desktop', maxCount: 1 },
     { name: 'mobile', maxCount: 1 }
 ]);
+
+// Middleware con manejo explícito de errores de subida para evitar 500 genéricos
+export const uploadBanners = (req, res, next) => {
+    uploadBannersMulter(req, res, (err) => {
+        if (!err) {
+            return next();
+        }
+
+        return res.status(400).json({
+            error: err.message || "Error al subir banners",
+        });
+    });
+};

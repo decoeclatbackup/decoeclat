@@ -14,10 +14,11 @@ export const variantesRepository = {
 
     async findByProducto(productoId) {
         let query = `
-        SELECT v.*, t.nombre AS tela, s.valor AS Size
+        SELECT v.*, t.nombre AS tela, s.valor AS Size, p.nombre AS producto_nombre
         FROM variantes_producto v
         JOIN tela t ON v.tela_id = t.tela_id
         JOIN sizes s ON v.size_id = s.size_id
+        JOIN productos p ON p.producto_id = v.producto_id
         WHERE v.activo = true
         `;
         const values = [];

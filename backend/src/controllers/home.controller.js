@@ -47,9 +47,10 @@ export const homeController = {
 
     async getCarouselHome(req, res) {
         try {
-            const carousel = await homeService.getHomeData().then(data => data.banners);
+            const carousel = await homeService.getCarouselHome();
             return res.status(200).json(carousel);
         } catch (error) {
+            console.error("Error en getCarouselHome:", error);
             return res.status(500).json({ error: error.message });
         }
     },

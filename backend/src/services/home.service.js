@@ -50,6 +50,14 @@ export const homeService = {
         return result;
     },
 
+    async getCarouselHome() {
+        return await homeRepository.getCarouselHome();
+    },
+
+    async getProductosHome() {
+        return await homeRepository.getProductosHome();
+    },
+
     async addCarouselItem(img_desktop_url, img_mobile_url, orden = 0, producto_id = null, categoria_id = null) {
         // Validar que al menos una imagen esté presente
         if (!img_desktop_url && !img_mobile_url) {

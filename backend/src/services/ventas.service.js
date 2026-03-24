@@ -1,12 +1,41 @@
 import { ventasRepository } from "../repositories/ventas.repository.js";
+import { clienteRepository } from "../repositories/cliente.repository.js";
+
+const ESTADOS = {
+    PENDIENTE: "pendiente",
+    CONFIRMADA: "confirmada",
+    ANULADA: "anulada",
+};
+
+function normalizarItems(items = []) {
+    return items
+        .map((item) => ({
+            variante_id: Number(item?.variante_id),
+            cantidad: Number(item?.cantidad),
+        }))
+        .filter(
+            (item) =>
+                Number.isInteger(item.variante_id) &&
+                item.variante_id > 0 &&
+                Number.isInteger(item.cantidad) &&
+                item.cantidad > 0
+        );
+}
+
+function normalizeText(value) {
+    return String(value || "").trim();
+}
 
 export const ventasService = {
     async registrarPedidoWeb(datosVenta) {
+        const { cliente_id, metodo_id, items } = datosVenta;
+        const estadoPendiente = await ventasRepository.findEstadoByDescripcion(ESTADOS.PENDIENTE);
 
-        const { cliente_id, metodo_id,items } = datosVenta;
-        const ESTADO_PENDIENTE_ID = 1;
+        if (!estadoPendiente) {
+            throw new Error("No se encontró el estado 'pendiente' en estados_venta");
+        }
 
-        if (!items|| items.length === 0) {
+        if (!items || items.length === 0) {
             throw new Error("El pedido debe contener al menos un item");
         }
 
@@ -18,85 +47,128 @@ export const ventasService = {
             throw new Error("El metodo_id es requerido");
         }
 
-        const nuevaVentaData= {
+        const itemsNormalizados = normalizarItems(items);
+        if (itemsNormalizados.length === 0) {
+            throw new Error("El pedido no tiene items válidos");
+        }
+
+        const nuevaVentaData = {
             cliente_id,
             metodo_id,
-            estado_id: ESTADO_PENDIENTE_ID,
+            estado_id: estadoPendiente.estado_id,
         };
 
-        return await ventasRepository.CreateVenta(nuevaVentaData, items);
+        return await ventasRepository.CreateVenta(nuevaVentaData, itemsNormalizados);
     },
 
     async registrarVentaManual(datosVenta) {
-        const { cliente_id, metodo_id, items } = datosVenta;
+        const { cliente_id, metodo_id, items, cliente } = datosVenta;
 
-        if (!cliente_id) throw new Error("El cliente_id es requerido");
+        let clienteIdFinal = Number(cliente_id);
+
         if (!metodo_id) throw new Error("El metodo_id es requerido");
         if (!items || items.length === 0) throw new Error("La venta debe contener al menos un item");
 
-        const ventaData ={
-            cliente_id,
-            metodo_id,
-            estado_id: 2 // Directamente confirmada para ventas manuales
+        if (!Number.isInteger(clienteIdFinal) || clienteIdFinal <= 0) {
+            const nombre = normalizeText(cliente?.nombre);
+            const email = normalizeText(cliente?.email);
+            const telefono = normalizeText(cliente?.telefono);
+
+            if (!nombre) {
+                throw new Error("Debes ingresar el nombre del cliente nuevo");
+            }
+
+            if (!email) {
+                throw new Error("Debes ingresar el email del cliente nuevo");
+            }
+
+            const existeEmail = await clienteRepository.findByEmailExact(email);
+            if (existeEmail) {
+                throw new Error("El correo electronico ya está registrado por otro cliente");
+            }
+
+            const clienteCreado = await clienteRepository.create({
+                nombre,
+                email,
+                telefono: telefono || null,
+            });
+
+            clienteIdFinal = Number(clienteCreado.cliente_id);
         }
 
-        return await ventasRepository.createVentaDirecta(ventaData, items);
+        const itemsNormalizados = normalizarItems(items);
+        if (itemsNormalizados.length === 0) {
+            throw new Error("La venta manual no tiene items válidos");
+        }
+
+        const ventaData = {
+            cliente_id: clienteIdFinal,
+            metodo_id,
+        };
+
+        return await ventasRepository.createVentaDirecta(ventaData, itemsNormalizados);
     },
 
- async confirmarPedidoPendiente(ventaId) {
-    if (!ventaId) throw new Error("El venta_id es requerido");
+    async actualizarEstado(ventaId, estadoId) {
+        const idVenta = Number(ventaId);
+        const idEstado = Number(estadoId);
 
-    const venta = await ventasRepository.findById(ventaId);
+        if (!Number.isInteger(idVenta) || idVenta <= 0) {
+            throw new Error("El venta_id es requerido");
+        }
 
-    // DEBUG: Vamos a ver qué trae de la base de datos
-    console.log("Datos de la venta encontrada:", venta);
+        if (!Number.isInteger(idEstado) || idEstado <= 0) {
+            throw new Error("El estado_id es requerido");
+        }
 
-    if (!venta) {
-        throw new Error("Venta no encontrada");
-    }
+        return await ventasRepository.actualizarEstadoVenta(idVenta, idEstado);
+    },
 
-    // Usamos Number() por las dudas de que la DB devuelva un string
-    if (Number(venta.estado_id) !== 1) {
-        throw new Error(`La venta está en estado ${venta.estado_id}, no en 1 (pendiente)`);
-    }
+    async confirmarPedidoPendiente(ventaId) {
+        const estadoConfirmada = await ventasRepository.findEstadoByDescripcion(ESTADOS.CONFIRMADA);
+        if (!estadoConfirmada) {
+            throw new Error("No se encontró el estado 'confirmada' en estados_venta");
+        }
 
-    // CORRECCIÓN AQUÍ: Usar 'ventaId', no 'venta_id'
-    return await ventasRepository.confirmarVenta(ventaId); 
-},
+        return await this.actualizarEstado(ventaId, estadoConfirmada.estado_id);
+    },
 
     async anularVentaRealizada(ventaId) {
-
-        const venta = await ventasRepository.findById(ventaId);
-
-        if (!venta) {throw new Error("Venta no encontrada");}
-
-        if (venta.estado_id !== 2) {
-            throw new Error("Solo las ventas confirmadas pueden ser anuladas");
+        const estadoAnulada = await ventasRepository.findEstadoByDescripcion(ESTADOS.ANULADA);
+        if (!estadoAnulada) {
+            throw new Error("No se encontró el estado 'anulada' en estados_venta");
         }
 
-        return await ventasRepository.anularVenta(ventaId);
+        return await this.actualizarEstado(ventaId, estadoAnulada.estado_id);
     },
 
-    async obtenerHistorial(){
-        return await ventasRepository.findAll();
+    async listarEstadosVenta() {
+        return await ventasRepository.getEstadosVenta();
+    },
+
+    async listarMetodosPago() {
+        return await ventasRepository.getMetodosPago();
+    },
+
+    async eliminarVenta(ventaId) {
+        const idVenta = Number(ventaId);
+        if (!Number.isInteger(idVenta) || idVenta <= 0) {
+            throw new Error("El venta_id es requerido");
+        }
+
+        return await ventasRepository.eliminarVenta(idVenta);
+    },
+
+    async obtenerHistorial(filters = {}) {
+        return await ventasRepository.findAll(filters);
     },
 
     async obtenerDetalleVenta(id) {
-        const venta=await ventasRepository.findById(id);
+        const venta = await ventasRepository.findById(id);
 
         if (!venta) {
             throw new Error("Venta no encontrada");
         }
         return venta;
     },
-
-
-
-
-
-
-
-
-
-
-}
+};

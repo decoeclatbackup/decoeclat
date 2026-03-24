@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MainLayout } from '../../../layouts/layouts'
 import { ProductFilters, ProductForm, ProductsTable } from '../components/components'
 import { useProductAdmin } from '../hooks/useProductAdmin'
+import AdminNavbar from '../../../shared/components/AdminNavbar'
 
 export function ProductAdminPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -58,8 +59,7 @@ export function ProductAdminPage() {
 
   return (
     <MainLayout
-      title="Gestionar Catalogo de Productos"
-      subtitle="Pantalla administrativa para registrar, editar, activar y eliminar productos"
+      navbar={<AdminNavbar />}
     >
       {message ? <p className="alert">{message}</p> : null}
 

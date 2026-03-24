@@ -1,0 +1,1 @@
+export { VentasAdminPage } from './VentasAdminPage'
