@@ -13,7 +13,21 @@ const INITIAL_CLIENT_FORM = {
   telefono: '',
 }
 
-const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '')
+const RAW_WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || ''
+
+function normalizeWhatsAppNumber(value) {
+  const digits = String(value || '').replace(/\D/g, '')
+  if (!digits) return ''
+
+  // For this project (AR), allow local mobile number and normalize to E.164-compatible format.
+  if (digits.length === 10 && !digits.startsWith('54')) {
+    return `549${digits}`
+  }
+
+  return digits
+}
+
+const WHATSAPP_NUMBER = normalizeWhatsAppNumber(RAW_WHATSAPP_NUMBER)
 
 function formatPrice(value) {
   const amount = Number(value) || 0
@@ -159,21 +173,25 @@ export function CartPage() {
       return
     }
 
+    const carritoSnapshot = {
+      ...carrito,
+      items: Array.isArray(carrito?.items) ? [...carrito.items] : [],
+    }
+
+    let clienteParaMensaje = payload
+    let ventaId = null
+
     try {
       const clienteActualizado = await completarDatosClienteTemporal(payload)
       setClienteGuardado(clienteActualizado)
-
-      const carritoSnapshot = {
-        ...carrito,
-        items: Array.isArray(carrito?.items) ? [...carrito.items] : [],
-      }
+      clienteParaMensaje = clienteActualizado
 
       const ventaRegistrada = await registrarVentaWeb({
         clienteId: getClienteTemporalId(),
         items: carrito?.items || [],
       })
 
-      const ventaId = ventaRegistrada?.venta_id || ventaRegistrada?.id || null
+      ventaId = ventaRegistrada?.venta_id || ventaRegistrada?.id || null
 
       setCheckoutNotice({
         type: 'success',
@@ -187,21 +205,30 @@ export function CartPage() {
       } catch {
         // Si falla el vaciado no bloqueamos el flujo de WhatsApp.
       }
-
-      const message = buildWhatsAppMessage({
-        cliente: clienteActualizado,
-        carrito: carritoSnapshot,
-        ventaId,
-      })
-
-      const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`
-      window.location.assign(url)
     } catch (err) {
       setCheckoutNotice({
-        type: 'error',
-        text: err?.message || 'No se pudieron guardar los datos del cliente para continuar por WhatsApp.',
+        type: 'success',
+        text: 'No se pudo registrar automaticamente el pedido, pero puedes continuar por WhatsApp para finalizar la compra.',
       })
     }
+
+    const message = buildWhatsAppMessage({
+      cliente: clienteParaMensaje,
+      carrito: carritoSnapshot,
+      ventaId,
+    })
+
+    const encodedMessage = encodeURIComponent(message)
+    const appUrl = `whatsapp://send?phone=${WHATSAPP_NUMBER}&text=${encodedMessage}`
+    const webUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`
+
+    window.location.assign(appUrl)
+
+    setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        window.location.assign(webUrl)
+      }
+    }, 900)
   }
 
   const handleNavbarSearch = () => {
