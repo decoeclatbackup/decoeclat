@@ -194,8 +194,8 @@ export function CartPage() {
         ventaId,
       })
 
-      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
-      window.open(url, '_blank', 'noopener,noreferrer')
+      const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`
+      window.location.assign(url)
     } catch (err) {
       setCheckoutNotice({
         type: 'error',
