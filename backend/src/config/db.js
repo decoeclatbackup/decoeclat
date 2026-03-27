@@ -35,11 +35,25 @@ async function ensureContactSchema() {
   `);
 }
 
+async function ensureDefaultCategories() {
+  await pool.query(`
+    INSERT INTO categorias (nombre, parent_id)
+    SELECT 'Combos', NULL
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM categorias
+      WHERE LOWER(nombre) = LOWER('Combos')
+        AND parent_id IS NULL
+    )
+  `);
+}
+
 pool.query("SELECT 1")
   .then(async () => {
     console.log("✅ Conectado a PostgreSQL");
     await ensureImageSchema();
     await ensureContactSchema();
+    await ensureDefaultCategories();
   })
   .catch((err) => {
     console.error("❌ Error de conexión a la base de datos");

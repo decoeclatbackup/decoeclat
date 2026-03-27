@@ -236,7 +236,8 @@ INSERT INTO categorias (nombre, parent_id) VALUES
 ('Cestería', NULL),
 ('Para la Mesa', NULL),
 ('Para la Cocina', NULL),
-('Kids', NULL);
+('Kids', NULL),
+('Combos', NULL);
 
 -- Subcategorías
 INSERT INTO categorias (nombre, parent_id)
@@ -244,6 +245,7 @@ VALUES
 ('Lonitas', (SELECT categoria_id FROM categorias WHERE nombre = 'Textiles')),
 ('Fundas', (SELECT categoria_id FROM categorias WHERE nombre = 'Textiles')),
 ('Mantas', (SELECT categoria_id FROM categorias WHERE nombre = 'Textiles')),
+('Neceseres', (SELECT categoria_id FROM categorias WHERE nombre = 'Textiles')),
 ('Almohadones', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids')),
 ('Cestos', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids')),
 ('Contenedores', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids')),
