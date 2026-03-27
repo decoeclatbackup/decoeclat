@@ -39,6 +39,35 @@ export const authService = {
 		return response
 	},
 
+	async requestPasswordReset(email) {
+		const normalizedEmail = email?.trim()
+		if (!normalizedEmail) {
+			throw new Error('Debes ingresar un email')
+		}
+
+		return request('/api/forgot-password', {
+			method: 'POST',
+			suppressAuthRedirect: true,
+			body: JSON.stringify({ email: normalizedEmail }),
+		})
+	},
+
+	async resetPasswordWithToken({ token, nuevaPassword }) {
+		if (!token) {
+			throw new Error('Token de recuperación inválido')
+		}
+
+		if (!nuevaPassword) {
+			throw new Error('Debes ingresar una nueva contraseña')
+		}
+
+		return request('/api/reset-password', {
+			method: 'POST',
+			suppressAuthRedirect: true,
+			body: JSON.stringify({ token, nuevaPassword }),
+		})
+	},
+
 	logout() {
 		localStorage.removeItem(AUTH_TOKEN_KEY)
 		localStorage.removeItem(AUTH_USER_KEY)

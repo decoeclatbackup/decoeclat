@@ -17,6 +17,11 @@ export function AdminLoginPage() {
   const nextFromQuery = searchParams.get('next')
   const [credentials, setCredentials] = useState(initialCredentials)
   const [error, setError] = useState('')
+  const [resetEmail, setResetEmail] = useState('')
+  const [showResetForm, setShowResetForm] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetSuccess, setResetSuccess] = useState('')
+  const [resetSubmitting, setResetSubmitting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   if (authService.isAdminAuthenticated()) {
@@ -48,6 +53,22 @@ export function AdminLoginPage() {
       setError(submitError.message || 'No se pudo iniciar sesion')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleRequestReset(event) {
+    event.preventDefault()
+    setResetError('')
+    setResetSuccess('')
+    setResetSubmitting(true)
+
+    try {
+      const response = await authService.requestPasswordReset(resetEmail)
+      setResetSuccess(response?.message || 'Si el correo es válido, recibirás un link de recuperación.')
+    } catch (requestError) {
+      setResetError(requestError.message || 'No se pudo procesar la solicitud de recuperación')
+    } finally {
+      setResetSubmitting(false)
     }
   }
 
@@ -102,6 +123,40 @@ export function AdminLoginPage() {
 
           {error ? <p className="contact-form-error" role="alert">{error}</p> : null}
         </form>
+
+        <button
+          type="button"
+          className="admin-login-reset-toggle"
+          onClick={() => {
+            setShowResetForm((prev) => !prev)
+            setResetError('')
+            setResetSuccess('')
+          }}
+        >
+          {showResetForm ? 'Ocultar recuperación de contraseña' : 'Olvidé mi contraseña'}
+        </button>
+
+        {showResetForm ? (
+          <form className="admin-login-reset-form" onSubmit={handleRequestReset}>
+            <label className="field">
+              <span>Email para recuperación</span>
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(event) => setResetEmail(event.target.value)}
+                autoComplete="email"
+                required
+              />
+            </label>
+
+            <button type="submit" className="btn ghost" disabled={resetSubmitting}>
+              {resetSubmitting ? 'Enviando...' : 'Enviar link de recuperación'}
+            </button>
+
+            {resetError ? <p className="contact-form-error" role="alert">{resetError}</p> : null}
+            {resetSuccess ? <p className="alert" role="status">{resetSuccess}</p> : null}
+          </form>
+        ) : null}
       </section>
     </MainLayout>
   )

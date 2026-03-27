@@ -19,7 +19,11 @@ export const homeService = {
 
     async addProductoHome(producto_id, orden = 0) {
         const normalizedProductoId = Number(producto_id);
-        const normalizedOrden = Number(orden || 0);
+        const hasExplicitOrden = orden !== undefined && orden !== null && String(orden) !== '';
+        const normalizedOrden = Number(orden);
+        const targetOrden = (hasExplicitOrden && Number.isFinite(normalizedOrden) && normalizedOrden >= 0)
+            ? Math.trunc(normalizedOrden)
+            : await homeRepository.getNextProductoHomeOrden();
 
         if (!Number.isInteger(normalizedProductoId) || normalizedProductoId <= 0) {
             throw new Error("Debes seleccionar un producto válido");
@@ -32,21 +36,21 @@ export const homeService = {
         }
 
         const existente = await homeRepository.findProductoHomeByProductoId(normalizedProductoId);
-        if (existente?.activo) {
-            throw new Error("Este producto ya está destacado");
-        }
+        let result;
 
-        if (existente && !existente.activo) {
-            return await homeRepository.updateProductoHome(existente.home_id, {
+        if (existente) {
+            await homeRepository.shiftProductoHomeOrdenFrom(targetOrden, existente.home_id);
+            result = await homeRepository.updateProductoHome(existente.home_id, {
                 activo: true,
-                orden: Number.isFinite(normalizedOrden) ? normalizedOrden : 0,
+                orden: targetOrden,
             });
+        } else {
+            await homeRepository.shiftProductoHomeOrdenFrom(targetOrden);
+            result = await homeRepository.addProductoHome(normalizedProductoId, targetOrden);
         }
 
-        return await homeRepository.addProductoHome(
-            normalizedProductoId,
-            Number.isFinite(normalizedOrden) ? normalizedOrden : 0
-        );
+        await homeRepository.normalizeProductoHomeOrden();
+        return result;
     },
 
     async updateProductoHome(home_id, updates) {
@@ -61,6 +65,8 @@ export const homeService = {
         if (!result) {
             throw new Error("Producto home no encontrado o no hay campos para actualizar");
         }
+
+        await homeRepository.normalizeProductoHomeOrden();
         return result;
     },
 
@@ -69,6 +75,8 @@ export const homeService = {
         if (!result) {
             throw new Error("Producto home no encontrado");
         }
+
+        await homeRepository.normalizeProductoHomeOrden();
         return result;
     },
 
@@ -81,6 +89,9 @@ export const homeService = {
     },
 
     async addCarouselItem(img_desktop_url, img_mobile_url, orden = 0, producto_id = null, categoria_id = null) {
+        const hasExplicitOrden = orden !== undefined && orden !== null && String(orden) !== '';
+        const normalizedOrden = Number(orden);
+
         // Validar que al menos una imagen esté presente
         if (!img_desktop_url && !img_mobile_url) {
             throw new Error("Se requiere al menos una imagen (desktop o mobile)");
@@ -102,7 +113,18 @@ export const homeService = {
             }
         }
 
-        return await homeRepository.addCarouselItem(img_desktop_url, img_mobile_url, orden, producto_id, categoria_id);
+        const created = await homeRepository.addCarouselItem(
+            img_desktop_url,
+            img_mobile_url,
+            (hasExplicitOrden && Number.isFinite(normalizedOrden))
+                ? normalizedOrden
+                : await homeRepository.getNextCarouselOrden(),
+            producto_id,
+            categoria_id
+        );
+
+        await homeRepository.normalizeCarouselOrden();
+        return created;
     },
 
     async updateCarouselItem(carousel_id, updates) {
@@ -126,6 +148,8 @@ export const homeService = {
         if (!result) {
             throw new Error("Item del carrusel no encontrado o no hay campos para actualizar");
         }
+
+        await homeRepository.normalizeCarouselOrden();
         return result;
     },
 
@@ -134,6 +158,8 @@ export const homeService = {
         if (!result) {
             throw new Error("Item del carrusel no encontrado");
         }
+
+        await homeRepository.normalizeCarouselOrden();
         return result;
     }
 };

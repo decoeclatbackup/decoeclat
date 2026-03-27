@@ -24,3 +24,10 @@ export const esAdmin = (req, res, next) => {
     }
     next();
 };
+
+export const esAdminOStaff = (req, res, next) => {
+    if (!req.user || ![1, 2].includes(Number(req.user.rol))) {
+        return res.status(403).json({ error: "Acceso denegado. Se requieren permisos administrativos." });
+    }
+    next();
+};

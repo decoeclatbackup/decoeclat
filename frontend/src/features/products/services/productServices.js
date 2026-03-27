@@ -17,9 +17,16 @@ function buildUrl(path, query = {}) {
 
 async function request(path, options = {}, query) {
 	const isFormData = options.body instanceof FormData
+	const token = typeof window !== 'undefined'
+		? localStorage.getItem('authToken') || localStorage.getItem('token')
+		: null
+	const hasAuthorizationHeader = Boolean(
+		options.headers && (options.headers.Authorization || options.headers.authorization)
+	)
 	const response = await fetch(buildUrl(path, query), {
 		headers: {
 			...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+			...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
 			...(options.headers || {}),
 		},
 		...options,

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { useHomePublic } from '../hooks/useHomePublic'
+import { useCarrito } from '../../carrito/hooks/useCarrito'
 
 function buildBannerTarget(banner) {
   if (banner?.producto_id) return `/producto/${banner.producto_id}`
@@ -13,6 +14,7 @@ function buildBannerTarget(banner) {
 export function HomePublicPage() {
   const navigate = useNavigate()
   const { banners, featuredProducts, categories, loading, error } = useHomePublic()
+  const { handleAddToCart, loading: addingToCart } = useCarrito()
   const [activeBannerIndex, setActiveBannerIndex] = useState(0)
 
   const safeActiveBannerIndex = useMemo(() => {
@@ -47,6 +49,20 @@ export function HomePublicPage() {
     navigate(`/catalogo${query.toString() ? `?${query.toString()}` : ''}`)
   }
 
+  const handleQuickBuy = async (e, item) => {
+    e.preventDefault()
+    if (!item.variante_id) {
+      alert('No hay variante disponible para este producto')
+      return
+    }
+    try {
+      await handleAddToCart(item.variante_id, 1)
+      navigate('/carrito')
+    } catch (err) {
+      console.error('Error al agregar al carrito:', err)
+    }
+  }
+
   return (
     <MainLayout
       navbar={(
@@ -59,23 +75,8 @@ export function HomePublicPage() {
     >
       {error ? <p className="alert">{error}</p> : null}
 
-      <section className="home-public-hero card">
-        <div className="home-public-hero-copy">
-          <p className="kicker">Decoeclat</p>
-          <h1>Textiles y disenio para transformar tus espacios</h1>
-          <p>
-            Descubre nuevas colecciones, productos destacados y combina telas con estilos pensados
-            para tu hogar.
-          </p>
-          <div className="actions">
-            <Link to="/catalogo" className="btn home-public-link-btn">Ver catalogo</Link>
-            <Link to="/carrito" className="btn ghost home-public-link-btn">Ir al carrito</Link>
-          </div>
-        </div>
-
+      <section className="home-public-hero">
         <div className="home-public-banner-shell">
-          {loading ? <p>Cargando home...</p> : null}
-
           {!loading && activeBanner ? (
             <Link className="home-public-banner" to={buildBannerTarget(activeBanner)}>
               <img
@@ -85,11 +86,7 @@ export function HomePublicPage() {
             </Link>
           ) : null}
 
-          {!loading && !activeBanner ? (
-            <div className="home-public-banner empty">
-              <p>No hay banners activos por el momento.</p>
-            </div>
-          ) : null}
+          {!loading && !activeBanner ? <div className="home-public-banner empty" aria-hidden="true" /> : null}
 
           {banners.length > 1 ? (
             <div className="home-public-banner-dots" role="tablist" aria-label="Seleccionar banner">
@@ -107,43 +104,50 @@ export function HomePublicPage() {
         </div>
       </section>
 
-      <section className="card home-public-featured">
-        <div className="home-public-section-heading">
+      <section className="home-public-featured">
+        <div className="home-public-section-heading centered">
           <h2>Productos destacados</h2>
           <Link to="/catalogo" className="home-public-see-all">Ver todos</Link>
         </div>
 
         {featuredProducts.length === 0 ? (
-          <p>No hay productos destacados activos por ahora.</p>
+          <p className="home-public-featured-empty">No hay productos destacados activos por ahora.</p>
         ) : (
           <div className="home-public-featured-grid">
             {featuredProducts.map((item) => (
               <article key={item.home_id} className="home-public-featured-card">
                 <Link to={`/producto/${item.producto_id}`} className="home-public-featured-media">
-                  {item.imagenPrincipal ? (
-                    <img src={item.imagenPrincipal} alt={item.nombre} />
+                  {item.imagen_principal ? (
+                    <img src={item.imagen_principal} alt={item.nombre} />
                   ) : (
                     <div className="home-public-featured-placeholder">Sin imagen</div>
                   )}
                 </Link>
                 <div className="home-public-featured-body">
                   <h3>{item.nombre}</h3>
-                  <p>{item.descripcion || 'Disenio seleccionado para destacar en esta temporada.'}</p>
-                  <Link to={`/producto/${item.producto_id}`} className="btn home-public-link-btn">Ver detalle</Link>
+                  <div className="home-public-featured-price">
+                    {item.precio_oferta ? (
+                      <>
+                        <span className="original-price">${Number(item.precio).toFixed(2)}</span>
+                        <span className="offer-price">${Number(item.precio_oferta).toFixed(2)}</span>
+                      </>
+                    ) : (
+                      <span className="current-price">${Number(item.precio).toFixed(2)}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn home-public-featured-buy-btn"
+                    onClick={(e) => handleQuickBuy(e, item)}
+                    disabled={addingToCart}
+                  >
+                    {addingToCart ? 'Agregando...' : 'Comprar'}
+                  </button>
                 </div>
               </article>
             ))}
           </div>
         )}
-      </section>
-
-      <section id="contacto" className="card home-public-contact">
-        <h2>Contacto</h2>
-        <p>Escribenos para asesorarte sobre medidas, telas y combinaciones para tu espacio.</p>
-        <div className="actions">
-          <Link to="/carrito" className="btn home-public-link-btn">Continuar compra</Link>
-          <Link to="/catalogo" className="btn ghost home-public-link-btn">Explorar productos</Link>
-        </div>
       </section>
     </MainLayout>
   )

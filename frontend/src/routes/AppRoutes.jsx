@@ -3,7 +3,7 @@ import { ProductAdminPage, ProductCatalogPage, ProductDetailPage } from '../feat
 import { CartPage } from '../features/carrito/pages/pages'
 import { VentasAdminPage } from '../features/ventas/pages/pages'
 import { ContactPage, HomeAdminPage, HomePublicPage } from '../features/home/pages/pages'
-import { AdminLoginPage } from '../features/auth/pages/pages'
+import { AdminLoginPage, ResetPasswordPage } from '../features/auth/pages/pages'
 import { authService } from '../features/auth/services/authService'
 
 function RequireAdminAuth({ children }) {
@@ -37,6 +37,8 @@ export function AppRoutes() {
           </AdminGuestOnly>
         )}
       />
+
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route path="/admin" element={<Navigate replace to="/admin/home" />} />
 

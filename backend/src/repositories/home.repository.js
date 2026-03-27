@@ -12,13 +12,32 @@ export const homeRepository = {
                 p.producto_id,
                 p.nombre,
                 p.descripcion,
+                vp.variante_id,
+                vp.precio,
+                vp.precio_oferta,
                 iv.url as imagen_principal
             FROM productos_home ph
             JOIN productos p ON ph.producto_id = p.producto_id
-            LEFT JOIN variantes_producto vp ON vp.producto_id = p.producto_id AND vp.activo = true
-            LEFT JOIN imagenes_variantes iv ON iv.variante_id = vp.variante_id AND iv.principal = true
+            LEFT JOIN LATERAL (
+                SELECT
+                    v.variante_id,
+                    v.precio,
+                    v.precio_oferta
+                FROM variantes_producto v
+                WHERE v.producto_id = p.producto_id
+                  AND v.activo = true
+                ORDER BY v.variante_id ASC
+                LIMIT 1
+            ) vp ON true
+            LEFT JOIN LATERAL (
+                SELECT i.url
+                FROM imagenes_variantes i
+                WHERE i.variante_id = vp.variante_id
+                ORDER BY i.principal DESC, i.orden ASC, i.img_id ASC
+                LIMIT 1
+            ) iv ON true
             WHERE ph.activo = true
-            ORDER BY ph.orden ASC, ph.home_id ASC
+            ORDER BY ph.orden ASC, ph.home_id ASC, vp.variante_id ASC
         `;
         const { rows } = await pool.query(query);
         return rows;
@@ -32,6 +51,56 @@ export const homeRepository = {
         `;
         const { rows } = await pool.query(query, [producto_id, orden]);
         return rows[0];
+    },
+
+    async getNextProductoHomeOrden() {
+        const query = `
+            SELECT COALESCE(MAX(orden), -1) + 1 AS next_orden
+            FROM productos_home
+            WHERE activo = true
+        `;
+        const { rows } = await pool.query(query);
+        return Number(rows[0]?.next_orden ?? 0);
+    },
+
+    async normalizeProductoHomeOrden() {
+        const query = `
+            WITH ordered AS (
+                SELECT
+                    home_id,
+                    ROW_NUMBER() OVER (ORDER BY orden ASC, home_id ASC) - 1 AS new_orden
+                FROM productos_home
+                WHERE activo = true
+            )
+            UPDATE productos_home ph
+            SET orden = ordered.new_orden
+            FROM ordered
+            WHERE ph.home_id = ordered.home_id
+        `;
+
+        await pool.query(query);
+    },
+
+    async shiftProductoHomeOrdenFrom(orden, excludeHomeId = null) {
+        if (excludeHomeId) {
+            const query = `
+                UPDATE productos_home
+                SET orden = orden + 1
+                WHERE activo = true
+                  AND orden >= $1
+                  AND home_id <> $2
+            `;
+            await pool.query(query, [orden, excludeHomeId]);
+            return;
+        }
+
+        const query = `
+            UPDATE productos_home
+            SET orden = orden + 1
+            WHERE activo = true
+              AND orden >= $1
+        `;
+        await pool.query(query, [orden]);
     },
 
     async findProductoHomeByProductoId(producto_id) {
@@ -119,6 +188,34 @@ export const homeRepository = {
         `;
         const { rows } = await pool.query(query, [img_desktop_url, img_mobile_url, orden, producto_id, categoria_id]);
         return rows[0];
+    },
+
+    async getNextCarouselOrden() {
+        const query = `
+            SELECT COALESCE(MAX(orden), -1) + 1 AS next_orden
+            FROM carousel_home
+            WHERE activo = true
+        `;
+        const { rows } = await pool.query(query);
+        return Number(rows[0]?.next_orden ?? 0);
+    },
+
+    async normalizeCarouselOrden() {
+        const query = `
+            WITH ordered AS (
+                SELECT
+                    carousel_id,
+                    ROW_NUMBER() OVER (ORDER BY orden ASC, carousel_id ASC) - 1 AS new_orden
+                FROM carousel_home
+                WHERE activo = true
+            )
+            UPDATE carousel_home ch
+            SET orden = ordered.new_orden
+            FROM ordered
+            WHERE ch.carousel_id = ordered.carousel_id
+        `;
+
+        await pool.query(query);
     },
 
     async updateCarouselItem(carousel_id, updates) {

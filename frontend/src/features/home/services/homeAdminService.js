@@ -54,7 +54,6 @@ export const homeAdminService = {
 
     return request('/api/home/productos', {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({
         producto_id: normalizedProductoId,
         orden: Number(orden || 0),
@@ -65,7 +64,6 @@ export const homeAdminService = {
   async updateFeaturedProduct(homeId, updates = {}) {
     return request(`/api/home/productos/${Number(homeId)}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     })
   },
@@ -73,7 +71,6 @@ export const homeAdminService = {
   async removeFeaturedProduct(homeId) {
     return request(`/api/home/productos/${Number(homeId)}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     })
   },
 
@@ -105,7 +102,6 @@ export const homeAdminService = {
 
     return request(`/api/home/carousel/${Number(carouselId)}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify({
         ...(orden !== undefined ? { orden: Number(orden) } : {}),
         ...(productoId !== undefined ? { producto_id: productoId ? Number(productoId) : null } : {}),
@@ -118,7 +114,6 @@ export const homeAdminService = {
   async removeBanner(carouselId) {
     return request(`/api/home/carousel/${Number(carouselId)}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
     })
   },
 }

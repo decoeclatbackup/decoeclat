@@ -14,8 +14,15 @@ async function descargarArchivo(path, { mes, anio, defaultName }) {
     mes: String(Number(mes)),
     anio: String(Number(anio)),
   })
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('authToken') || localStorage.getItem('token')
+    : null
 
-  const response = await fetch(`${API_BASE_URL}${path}?${query.toString()}`)
+  const response = await fetch(`${API_BASE_URL}${path}?${query.toString()}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  })
   if (!response.ok) {
     let message = 'No se pudo descargar el reporte'
     try {

@@ -21,13 +21,15 @@ export async function request(path, options = {}, query) {
     customHeaders && (customHeaders.Authorization || customHeaders.authorization)
   )
 
+  const finalHeaders = {
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(customHeaders || {}),
+  }
+
   const response = await fetch(buildUrl(path, query), {
     ...fetchOptions,
-    headers: {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(customHeaders || {}),
-    },
+    headers: finalHeaders,
   })
 
   if (!response.ok) {

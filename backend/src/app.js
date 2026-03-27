@@ -18,7 +18,7 @@ import path from "path";
 export const app = express();
 
 app.use(cors({
-  origin: "https://decoeclat.vercel.app",
+  origin: ["https://decoeclat.vercel.app", "http://localhost:5173", "http://localhost:3000"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));
