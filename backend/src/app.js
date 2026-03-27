@@ -12,6 +12,7 @@ import categoriasRoutes from "./routes/categorias.routes.js";
 import telasRoutes from "./routes/telas.routes.js";
 import sizesRoutes from "./routes/sizes.routes.js";
 import carritoRoutes from "./routes/carrito.routes.js";
+import contactoRoutes from "./routes/contacto.routes.js";
 import path from "path";
 
 export const app = express();
@@ -35,6 +36,7 @@ app.use("/api", categoriasRoutes);
 app.use("/api", telasRoutes);
 app.use("/api", sizesRoutes);
 app.use("/api", carritoRoutes);
+app.use("/api", contactoRoutes);
 app.use("/api/imagenes", imagenesRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));

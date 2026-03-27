@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProductAdminPage, ProductCatalogPage, ProductDetailPage } from '../features/products/pages/pages'
 import { CartPage } from '../features/carrito/pages/pages'
 import { VentasAdminPage } from '../features/ventas/pages/pages'
-import { HomeAdminPage, HomePublicPage } from '../features/home/pages/pages'
+import { ContactPage, HomeAdminPage, HomePublicPage } from '../features/home/pages/pages'
 
 export function AppRoutes() {
   return (
@@ -25,6 +25,9 @@ export function AppRoutes() {
 
       {/* 5. Carrito */}
       <Route path="/carrito" element={<CartPage />} />
+
+      {/* 6. Contacto */}
+      <Route path="/contacto" element={<ContactPage />} />
 
       {/* Redirección por defecto */}
       <Route path="*" element={<Navigate replace to="/" />} />

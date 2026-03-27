@@ -313,7 +313,13 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
           ) : null}
         </div>
 
-        <Link to="/#contacto" className="home-top-nav-link" onClick={handleNavLinkClick}>Contacto</Link>
+        <NavLink
+          to="/contacto"
+          className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
+          onClick={handleNavLinkClick}
+        >
+          Contacto
+        </NavLink>
       </div>
     </nav>
   )

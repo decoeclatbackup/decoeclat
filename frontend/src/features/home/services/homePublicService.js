@@ -9,4 +9,11 @@ export const homePublicService = {
     const response = await request('/api/categorias')
     return Array.isArray(response) ? response : []
   },
+
+  async sendContactMessage(payload) {
+    return request('/api/contacto', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
 }

@@ -22,10 +22,24 @@ async function ensureImageSchema() {
   `);
 }
 
+async function ensureContactSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS consultas_contacto (
+      consulta_contacto_id SERIAL PRIMARY KEY,
+      nombre VARCHAR(100) NOT NULL,
+      email VARCHAR(150) NOT NULL,
+      telefono VARCHAR(40) NOT NULL,
+      mensaje TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 pool.query("SELECT 1")
   .then(async () => {
     console.log("✅ Conectado a PostgreSQL");
     await ensureImageSchema();
+    await ensureContactSchema();
   })
   .catch((err) => {
     console.error("❌ Error de conexión a la base de datos");
