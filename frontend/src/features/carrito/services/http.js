@@ -14,16 +14,34 @@ function buildUrl(path, query = {}) {
 }
 
 export async function request(path, options = {}, query) {
-  const isFormData = options.body instanceof FormData
+  const { suppressAuthRedirect = false, headers: customHeaders = {}, ...fetchOptions } = options
+  const isFormData = fetchOptions.body instanceof FormData
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null
+  const hasAuthorizationHeader = Boolean(
+    customHeaders && (customHeaders.Authorization || customHeaders.authorization)
+  )
+
   const response = await fetch(buildUrl(path, query), {
+    ...fetchOptions,
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(options.headers || {}),
+      ...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(customHeaders || {}),
     },
-    ...options,
   })
 
   if (!response.ok) {
+    if (!suppressAuthRedirect && (response.status === 401 || response.status === 403) && typeof window !== 'undefined') {
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('authUser')
+      localStorage.removeItem('token')
+
+      if (window.location.pathname.startsWith('/admin')) {
+        const nextPath = encodeURIComponent(window.location.pathname + window.location.search)
+        window.location.assign(`/admin/login?reason=session-expired&next=${nextPath}`)
+      }
+    }
+
     let message = 'Error de red'
     try {
       const body = await response.json()

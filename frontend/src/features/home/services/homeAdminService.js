@@ -47,11 +47,16 @@ export const homeAdminService = {
   },
 
   async addFeaturedProduct({ productoId, orden }) {
+    const normalizedProductoId = Number(productoId)
+    if (!Number.isInteger(normalizedProductoId) || normalizedProductoId <= 0) {
+      throw new Error('Debes seleccionar un producto valido')
+    }
+
     return request('/api/home/productos', {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({
-        producto_id: Number(productoId),
+        producto_id: normalizedProductoId,
         orden: Number(orden || 0),
       }),
     })

@@ -34,6 +34,18 @@ export const homeRepository = {
         return rows[0];
     },
 
+    async findProductoHomeByProductoId(producto_id) {
+        const query = `
+            SELECT *
+            FROM productos_home
+            WHERE producto_id = $1
+            ORDER BY home_id DESC
+            LIMIT 1
+        `;
+        const { rows } = await pool.query(query, [producto_id]);
+        return rows[0];
+    },
+
     async updateProductoHome(home_id, updates) {
         const sets = [];
         const values = [];

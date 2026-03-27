@@ -3,9 +3,16 @@
   margin: 0;
 }
 
+.app-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .app-shell {
+  flex: 1;
   width: min(1100px, 100% - 2rem);
-  margin: 1rem auto 3rem;
+  margin: 1rem auto 1.5rem;
 }
 
 .hero {
@@ -40,7 +47,7 @@
 }
 
 .site-footer {
-  margin-top: 2rem;
+  margin-top: auto;
   border-top: 1px solid rgba(194, 163, 133, 0.6);
   background: linear-gradient(180deg, rgba(245, 245, 220, 0.94) 0%, rgba(238, 225, 206, 0.98) 100%);
   color: var(--color-texto);
@@ -1508,12 +1515,31 @@ th {
   color: var(--color-texto);
   border: 1px solid transparent;
   text-decoration: none;
+  position: relative;
 }
 
 .home-top-icon-link svg {
   width: 22px;
   height: 22px;
   display: block;
+}
+
+.home-top-icon-link.logged-in {
+  border-color: rgba(25, 130, 74, 0.5);
+  background: rgba(25, 130, 74, 0.08);
+  border-radius: 999px;
+}
+
+.home-top-icon-link.logged-in::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #19824a;
+  box-shadow: 0 0 0 2px rgba(245, 245, 220, 1);
 }
 
 .home-top-navbar-links {
@@ -1711,6 +1737,28 @@ th {
 .contact-form .btn[disabled] {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.admin-login-card {
+  width: min(520px, 100%);
+  margin-inline: auto;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-login-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-login-header h1,
+.admin-login-header p {
+  margin: 0;
+}
+
+.admin-login-form {
+  display: grid;
+  gap: 0.8rem;
 }
 
 @media (max-width: 900px) {

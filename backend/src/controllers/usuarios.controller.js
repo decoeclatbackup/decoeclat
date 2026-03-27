@@ -16,7 +16,7 @@ export const usuariosController = {
             const nuevoUsuario = await usuariosService.registrarUsuario(req.body);
             return res.status(201).json(nuevoUsuario);
         } catch (error) {
-            return res.status(500).json({ error: "Error al crear el usuario" });
+            return res.status(400).json({ error: error.message });
         }
     },
 

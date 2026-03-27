@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { authService } from '../../features/auth/services/authService'
 
 const ADMIN_TABS = [
   { to: '/admin/home', label: 'Admin Home' },
@@ -12,6 +14,13 @@ const QUICK_LINKS = [
 ]
 
 export default function AdminNavbar() {
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    authService.logout()
+    navigate('/admin/login', { replace: true })
+  }
+
   return (
     <nav className="admin-navbar" aria-label="Navegacion administrativa">
       <div className="admin-navbar-tabs">
@@ -36,6 +45,9 @@ export default function AdminNavbar() {
             {link.label}
           </NavLink>
         ))}
+        <button type="button" className="admin-quick-link" onClick={handleLogout}>
+          Cerrar sesion
+        </button>
       </div>
     </nav>
   )

@@ -33,6 +33,23 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
     return window.matchMedia('(max-width: 900px)').matches
   })
   const closeTimerRef = useRef(null)
+  const adminAccount = (() => {
+    if (typeof window === 'undefined') return '/admin/login'
+    const token = localStorage.getItem('authToken')
+    const rawUser = localStorage.getItem('authUser')
+
+    if (!token || !rawUser) {
+      return { path: '/admin/login', isLoggedIn: false }
+    }
+
+    try {
+      const user = JSON.parse(rawUser)
+      const isLoggedIn = Number(user?.rol) === 1
+      return { path: isLoggedIn ? '/admin/home' : '/admin/login', isLoggedIn }
+    } catch {
+      return { path: '/admin/login', isLoggedIn: false }
+    }
+  })()
 
   useEffect(() => {
     setDraftSearchValue(searchValue || '')
@@ -206,7 +223,12 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
         <Link to="/" className="home-top-brand">DECO ECLAT</Link>
 
         <div className="home-top-actions" aria-label="Accesos rápidos">
-          <Link to="/catalogo" className="home-top-icon-link" aria-label="Cuenta">
+          <Link
+            to={adminAccount.path}
+            className={`home-top-icon-link ${adminAccount.isLoggedIn ? 'logged-in' : ''}`}
+            aria-label={adminAccount.isLoggedIn ? 'Cuenta admin conectada' : 'Iniciar sesion admin'}
+            title={adminAccount.isLoggedIn ? 'Admin conectado' : 'Iniciar sesion admin'}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M12 12.3a4.15 4.15 0 1 1 0-8.3a4.15 4.15 0 0 1 0 8.3Zm0 1.8c-4.2 0-7.6 2.62-7.6 5.85c0 .5.4.9.9.9h13.4c.5 0 .9-.4.9-.9c0-3.23-3.4-5.85-7.6-5.85Zm0-1.8a2.35 2.35 0 1 0 0-4.7a2.35 2.35 0 0 0 0 4.7Zm0 3.6c3.05 0 5.5 1.7 5.77 3.15H6.23c.27-1.45 2.72-3.15 5.77-3.15Z"

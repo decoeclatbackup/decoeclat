@@ -7,13 +7,13 @@ export function MainLayout({navbar, children }) {
   const isAdminRoute = pathname.startsWith('/admin')
 
   return (
-    <>
+    <div className="app-page">
       {navbar ? <div className="app-topbar">{navbar}</div> : null}
       <main className="app-shell">
         <section className="content">{children}</section>
       </main>
       <SiteFooter />
       {!isAdminRoute ? <FloatingWhatsAppButton /> : null}
-    </>
+    </div>
   )
 }

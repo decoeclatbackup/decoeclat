@@ -6,8 +6,17 @@ import jwt from "jsonwebtoken";
 
 export const usuariosService = {
     login: async (email, contrasenia) => {
+        if (!email || !contrasenia) {
+            throw new Error("Email y contraseña son obligatorios");
+        }
+
         const usuario = await usuariosRepository.findByEmail(email);
         if (!usuario) throw new Error("Credenciales inválidas");
+
+        // Modelo cerrado: solo administradores pueden ingresar al panel.
+        if (Number(usuario.rol_id) !== 1) {
+            throw new Error("Acceso denegado. Solo administradores.");
+        }
 
         const esValida = await bcrypt.compare(contrasenia, usuario.contrasenia);
         if (!esValida) throw new Error("Credenciales inválidas");
@@ -25,11 +34,28 @@ export const usuariosService = {
     },
 
     registrarUsuario: async (datos) => {
+        if (!datos) {
+            throw new Error("No se recibieron datos del usuario");
+        }
+
+        const required = ["nombre", "email", "contrasenia"];
+        for (const field of required) {
+            if (!datos[field]) {
+                throw new Error(`${field} es obligatorio`);
+            }
+        }
+
+        const existeUsuario = await usuariosRepository.findByEmail(datos.email);
+        if (existeUsuario) {
+            throw new Error("El correo electrónico ya está registrado");
+        }
+
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(datos.contrasenia, saltRounds);
         
         return await usuariosRepository.create({ 
             ...datos, 
+            rol_id: 1,
             contrasenia: hashedPassword 
         });
     },

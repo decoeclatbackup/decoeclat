@@ -177,7 +177,7 @@ CREATE TABLE "usuarios" (
 INSERT INTO "usuarios" (nombre, email, contrasenia, rol_id) 
 VALUES (
   'Dueño Decoeclat', 
-  'admin@decoeclat.com.ar', 
+  'decoeclatbackup@gmail.com', 
   '$2b$10$9ZIQ0LSO6/66o49/DX3NFOIUTI0kDN3OfJikeN7VH4HM.O963TjqS', -- Hash para 'admin123'
   1 -- Rol de Administrador
 );
@@ -191,7 +191,6 @@ INSERT INTO "roles" (descripcion)
 VALUES 
   ('Administrador'), -- Será ID 1
   ('Vendedor'),      -- Será ID 2
-  ('Depósito');      -- Será ID 3
 
 ALTER TABLE "productos" ADD FOREIGN KEY ("categoria_id") REFERENCES "categorias" ("categoria_id");
 

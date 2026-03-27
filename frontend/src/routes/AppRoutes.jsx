@@ -1,18 +1,49 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ProductAdminPage, ProductCatalogPage, ProductDetailPage } from '../features/products/pages/pages'
 import { CartPage } from '../features/carrito/pages/pages'
 import { VentasAdminPage } from '../features/ventas/pages/pages'
 import { ContactPage, HomeAdminPage, HomePublicPage } from '../features/home/pages/pages'
+import { AdminLoginPage } from '../features/auth/pages/pages'
+import { authService } from '../features/auth/services/authService'
+
+function RequireAdminAuth({ children }) {
+  const location = useLocation()
+
+  if (!authService.isAdminAuthenticated()) {
+    return <Navigate to="/admin/login" replace state={{ from: location }} />
+  }
+
+  return children
+}
+
+function AdminGuestOnly({ children }) {
+  if (authService.isAdminAuthenticated()) {
+    return <Navigate to="/admin/home" replace />
+  }
+
+  return children
+}
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePublicPage />} />
 
+      <Route
+        path="/admin/login"
+        element={(
+          <AdminGuestOnly>
+            <AdminLoginPage />
+          </AdminGuestOnly>
+        )}
+      />
+
+      <Route path="/admin" element={<Navigate replace to="/admin/home" />} />
+
       {/* 1. La vista del Admin */}
-      <Route path="/admin/home" element={<HomeAdminPage />} />
-      <Route path="/admin/productos" element={<ProductAdminPage />} />
-      <Route path="/admin/ventas" element={<VentasAdminPage />} />
+      <Route path="/admin/home" element={<RequireAdminAuth><HomeAdminPage /></RequireAdminAuth>} />
+      <Route path="/admin/productos" element={<RequireAdminAuth><ProductAdminPage /></RequireAdminAuth>} />
+      <Route path="/admin/ventas" element={<RequireAdminAuth><VentasAdminPage /></RequireAdminAuth>} />
 
       {/* 2. La vista del Cliente (Catálogo General) */}
       <Route path="/catalogo" element={<ProductCatalogPage />} />

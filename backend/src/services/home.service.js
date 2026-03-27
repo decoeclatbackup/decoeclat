@@ -18,13 +18,35 @@ export const homeService = {
     },
 
     async addProductoHome(producto_id, orden = 0) {
+        const normalizedProductoId = Number(producto_id);
+        const normalizedOrden = Number(orden || 0);
+
+        if (!Number.isInteger(normalizedProductoId) || normalizedProductoId <= 0) {
+            throw new Error("Debes seleccionar un producto válido");
+        }
+
         // Validar que el producto existe
-        const productoExists = await homeRepository.checkProductoExists(producto_id);
+        const productoExists = await homeRepository.checkProductoExists(normalizedProductoId);
         if (!productoExists) {
             throw new Error("Producto no encontrado");
         }
 
-        return await homeRepository.addProductoHome(producto_id, orden);
+        const existente = await homeRepository.findProductoHomeByProductoId(normalizedProductoId);
+        if (existente?.activo) {
+            throw new Error("Este producto ya está destacado");
+        }
+
+        if (existente && !existente.activo) {
+            return await homeRepository.updateProductoHome(existente.home_id, {
+                activo: true,
+                orden: Number.isFinite(normalizedOrden) ? normalizedOrden : 0,
+            });
+        }
+
+        return await homeRepository.addProductoHome(
+            normalizedProductoId,
+            Number.isFinite(normalizedOrden) ? normalizedOrden : 0
+        );
     },
 
     async updateProductoHome(home_id, updates) {

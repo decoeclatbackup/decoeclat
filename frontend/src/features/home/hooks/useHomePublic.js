@@ -87,7 +87,7 @@ export function useHomePublic() {
 
           return {
             ...banner,
-            imageUrl: isMobileViewport ? mobileImage || desktopImage : desktopImage || mobileImage,
+            imageUrl: isMobileViewport ? mobileImage : desktopImage,
           }
         })
         .filter((banner) => Boolean(banner.imageUrl)),
