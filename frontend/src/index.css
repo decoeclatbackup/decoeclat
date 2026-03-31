@@ -27,4 +27,5 @@ body {
   min-width: 320px;
   background: var(--color-hueso);
   color: var(--color-texto);
+  overflow-x: hidden;
 }

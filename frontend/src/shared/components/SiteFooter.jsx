@@ -19,11 +19,6 @@ export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
-        <div className="site-footer-brand">
-          <h2>DECO ECLAT</h2>
-          <p>Textiles y deco para transformar tus espacios.</p>
-        </div>
-
         <nav className="site-footer-nav" aria-label="Enlaces de pie de pagina">
           <Link to="/">Inicio</Link>
           <Link to="/catalogo">Catalogo</Link>
@@ -31,8 +26,12 @@ export default function SiteFooter() {
           <Link to="/carrito">Carrito</Link>
         </nav>
 
+        <div className="site-footer-brand">
+          <h2>DECO ECLAT</h2>
+          <p>Textiles y deco para transformar tus espacios.</p>
+        </div>
+
         <div className="site-footer-contact">
-          <p>Atencion personalizada.</p>
           <div className="site-footer-social">
             {whatsappLink ? (
               <a

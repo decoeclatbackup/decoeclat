@@ -151,6 +151,43 @@ export function HomePublicPage() {
           </div>
         )}
       </section>
+
+      <section className="home-public-values" aria-label="Valores de la marca">
+        <div className="home-public-values-grid">
+          <article className="home-public-value-card">
+            <div className="home-public-value-icon" aria-hidden="true">
+              <img src="/valores/maquina-costura.webp" alt="" loading="lazy" decoding="async" />
+            </div>
+            <h3>Calidad garantizada</h3>
+            <p>
+              Seleccionamos textiles y terminaciones que resisten el uso diario, para que cada producto te
+              acompañe por mucho tiempo.
+            </p>
+          </article>
+
+          <article className="home-public-value-card">
+            <div className="home-public-value-icon" aria-hidden="true">
+              <img src="/valores/manos-corazon.webp" alt="" loading="lazy" decoding="async" />
+            </div>
+            <h3>Transparencia</h3>
+            <p>
+              Trabajamos de forma cercana y clara en cada etapa, para que sepas que estas llevando y como fue
+              hecho.
+            </p>
+          </article>
+
+          <article className="home-public-value-card">
+            <div className="home-public-value-icon" aria-hidden="true">
+              <img src="/valores/corazon.webp" alt="" loading="lazy" decoding="async" />
+            </div>
+            <h3>Familia</h3>
+            <p>
+              Somos un proyecto familiar donde cada detalle se piensa con dedicacion, cercania y una mirada
+              calida del hogar.
+            </p>
+          </article>
+        </div>
+      </section>
     </MainLayout>
   )
 }
