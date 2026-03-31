@@ -98,7 +98,10 @@ export function useHomePublic() {
     () =>
       productosDestacados.map((item) => ({
         ...item,
+        imagen_principal: resolveImageUrl(item?.imagen_principal),
+        imagen_secundaria: resolveImageUrl(item?.imagen_secundaria),
         imagenPrincipal: resolveImageUrl(item?.imagen_principal),
+        imagenSecundaria: resolveImageUrl(item?.imagen_secundaria),
       })),
     [productosDestacados]
   )

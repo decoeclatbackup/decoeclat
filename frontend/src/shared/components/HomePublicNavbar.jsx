@@ -28,6 +28,8 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
   const [internalCategories, setInternalCategories] = useState([])
   const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
+  const [mobileMenuView, setMobileMenuView] = useState('main')
+  const [mobileActiveCategory, setMobileActiveCategory] = useState(null)
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.matchMedia('(max-width: 900px)').matches
@@ -111,6 +113,16 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
   }, [categories])
 
   const categoryTree = useMemo(() => buildCategoryTree(internalCategories), [internalCategories])
+  const orderedCategoryTree = useMemo(() => {
+    const items = [...categoryTree]
+    items.sort((a, b) => {
+      const aHasChildren = a.children.length > 0 ? 1 : 0
+      const bHasChildren = b.children.length > 0 ? 1 : 0
+      if (aHasChildren !== bHasChildren) return bHasChildren - aHasChildren
+      return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+    })
+    return items
+  }, [categoryTree])
 
   function clearCloseTimer() {
     if (closeTimerRef.current) {
@@ -158,12 +170,16 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
   function handleCategoryClick() {
     setIsProductsMenuOpen(false)
     setIsMobileNavOpen(false)
+    setMobileMenuView('main')
+    setMobileActiveCategory(null)
   }
 
   function handleNavLinkClick() {
     if (!isMobileViewport) return
     setIsProductsMenuOpen(false)
     setIsMobileNavOpen(false)
+    setMobileMenuView('main')
+    setMobileActiveCategory(null)
   }
 
   function handleMobileMenuToggle() {
@@ -172,9 +188,41 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
       const nextValue = !prev
       if (!nextValue) {
         setIsProductsMenuOpen(false)
+        setMobileMenuView('main')
+        setMobileActiveCategory(null)
       }
       return nextValue
     })
+  }
+
+  function handleCloseMobileMenu() {
+    if (!isMobileViewport) return
+    setIsMobileNavOpen(false)
+    setIsProductsMenuOpen(false)
+    setMobileMenuView('main')
+    setMobileActiveCategory(null)
+  }
+
+  function handleOpenMobileProducts() {
+    if (!isMobileViewport) return
+    setMobileMenuView('products')
+    setMobileActiveCategory(null)
+  }
+
+  function handleOpenMobileSubcategories(category) {
+    if (!isMobileViewport || !category?.children?.length) return
+    setMobileActiveCategory(category)
+    setMobileMenuView('subcategory')
+  }
+
+  function handleMobileBackToMain() {
+    setMobileMenuView('main')
+    setMobileActiveCategory(null)
+  }
+
+  function handleMobileBackToProducts() {
+    setMobileMenuView('products')
+    setMobileActiveCategory(null)
   }
 
   function handleSubmit(event) {
@@ -248,100 +296,223 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
         </div>
       </div>
 
+      {isMobileViewport && isMobileNavOpen ? (
+        <button
+          type="button"
+          className="home-top-mobile-backdrop"
+          aria-label="Cerrar menu"
+          onClick={handleCloseMobileMenu}
+        />
+      ) : null}
+
       <div className="home-top-navbar-links">
-        <form className="home-top-search home-top-search-mobile" onSubmit={handleSubmit}>
-          <input
-            type="search"
-            name="name-mobile"
-            value={draftSearchValue}
-            onChange={(event) => setDraftSearchValue(event.target.value)}
-            placeholder="Buscar productos"
-            aria-label="Buscar productos"
-          />
-          <button type="submit" aria-label="Buscar">
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="home-top-search-icon">
-              <path
-                d="M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13Zm0 1.8a4.7 4.7 0 1 1 0 9.4a4.7 4.7 0 0 1 0-9.4Zm5.54 10.97l3.43 3.43a.9.9 0 1 1-1.27 1.27l-3.43-3.43a.9.9 0 0 1 1.27-1.27Z"
-                fill="currentColor"
+        {isMobileViewport ? (
+          <>
+            <form className="home-top-search home-top-search-mobile" onSubmit={handleSubmit}>
+              <input
+                type="search"
+                name="name-mobile"
+                value={draftSearchValue}
+                onChange={(event) => setDraftSearchValue(event.target.value)}
+                placeholder="Buscar productos"
+                aria-label="Buscar productos"
               />
-            </svg>
-          </button>
-        </form>
+              <button type="submit" aria-label="Buscar">
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="home-top-search-icon">
+                  <path
+                    d="M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13Zm0 1.8a4.7 4.7 0 1 1 0 9.4a4.7 4.7 0 0 1 0-9.4Zm5.54 10.97l3.43 3.43a.9.9 0 1 1-1.27 1.27l-3.43-3.43a.9.9 0 0 1 1.27-1.27Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+            </form>
 
-        <NavLink
-          to="/"
-          end
-          className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleNavLinkClick}
-        >
-          Inicio
-        </NavLink>
+            {mobileMenuView === 'main' ? (
+              <>
+                <NavLink
+                  to="/"
+                  end
+                  className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
+                  onClick={handleNavLinkClick}
+                >
+                  Inicio
+                </NavLink>
 
-        <div
-          className="home-top-nav-item products"
-          onMouseEnter={handleProductsMouseEnter}
-          onMouseLeave={handleProductsMouseLeave}
-          onBlur={handleProductsBlur}
-        >
-          <div className="home-top-products-trigger">
+                <button
+                  type="button"
+                  className="home-top-nav-link home-top-mobile-products-entry"
+                  onClick={handleOpenMobileProducts}
+                  aria-expanded={mobileMenuView === 'products'}
+                >
+                  <span>Productos</span>
+                  <span className="home-top-mobile-arrow" aria-hidden="true">→</span>
+                </button>
+
+                <NavLink
+                  to="/contacto"
+                  className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
+                  onClick={handleNavLinkClick}
+                >
+                  Personalizado
+                </NavLink>
+              </>
+            ) : null}
+
+            {mobileMenuView === 'products' ? (
+              <div className="home-top-mobile-products-panel" role="menu" aria-label="Categorias de productos">
+                <div className="home-top-mobile-products-header">
+                  <button
+                    type="button"
+                    className="home-top-mobile-back-btn"
+                    onClick={handleMobileBackToMain}
+                    aria-label="Volver"
+                  >
+                    ←
+                  </button>
+                  <span>Productos</span>
+                </div>
+
+                <Link to="/catalogo" className="home-top-mobile-products-link" onClick={handleCategoryClick}>
+                  Ver todo
+                </Link>
+
+                {orderedCategoryTree.map((category) => (
+                  category.children.length > 0 ? (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className="home-top-mobile-products-link with-arrow"
+                      onClick={() => handleOpenMobileSubcategories(category)}
+                    >
+                      <span>{category.name}</span>
+                      <span className="home-top-mobile-arrow" aria-hidden="true">→</span>
+                    </button>
+                  ) : (
+                    <Link
+                      key={category.id}
+                      to={`/categoria/${category.id}`}
+                      className="home-top-mobile-products-link"
+                      onClick={handleCategoryClick}
+                    >
+                      {category.name}
+                    </Link>
+                  )
+                ))}
+              </div>
+            ) : null}
+
+            {mobileMenuView === 'subcategory' && mobileActiveCategory ? (
+              <div className="home-top-mobile-products-panel" role="menu" aria-label={`Subcategorias de ${mobileActiveCategory.name}`}>
+                <div className="home-top-mobile-products-header">
+                  <button
+                    type="button"
+                    className="home-top-mobile-back-btn"
+                    onClick={handleMobileBackToProducts}
+                    aria-label="Volver a productos"
+                  >
+                    ←
+                  </button>
+                  <span>{mobileActiveCategory.name}</span>
+                </div>
+
+                <Link
+                  to={`/categoria/${mobileActiveCategory.id}`}
+                  className="home-top-mobile-products-link"
+                  onClick={handleCategoryClick}
+                >
+                  Ver todo
+                </Link>
+
+                {mobileActiveCategory.children.map((child) => (
+                  <Link
+                    key={child.id}
+                    to={`/categoria/${child.id}`}
+                    className="home-top-mobile-products-link"
+                    onClick={handleCategoryClick}
+                  >
+                    {child.name}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <>
             <NavLink
-              to="/catalogo"
+              to="/"
+              end
               className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
               onClick={handleNavLinkClick}
             >
-              Productos
+              Inicio
             </NavLink>
-            <button
-              type="button"
-              className="home-top-products-toggle"
-              aria-label="Ver categorias"
-              aria-expanded={isProductsMenuOpen}
-              onClick={handleMobileProductsToggle}
-            >
-              ▾
-            </button>
-          </div>
 
-          {categoryTree.length > 0 ? (
             <div
-              className={`home-top-products-menu ${isProductsMenuOpen ? 'open' : ''}`}
-              role="menu"
-              aria-label="Categorias de productos"
+              className="home-top-nav-item products"
               onMouseEnter={handleProductsMouseEnter}
               onMouseLeave={handleProductsMouseLeave}
+              onBlur={handleProductsBlur}
             >
-              {categoryTree.map((category) => (
-                <div key={category.id} className="home-top-products-group">
-                  <Link to={`/categoria/${category.id}`} className="home-top-products-parent" onClick={handleCategoryClick}>
-                    {category.name}
-                  </Link>
-                  {category.children.length > 0 ? (
-                    <div className="home-top-products-children">
-                      {category.children.map((child) => (
-                        <Link
-                          key={child.id}
-                          to={`/categoria/${child.id}`}
-                          className="home-top-products-child"
-                          onClick={handleCategoryClick}
-                        >
-                          {child.name}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+              <div className="home-top-products-trigger">
+                <NavLink
+                  to="/catalogo"
+                  className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
+                  onClick={handleNavLinkClick}
+                >
+                  Productos
+                </NavLink>
+                <button
+                  type="button"
+                  className="home-top-products-toggle"
+                  aria-label="Ver categorias"
+                  aria-expanded={isProductsMenuOpen}
+                  onClick={handleMobileProductsToggle}
+                >
+                  ▾
+                </button>
+              </div>
 
-        <NavLink
-          to="/contacto"
-          className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleNavLinkClick}
-        >
-          Personalizado
-        </NavLink>
+              <div
+                className={`home-top-products-menu ${isProductsMenuOpen ? 'open' : ''}`}
+                style={{ '--desktop-products-columns': String(Math.max(orderedCategoryTree.length, 1)) }}
+                role="menu"
+                aria-label="Categorias de productos"
+                onMouseEnter={handleProductsMouseEnter}
+                onMouseLeave={handleProductsMouseLeave}
+              >
+                {orderedCategoryTree.map((category) => (
+                  <div key={category.id} className="home-top-products-group">
+                    <Link to={`/categoria/${category.id}`} className="home-top-products-parent" onClick={handleCategoryClick}>
+                      {category.name}
+                    </Link>
+                    {category.children.length > 0 ? (
+                      <div className="home-top-products-children">
+                        {category.children.map((child) => (
+                          <Link
+                            key={child.id}
+                            to={`/categoria/${child.id}`}
+                            className="home-top-products-child"
+                            onClick={handleCategoryClick}
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <NavLink
+              to="/contacto"
+              className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
+              onClick={handleNavLinkClick}
+            >
+              Personalizado
+            </NavLink>
+          </>
+        )}
       </div>
     </nav>
   )

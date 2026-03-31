@@ -11,11 +11,69 @@ function buildBannerTarget(banner) {
   return '/catalogo'
 }
 
+function FeaturedCard({ item, className = '', onQuickBuy, addingToCart }) {
+  return (
+    <article className={`home-public-featured-card ${className}`.trim()}>
+      <Link
+        to={`/producto/${item.producto_id}`}
+        className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''}`}
+      >
+        {item.imagen_principal ? (
+          <div className="home-public-featured-media-stack">
+            <img
+              className="home-public-featured-media-image primary"
+              src={item.imagen_principal}
+              alt={item.nombre}
+            />
+            {item.imagen_secundaria ? (
+              <img
+                className="home-public-featured-media-image secondary"
+                src={item.imagen_secundaria}
+                alt={`${item.nombre} vista alternativa`}
+              />
+            ) : null}
+          </div>
+        ) : (
+          <div className="home-public-featured-placeholder">Sin imagen</div>
+        )}
+      </Link>
+      <div className="home-public-featured-body">
+        <h3>{item.nombre}</h3>
+        <div className="home-public-featured-footer">
+          <div className="home-public-featured-price">
+            {item.precio_oferta ? (
+              <>
+                <span className="original-price">${Number(item.precio).toFixed(2)}</span>
+                <span className="offer-price">${Number(item.precio_oferta).toFixed(2)}</span>
+              </>
+            ) : (
+              <span className="current-price">${Number(item.precio).toFixed(2)}</span>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn home-public-featured-buy-btn"
+            onClick={(e) => onQuickBuy(e, item)}
+            disabled={addingToCart}
+          >
+            {addingToCart ? 'Agregando...' : 'Comprar'}
+          </button>
+        </div>
+      </div>
+    </article>
+  )
+}
+
 export function HomePublicPage() {
   const navigate = useNavigate()
   const { banners, featuredProducts, categories, loading, error } = useHomePublic()
   const { handleAddToCart, loading: addingToCart } = useCarrito()
   const [activeBannerIndex, setActiveBannerIndex] = useState(0)
+  const [isMobileFeatured, setIsMobileFeatured] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(max-width: 575px)').matches
+  })
+  const [featuredCarouselIndex, setFeaturedCarouselIndex] = useState(0)
 
   const safeActiveBannerIndex = useMemo(() => {
     if (banners.length === 0) return 0
@@ -41,6 +99,25 @@ export function HomePublicPage() {
     setActiveBannerIndex(0)
   }, [activeBannerIndex, banners.length])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const mediaQuery = window.matchMedia('(max-width: 575px)')
+    const handleChange = (event) => {
+      setIsMobileFeatured(event.matches)
+    }
+
+    setIsMobileFeatured(mediaQuery.matches)
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+
+    mediaQuery.addListener(handleChange)
+    return () => mediaQuery.removeListener(handleChange)
+  }, [])
+
   const handleNavbarSearch = (searchValue) => {
     const query = new URLSearchParams()
     if (searchValue?.trim()) {
@@ -61,6 +138,37 @@ export function HomePublicPage() {
     } catch (err) {
       console.error('Error al agregar al carrito:', err)
     }
+  }
+
+  const featuredSlides = useMemo(() => {
+    const slides = []
+    for (let i = 0; i < featuredProducts.length; i += 2) {
+      slides.push(featuredProducts.slice(i, i + 2))
+    }
+    return slides
+  }, [featuredProducts])
+
+  const isFeaturedCarousel = isMobileFeatured && featuredSlides.length > 0
+  const canNavigateFeatured = featuredSlides.length > 1
+
+  useEffect(() => {
+    if (featuredSlides.length === 0 || !isMobileFeatured) {
+      setFeaturedCarouselIndex(0)
+      return
+    }
+
+    if (featuredCarouselIndex < featuredSlides.length) return
+    setFeaturedCarouselIndex(featuredSlides.length - 1)
+  }, [featuredCarouselIndex, featuredSlides.length, isMobileFeatured])
+
+  const handleFeaturedPrev = () => {
+    if (!canNavigateFeatured) return
+    setFeaturedCarouselIndex((prev) => Math.max(prev - 1, 0))
+  }
+
+  const handleFeaturedNext = () => {
+    if (!canNavigateFeatured) return
+    setFeaturedCarouselIndex((prev) => Math.min(prev + 1, featuredSlides.length - 1))
   }
 
   return (
@@ -112,41 +220,78 @@ export function HomePublicPage() {
 
         {featuredProducts.length === 0 ? (
           <p className="home-public-featured-empty">No hay productos destacados activos por ahora.</p>
+        ) : isFeaturedCarousel ? (
+          <div className="home-public-featured-carousel" aria-label="Carrusel de productos destacados">
+            <div className="home-public-featured-carousel-main">
+              {canNavigateFeatured ? (
+                <button
+                  type="button"
+                  className="home-public-featured-nav prev"
+                  onClick={handleFeaturedPrev}
+                  aria-label="Producto destacado anterior"
+                >
+                  ‹
+                </button>
+              ) : null}
+
+              <div className="home-public-featured-viewport">
+                <div
+                  className="home-public-featured-track"
+                  style={{ transform: `translateX(-${featuredCarouselIndex * 100}%)` }}
+                >
+                  {featuredSlides.map((slide, slideIndex) => (
+                    <div key={`featured-slide-${slideIndex}`} className="home-public-featured-carousel-item">
+                      <div className="home-public-featured-slide-grid">
+                        {slide.map((item) => (
+                          <FeaturedCard
+                            key={item.home_id}
+                            item={item}
+                            className="is-carousel-item"
+                            onQuickBuy={handleQuickBuy}
+                            addingToCart={addingToCart}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {canNavigateFeatured ? (
+                <button
+                  type="button"
+                  className="home-public-featured-nav next"
+                  onClick={handleFeaturedNext}
+                  aria-label="Siguiente producto destacado"
+                >
+                  ›
+                </button>
+              ) : null}
+            </div>
+
+            {canNavigateFeatured ? (
+              <div className="home-public-featured-carousel-dots" role="tablist" aria-label="Seleccionar producto destacado">
+                {featuredSlides.map((_, index) => (
+                  <button
+                    key={`featured-dot-${index}`}
+                    type="button"
+                    className={`home-public-featured-carousel-dot ${index === featuredCarouselIndex ? 'active' : ''}`}
+                    onClick={() => setFeaturedCarouselIndex(index)}
+                    aria-label={`Slide de productos ${index + 1}`}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
         ) : (
           <div className="home-public-featured-grid">
             {featuredProducts.map((item) => (
-              <article key={item.home_id} className="home-public-featured-card">
-                <Link to={`/producto/${item.producto_id}`} className="home-public-featured-media">
-                  {item.imagen_principal ? (
-                    <img src={item.imagen_principal} alt={item.nombre} />
-                  ) : (
-                    <div className="home-public-featured-placeholder">Sin imagen</div>
-                  )}
-                </Link>
-                <div className="home-public-featured-body">
-                  <h3>{item.nombre}</h3>
-                  <div className="home-public-featured-footer">
-                    <div className="home-public-featured-price">
-                      {item.precio_oferta ? (
-                        <>
-                          <span className="original-price">${Number(item.precio).toFixed(2)}</span>
-                          <span className="offer-price">${Number(item.precio_oferta).toFixed(2)}</span>
-                        </>
-                      ) : (
-                        <span className="current-price">${Number(item.precio).toFixed(2)}</span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn home-public-featured-buy-btn"
-                      onClick={(e) => handleQuickBuy(e, item)}
-                      disabled={addingToCart}
-                    >
-                      {addingToCart ? 'Agregando...' : 'Comprar'}
-                    </button>
-                  </div>
-                </div>
-              </article>
+              <FeaturedCard
+                key={item.home_id}
+                item={item}
+                onQuickBuy={handleQuickBuy}
+                addingToCart={addingToCart}
+              />
             ))}
           </div>
         )}
