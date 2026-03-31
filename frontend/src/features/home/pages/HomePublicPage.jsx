@@ -125,24 +125,26 @@ export function HomePublicPage() {
                 </Link>
                 <div className="home-public-featured-body">
                   <h3>{item.nombre}</h3>
-                  <div className="home-public-featured-price">
-                    {item.precio_oferta ? (
-                      <>
-                        <span className="original-price">${Number(item.precio).toFixed(2)}</span>
-                        <span className="offer-price">${Number(item.precio_oferta).toFixed(2)}</span>
-                      </>
-                    ) : (
-                      <span className="current-price">${Number(item.precio).toFixed(2)}</span>
-                    )}
+                  <div className="home-public-featured-footer">
+                    <div className="home-public-featured-price">
+                      {item.precio_oferta ? (
+                        <>
+                          <span className="original-price">${Number(item.precio).toFixed(2)}</span>
+                          <span className="offer-price">${Number(item.precio_oferta).toFixed(2)}</span>
+                        </>
+                      ) : (
+                        <span className="current-price">${Number(item.precio).toFixed(2)}</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn home-public-featured-buy-btn"
+                      onClick={(e) => handleQuickBuy(e, item)}
+                      disabled={addingToCart}
+                    >
+                      {addingToCart ? 'Agregando...' : 'Comprar'}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="btn home-public-featured-buy-btn"
-                    onClick={(e) => handleQuickBuy(e, item)}
-                    disabled={addingToCart}
-                  >
-                    {addingToCart ? 'Agregando...' : 'Comprar'}
-                  </button>
                 </div>
               </article>
             ))}

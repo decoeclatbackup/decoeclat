@@ -340,7 +340,7 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
           className={({ isActive }) => `home-top-nav-link ${isActive ? 'active' : ''}`}
           onClick={handleNavLinkClick}
         >
-          Contacto
+          Personalizado
         </NavLink>
       </div>
     </nav>
