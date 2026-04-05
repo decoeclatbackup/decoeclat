@@ -2349,6 +2349,114 @@ th {
   height: 18px;
 }
 
+.home-top-search-suggestions {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  display: grid;
+  background: var(--color-hueso);
+  border: 1px solid rgba(194, 163, 133, 0.78);
+  box-shadow: 0 14px 24px rgba(42, 38, 30, 0.16);
+  z-index: 1600;
+  max-height: min(56vh, 320px);
+  overflow-y: auto;
+}
+
+.home-top-search-suggestion-item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  color: var(--color-texto);
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(194, 163, 133, 0.35);
+}
+
+.home-top-search-suggestion-thumb {
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(194, 163, 133, 0.55);
+  background: rgba(194, 163, 133, 0.12);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.home-top-search-suggestion-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.home-top-search-suggestion-image-fallback {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(35, 69, 75, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-align: center;
+  line-height: 1.15;
+  padding: 0 3px;
+}
+
+.home-top-search-suggestion-text {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.home-top-search-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.home-top-search-suggestion-item:hover {
+  background: rgba(194, 163, 133, 0.16);
+}
+
+.home-top-search-suggestion-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.home-top-search-suggestion-category {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(35, 69, 75, 0.75);
+}
+
+.home-top-search-suggestion-price {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #23454b;
+}
+
+.home-top-search-suggestion-price-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.home-top-search-suggestion-price-old {
+  font-size: 0.74rem;
+  color: rgba(35, 69, 75, 0.72);
+  text-decoration: line-through;
+}
+
+.home-top-search-suggestions-empty {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(35, 69, 75, 0.8);
+}
+
 .home-top-brand {
   position: static;
   transform: none;

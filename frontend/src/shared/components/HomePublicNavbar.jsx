@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { homePublicService } from '../../features/home/services/homePublicService'
 import { carritoServices } from '../../features/carrito/services/carritoService'
+import { formatCurrency } from '../utils/utils'
 
 const CART_UPDATED_EVENT = 'decoeclat:cart-updated'
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 const CATEGORY_DISPLAY_ORDER = [
   'textiles',
   'kids',
@@ -19,6 +21,14 @@ function normalizeCategoryName(value) {
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase()
+}
+
+function resolveImageUrl(url) {
+  if (!url) return null
+  if (/^https?:\/\//i.test(url)) return url
+  if (API_BASE_URL) return `${API_BASE_URL}${url}`
+  if (url.startsWith('/uploads')) return `http://localhost:4000${url}`
+  return url
 }
 
 function getItemsCount(carrito) {
@@ -52,6 +62,9 @@ function buildCategoryTree(categories) {
 export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, categories = [] }) {
   const [draftSearchValue, setDraftSearchValue] = useState(searchValue)
   const [internalCategories, setInternalCategories] = useState([])
+  const [searchSuggestions, setSearchSuggestions] = useState([])
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false)
   const [cartItemsCount, setCartItemsCount] = useState(0)
   const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
@@ -85,6 +98,39 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
   }, [searchValue])
 
   useEffect(() => {
+    const term = String(draftSearchValue || '').trim()
+    if (term.length < 2) {
+      setSearchSuggestions([])
+      setIsSearchingSuggestions(false)
+      return undefined
+    }
+
+    let cancelled = false
+    const timeoutId = window.setTimeout(async () => {
+      setIsSearchingSuggestions(true)
+      try {
+        const items = await homePublicService.searchProductsByName(term, 6)
+        if (!cancelled) {
+          setSearchSuggestions(items)
+        }
+      } catch {
+        if (!cancelled) {
+          setSearchSuggestions([])
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSearchingSuggestions(false)
+        }
+      }
+    }, 220)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [draftSearchValue])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return undefined
 
     const mediaQuery = window.matchMedia('(max-width: 900px)')
@@ -108,6 +154,26 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
   useEffect(() => () => {
     if (closeTimerRef.current) {
       window.clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (event.target?.closest?.('.home-top-search')) return
+      setIsSearchFocused(false)
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setIsSearchFocused(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
     }
   }, [])
 
@@ -304,10 +370,73 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
   function handleSubmit(event) {
     event.preventDefault()
     onSearchSubmit?.(draftSearchValue)
+    setIsSearchFocused(false)
     if (isMobileViewport) {
       setIsMobileNavOpen(false)
       setIsProductsMenuOpen(false)
     }
+  }
+
+  function handleSearchSuggestionClick() {
+    setIsSearchFocused(false)
+    setIsProductsMenuOpen(false)
+    if (isMobileViewport) {
+      setIsMobileNavOpen(false)
+      setMobileMenuView('main')
+      setMobileActiveCategory(null)
+    }
+  }
+
+  function renderSearchSuggestions() {
+    const hasEnoughCharacters = String(draftSearchValue || '').trim().length >= 2
+    const shouldRender = isSearchFocused && hasEnoughCharacters && (isSearchingSuggestions || searchSuggestions.length > 0)
+    if (!shouldRender) return null
+
+    return (
+      <div className="home-top-search-suggestions" role="listbox" aria-label="Sugerencias de productos">
+        {isSearchingSuggestions ? (
+          <p className="home-top-search-suggestions-empty">Buscando...</p>
+        ) : (
+          searchSuggestions.map((product) => (
+            <Link
+              key={product.producto_id}
+              to={`/producto/${product.producto_id}`}
+              className="home-top-search-suggestion-item"
+              onClick={handleSearchSuggestionClick}
+            >
+              <span className="home-top-search-suggestion-thumb" aria-hidden="true">
+                {resolveImageUrl(product.imagen_principal) ? (
+                  <img
+                    src={resolveImageUrl(product.imagen_principal)}
+                    alt={product.nombre}
+                    className="home-top-search-suggestion-image"
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className="home-top-search-suggestion-image-fallback">Sin imagen</span>
+                )}
+              </span>
+              <span className="home-top-search-suggestion-text">
+                <span className="home-top-search-suggestion-name">{product.nombre}</span>
+                {product.categoria ? (
+                  <span className="home-top-search-suggestion-category">{product.categoria}</span>
+                ) : null}
+                {Number(product.finalPrice) > 0 ? (
+                  product.hasOffer && Number(product.basePrice) > Number(product.finalPrice) ? (
+                    <span className="home-top-search-suggestion-price-group">
+                      <span className="home-top-search-suggestion-price-old">{formatCurrency(product.basePrice)}</span>
+                      <span className="home-top-search-suggestion-price">{formatCurrency(product.finalPrice)}</span>
+                    </span>
+                  ) : (
+                    <span className="home-top-search-suggestion-price">{formatCurrency(product.finalPrice)}</span>
+                  )
+                ) : null}
+              </span>
+            </Link>
+          ))
+        )}
+      </div>
+    )
   }
 
   return (
@@ -330,7 +459,11 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
             type="search"
             name="name"
             value={draftSearchValue}
-            onChange={(event) => setDraftSearchValue(event.target.value)}
+            onChange={(event) => {
+              setDraftSearchValue(event.target.value)
+              setIsSearchFocused(true)
+            }}
+            onFocus={() => setIsSearchFocused(true)}
             placeholder="Buscar"
             aria-label="Buscar productos"
           />
@@ -342,6 +475,7 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
               />
             </svg>
           </button>
+          {renderSearchSuggestions()}
         </form>
 
         <Link to="/" className="home-top-brand">DECO ECLAT</Link>
@@ -394,7 +528,11 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
                 type="search"
                 name="name-mobile"
                 value={draftSearchValue}
-                onChange={(event) => setDraftSearchValue(event.target.value)}
+                onChange={(event) => {
+                  setDraftSearchValue(event.target.value)
+                  setIsSearchFocused(true)
+                }}
+                onFocus={() => setIsSearchFocused(true)}
                 placeholder="Buscar productos"
                 aria-label="Buscar productos"
               />
@@ -406,6 +544,7 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
                   />
                 </svg>
               </button>
+              {renderSearchSuggestions()}
             </form>
 
             {mobileMenuView === 'main' ? (
