@@ -104,7 +104,7 @@ export function ContactPage() {
       <section className="card contact-page">
         <div className="contact-page-header">
           <p className="kicker">Contacto</p>
-          <h1>Armemos tu decoriación</h1>
+          <h1>Armemos tu decoración</h1>
           <p>
             Completa el formulario con tu consulta para ayudarte con telas, medidas y recomendaciones para tu espacio.
           </p>
