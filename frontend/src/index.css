@@ -8,10 +8,7 @@
   line-height: 1.45;
   font-weight: 400;
   color: var(--color-texto);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(194, 163, 133, 0.22) 0%, transparent 35%),
-    radial-gradient(circle at 95% 15%, rgba(194, 163, 133, 0.2) 0%, transparent 33%),
-    var(--color-hueso);
+  background: #e9ebea;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -25,7 +22,7 @@
 body {
   margin: 0;
   min-width: 320px;
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
   overflow-x: hidden;
 }

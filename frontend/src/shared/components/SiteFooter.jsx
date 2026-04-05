@@ -28,7 +28,7 @@ export default function SiteFooter() {
 
         <div className="site-footer-brand">
           <h2>DECO ECLAT</h2>
-          <p>Textiles y deco para transformar tus espacios.</p>
+          <p>Deco y asesoramiento personalizado.</p>
         </div>
 
         <div className="site-footer-contact">
