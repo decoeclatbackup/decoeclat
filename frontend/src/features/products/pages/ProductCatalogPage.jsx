@@ -7,6 +7,14 @@ import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 
 const PRODUCTS_BATCH_SIZE = 9
 const CATALOG_VIEW_STATE_KEY = 'decoeclat:catalog-view-state'
+const CATALOG_VIEW_STATE_MAX_AGE_MS = 30 * 60 * 1000
+
+function normalizePathname(pathname) {
+  const value = String(pathname || '').trim()
+  if (!value) return '/'
+  if (value.length === 1) return value
+  return value.replace(/\/+$/, '')
+}
 
 function toList(value) {
   if (Array.isArray(value)) return value.map(String)
@@ -32,6 +40,7 @@ export function ProductCatalogPage() {
   const [isMobileFiltersSheetOpen, setIsMobileFiltersSheetOpen] = useState(false)
   const [mobileFiltersSheetMode, setMobileFiltersSheetMode] = useState('filters')
   const [pendingRestoreScrollY, setPendingRestoreScrollY] = useState(null)
+  const [pendingRestoreProductId, setPendingRestoreProductId] = useState(null)
   const skipNextProductsResetRef = useRef(false)
 
   const {
@@ -154,6 +163,17 @@ export function ProductCatalogPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    const previousMode = window.history.scrollRestoration
+    window.history.scrollRestoration = 'manual'
+
+    return () => {
+      window.history.scrollRestoration = previousMode
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
     let parsed = null
     try {
       const raw = sessionStorage.getItem(CATALOG_VIEW_STATE_KEY)
@@ -162,15 +182,19 @@ export function ProductCatalogPage() {
       parsed = null
     }
 
-    const currentPath = `${location.pathname}${location.search}`
+    const currentPath = `${normalizePathname(location.pathname)}${location.search}`
+    const parsedPath = `${normalizePathname(parsed?.pathname)}${parsed?.search || ''}`
+    const savedAt = Number(parsed?.savedAt || 0)
+    const isExpired = !Number.isFinite(savedAt) || (Date.now() - savedAt) > CATALOG_VIEW_STATE_MAX_AGE_MS
 
-    if (!parsed || parsed.path !== currentPath) {
+    if (!parsed || parsedPath !== currentPath || isExpired) {
       sessionStorage.removeItem(CATALOG_VIEW_STATE_KEY)
       return
     }
 
     const savedVisibleCount = Number(parsed.visibleCount)
     const savedScrollY = Number(parsed.scrollY)
+    const savedProductId = Number(parsed.productId)
 
     if (Number.isFinite(savedVisibleCount) && savedVisibleCount > PRODUCTS_BATCH_SIZE) {
       skipNextProductsResetRef.current = true
@@ -179,6 +203,10 @@ export function ProductCatalogPage() {
 
     if (Number.isFinite(savedScrollY) && savedScrollY >= 0) {
       setPendingRestoreScrollY(savedScrollY)
+    }
+
+    if (Number.isFinite(savedProductId) && savedProductId > 0) {
+      setPendingRestoreProductId(savedProductId)
     }
   }, [location.pathname, location.search])
 
@@ -200,8 +228,16 @@ export function ProductCatalogPage() {
 
       const isCloseEnough = Math.abs(window.scrollY - targetTop) <= 2
       if (isCloseEnough || attempts >= maxAttempts) {
+        if (!isCloseEnough && pendingRestoreProductId) {
+          const anchor = document.querySelector(`[data-catalog-product-id="${pendingRestoreProductId}"]`)
+          if (anchor && typeof anchor.scrollIntoView === 'function') {
+            anchor.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' })
+          }
+        }
+
         sessionStorage.removeItem(CATALOG_VIEW_STATE_KEY)
         setPendingRestoreScrollY(null)
+        setPendingRestoreProductId(null)
         return
       }
 
@@ -217,7 +253,7 @@ export function ProductCatalogPage() {
         window.cancelAnimationFrame(rafId)
       }
     }
-  }, [loading, pendingRestoreScrollY, visibleCount, products.length])
+  }, [loading, pendingRestoreProductId, pendingRestoreScrollY, visibleCount, products.length])
 
   useEffect(() => {
     if (!isMobileFiltersSheetOpen) return undefined
@@ -268,13 +304,16 @@ export function ProductCatalogPage() {
     closeMobileFiltersSheet()
   }
 
-  function handleProductNavigate() {
+  function handleProductNavigate(productId) {
     if (typeof window === 'undefined') return
 
     const viewState = {
-      path: `${location.pathname}${location.search}`,
+      pathname: normalizePathname(location.pathname),
+      search: location.search,
       visibleCount,
       scrollY: window.scrollY,
+      productId: Number(productId) || null,
+      savedAt: Date.now(),
     }
 
     sessionStorage.setItem(CATALOG_VIEW_STATE_KEY, JSON.stringify(viewState))

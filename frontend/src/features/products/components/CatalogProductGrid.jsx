@@ -63,7 +63,8 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
             key={product.producto_id}
             to={`/producto/${product.producto_id}`}
             className="catalog-card-link"
-            onClick={() => onProductNavigate?.()}
+            data-catalog-product-id={product.producto_id}
+            onClick={() => onProductNavigate?.(product.producto_id)}
           >
             <article className="home-public-featured-card catalog-product-card">
               <div
