@@ -2010,7 +2010,7 @@ table select {
   padding: 0.55rem 0.85rem;
   border: 1px solid rgba(194, 163, 133, 0.75);
   border-radius: 2px;
-  background: var(--color-hueso);
+  background: rgba(194, 163, 133, 0.18);
   color: var(--color-texto);
   font-weight: 800;
   cursor: pointer;
@@ -3895,6 +3895,7 @@ table select {
   .catalog-nav-link {
     width: 100%;
     justify-content: center;
+    color: var(--color-texto);
   }
 
   .catalog-nav-parent-row .catalog-nav-link {
@@ -3918,6 +3919,14 @@ table select {
     min-width: 100%;
     box-shadow: none;
     background: #f8fbfb;
+  }
+
+  .catalog-submenu-link {
+    color: var(--color-texto);
+  }
+
+  .catalog-submenu-link.active {
+    color: var(--color-texto);
   }
 
   .catalog-navbar-search {
@@ -4177,10 +4186,17 @@ table select {
     width: 100%;
   }
 
+  .home-top-search-mobile input {
+    background: #e9ebea;
+    color: var(--color-texto);
+    border-color: rgba(194, 163, 133, 0.74);
+  }
+
   .home-top-nav-link {
     width: 100%;
     padding: 0.65rem 0.25rem;
     border-bottom: 1px solid rgba(194, 163, 133, 0.35);
+    color: var(--color-texto);
   }
 
   .home-top-products-trigger {
