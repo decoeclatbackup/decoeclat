@@ -183,6 +183,8 @@ export function HomePublicPage() {
 
   return (
     <MainLayout
+      title="Inicio | Textiles, fundas y deco"
+      description="Descubri textiles, fundas y accesorios deco para cada ambiente. Compra online en DECOECLAT con envios a todo el pais."
       navbar={(
         <HomePublicNavbar
           categories={categories}

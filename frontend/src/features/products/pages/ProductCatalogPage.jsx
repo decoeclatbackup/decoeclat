@@ -69,6 +69,9 @@ export function ProductCatalogPage() {
     : 'Catalogo de Productos'
 
   const pageSubtitle = 'Explora productos activos por categoria o nombre'
+  const seoDescription = currentCategory
+    ? `Explora ${currentCategory.nombre} en DECOECLAT: textiles, disenos y medidas para decorar tu hogar.`
+    : 'Explora el catalogo de DECOECLAT con textiles, fundas y deco para todos los ambientes.'
 
   const activeFilters = useMemo(() => {
     const chips = []
@@ -325,7 +328,7 @@ export function ProductCatalogPage() {
   return (
     <MainLayout
       title={pageTitle}
-      subtitle={pageSubtitle}
+      description={seoDescription}
       navbar={(
         <HomePublicNavbar
           categories={categories}

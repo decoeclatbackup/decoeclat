@@ -229,6 +229,9 @@ export function CartPage() {
 
   return (
     <MainLayout
+      title="Carrito"
+      description="Revisa tu carrito y finaliza tu compra en DECOECLAT."
+      noIndex
       navbar={
         <HomePublicNavbar
           searchValue=""

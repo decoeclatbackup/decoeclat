@@ -199,6 +199,13 @@ export function ProductDetailPage() {
   const offerPrice = Number(selectedVariant?.precio_oferta ?? 0)
   const isOnOffer = Boolean(selectedVariant?.en_oferta) && offerPrice > 0
   const productDescription = String(product?.descripcion || '').trim()
+  const seoTitle = product?.nombre
+    ? `${product.nombre} | ${product.categoria || 'Producto'}`
+    : 'Detalle de producto'
+  const seoDescription = productDescription
+    ? productDescription.slice(0, 160)
+    : `Compra ${String(product?.nombre || 'este producto')} en DECOECLAT. Encontra medidas, disenos y precios actualizados.`
+  const seoImage = selectedImageUrl || resolveImage(product) || null
 
   async function onAddToCartClick() {
     if (!selectedVariantId || !hasStock) return
@@ -269,6 +276,9 @@ export function ProductDetailPage() {
 
   return (
     <MainLayout
+      title={seoTitle}
+      description={seoDescription}
+      image={seoImage}
       navbar={(
         <HomePublicNavbar
           categories={categories}

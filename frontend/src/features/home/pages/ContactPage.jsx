@@ -92,6 +92,8 @@ export function ContactPage() {
 
   return (
     <MainLayout
+      title="Contacto | Pedido personalizado"
+      description="Contactate con DECOECLAT para pedidos personalizados de textiles, medidas y asesoramiento por WhatsApp."
       navbar={(
         <HomePublicNavbar
           searchValue=""
