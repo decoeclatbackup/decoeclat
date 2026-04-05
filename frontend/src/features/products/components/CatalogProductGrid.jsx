@@ -22,7 +22,7 @@ function resolveSecondaryImage(product) {
   )
 }
 
-export function CatalogProductGrid({ products, loading }) {
+export function CatalogProductGrid({ products, loading, onProductNavigate }) {
   const { handleAddToCart } = useCarrito()
   const [addingProductId, setAddingProductId] = useState(null)
 
@@ -59,7 +59,12 @@ export function CatalogProductGrid({ products, loading }) {
         const secondaryImage = resolveSecondaryImage(product)
         const hasStock = Number(product?.stock ?? 0) > 0
         return (
-          <Link key={product.producto_id} to={`/producto/${product.producto_id}`} className="catalog-card-link">
+          <Link
+            key={product.producto_id}
+            to={`/producto/${product.producto_id}`}
+            className="catalog-card-link"
+            onClick={() => onProductNavigate?.()}
+          >
             <article className="home-public-featured-card catalog-product-card">
               <div
                 className={`home-public-featured-media ${secondaryImage ? 'has-secondary' : ''} ${productImage ? '' : 'catalog-product-media-placeholder'}`}

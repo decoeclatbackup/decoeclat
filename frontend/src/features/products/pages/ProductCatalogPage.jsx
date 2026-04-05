@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import { CatalogProductGrid, CatalogSidebar } from '../components/components'
 import { useProductCatalog } from '../hooks/useProductCatalog'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 
 const PRODUCTS_BATCH_SIZE = 9
+const CATALOG_VIEW_STATE_KEY = 'decoeclat:catalog-view-state'
 
 function toList(value) {
   if (Array.isArray(value)) return value.map(String)
@@ -24,10 +26,13 @@ function buildMobileDraftFilters(sourceFilters) {
 }
 
 export function ProductCatalogPage() {
+  const location = useLocation()
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_BATCH_SIZE)
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [isMobileFiltersSheetOpen, setIsMobileFiltersSheetOpen] = useState(false)
   const [mobileFiltersSheetMode, setMobileFiltersSheetMode] = useState('filters')
+  const [pendingRestoreScrollY, setPendingRestoreScrollY] = useState(null)
+  const skipNextProductsResetRef = useRef(false)
 
   const {
     products,
@@ -138,8 +143,56 @@ export function ProductCatalogPage() {
   }, [filters, isMobileFiltersSheetOpen, sortOrder])
 
   useEffect(() => {
+    if (skipNextProductsResetRef.current) {
+      skipNextProductsResetRef.current = false
+      return
+    }
+
     setVisibleCount(PRODUCTS_BATCH_SIZE)
   }, [products])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    let parsed = null
+    try {
+      const raw = sessionStorage.getItem(CATALOG_VIEW_STATE_KEY)
+      parsed = raw ? JSON.parse(raw) : null
+    } catch {
+      parsed = null
+    }
+
+    const currentPath = `${location.pathname}${location.search}`
+
+    if (!parsed || parsed.path !== currentPath) {
+      sessionStorage.removeItem(CATALOG_VIEW_STATE_KEY)
+      return
+    }
+
+    const savedVisibleCount = Number(parsed.visibleCount)
+    const savedScrollY = Number(parsed.scrollY)
+
+    if (Number.isFinite(savedVisibleCount) && savedVisibleCount > PRODUCTS_BATCH_SIZE) {
+      skipNextProductsResetRef.current = true
+      setVisibleCount(savedVisibleCount)
+    }
+
+    if (Number.isFinite(savedScrollY) && savedScrollY >= 0) {
+      setPendingRestoreScrollY(savedScrollY)
+    }
+  }, [location.pathname, location.search])
+
+  useEffect(() => {
+    if (pendingRestoreScrollY == null || loading) return
+
+    const rafId = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: pendingRestoreScrollY, left: 0, behavior: 'auto' })
+      sessionStorage.removeItem(CATALOG_VIEW_STATE_KEY)
+      setPendingRestoreScrollY(null)
+    })
+
+    return () => window.cancelAnimationFrame(rafId)
+  }, [loading, pendingRestoreScrollY, visibleCount, products.length])
 
   useEffect(() => {
     if (!isMobileFiltersSheetOpen) return undefined
@@ -188,6 +241,18 @@ export function ProductCatalogPage() {
     setFilters(mobileDraftFilters)
     setSortOrder(mobileDraftSortOrder)
     closeMobileFiltersSheet()
+  }
+
+  function handleProductNavigate() {
+    if (typeof window === 'undefined') return
+
+    const viewState = {
+      path: `${location.pathname}${location.search}`,
+      visibleCount,
+      scrollY: window.scrollY,
+    }
+
+    sessionStorage.setItem(CATALOG_VIEW_STATE_KEY, JSON.stringify(viewState))
   }
 
   const mobileSelectedSizeIds = toList(mobileDraftFilters.sizeId)
@@ -413,7 +478,11 @@ export function ProductCatalogPage() {
             </div>
           ) : null}
 
-          <CatalogProductGrid products={visibleProducts} loading={loading} />
+          <CatalogProductGrid
+            products={visibleProducts}
+            loading={loading}
+            onProductNavigate={handleProductNavigate}
+          />
 
           {!loading && hasMoreProducts ? (
             <div className="catalog-load-more">
