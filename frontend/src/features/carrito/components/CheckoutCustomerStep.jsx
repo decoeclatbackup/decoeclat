@@ -1,11 +1,4 @@
-function formatPrice(value) {
-  const amount = Number(value) || 0
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-  }).format(amount)
-}
+import { formatCurrency } from '../../../shared/utils/utils'
 
 export function CheckoutCustomerStep({
   formData,
@@ -34,7 +27,7 @@ export function CheckoutCustomerStep({
 
       <div className="checkout-step-resumen">
         <span>{itemsCount} {itemsCount === 1 ? 'producto' : 'productos'}</span>
-        <strong>Total: {formatPrice(total)}</strong>
+        <strong>Total: {formatCurrency(total)}</strong>
       </div>
 
       <form className="checkout-client-form" onSubmit={onSubmit}>

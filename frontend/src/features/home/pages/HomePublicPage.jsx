@@ -4,6 +4,7 @@ import { MainLayout } from '../../../layouts/layouts'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { useHomePublic } from '../hooks/useHomePublic'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
+import { formatCurrency } from '../../../shared/utils/utils'
 
 function buildBannerTarget(banner) {
   if (banner?.producto_id) return `/producto/${banner.producto_id}`
@@ -11,7 +12,9 @@ function buildBannerTarget(banner) {
   return '/catalogo'
 }
 
-function FeaturedCard({ item, className = '', onQuickBuy, addingToCart }) {
+function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
+  const hasStock = Number(item?.stock ?? 0) > 0
+
   return (
     <article className={`home-public-featured-card ${className}`.trim()}>
       <Link
@@ -43,21 +46,25 @@ function FeaturedCard({ item, className = '', onQuickBuy, addingToCart }) {
           <div className="home-public-featured-price">
             {item.precio_oferta ? (
               <>
-                <span className="original-price">${Number(item.precio).toFixed(2)}</span>
-                <span className="offer-price">${Number(item.precio_oferta).toFixed(2)}</span>
+                <span className="original-price">{formatCurrency(item.precio)}</span>
+                <span className="offer-price">{formatCurrency(item.precio_oferta)}</span>
               </>
             ) : (
-              <span className="current-price">${Number(item.precio).toFixed(2)}</span>
+              <span className="current-price">{formatCurrency(item.precio)}</span>
             )}
           </div>
-          <button
-            type="button"
-            className="btn home-public-featured-buy-btn"
-            onClick={(e) => onQuickBuy(e, item)}
-            disabled={addingToCart}
-          >
-            {addingToCart ? 'Agregando...' : 'Comprar'}
-          </button>
+          {hasStock ? (
+            <button
+              type="button"
+              className="btn home-public-featured-buy-btn"
+              onClick={(e) => onQuickBuy(e, item)}
+              disabled={isAdding}
+            >
+              {isAdding ? 'Agregando...' : 'Comprar'}
+            </button>
+          ) : (
+            <span className="home-public-featured-stock-label">Sin stock</span>
+          )}
         </div>
       </div>
     </article>
@@ -67,7 +74,8 @@ function FeaturedCard({ item, className = '', onQuickBuy, addingToCart }) {
 export function HomePublicPage() {
   const navigate = useNavigate()
   const { banners, featuredProducts, categories, loading, error } = useHomePublic()
-  const { handleAddToCart, loading: addingToCart } = useCarrito()
+  const { handleAddToCart } = useCarrito()
+  const [addingProductId, setAddingProductId] = useState(null)
   const [activeBannerIndex, setActiveBannerIndex] = useState(0)
   const [isMobileFeatured, setIsMobileFeatured] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -133,10 +141,12 @@ export function HomePublicPage() {
       return
     }
     try {
+      setAddingProductId(item.producto_id)
       await handleAddToCart(item.variante_id, 1)
-      navigate('/carrito')
     } catch (err) {
       console.error('Error al agregar al carrito:', err)
+    } finally {
+      setAddingProductId(null)
     }
   }
 
@@ -223,7 +233,7 @@ export function HomePublicPage() {
         ) : isFeaturedCarousel ? (
           <div className="home-public-featured-carousel" aria-label="Carrusel de productos destacados">
             <div className="home-public-featured-carousel-main">
-              {canNavigateFeatured ? (
+              {!isMobileFeatured && canNavigateFeatured ? (
                 <button
                   type="button"
                   className="home-public-featured-nav prev"
@@ -248,7 +258,7 @@ export function HomePublicPage() {
                             item={item}
                             className="is-carousel-item"
                             onQuickBuy={handleQuickBuy}
-                            addingToCart={addingToCart}
+                            isAdding={addingProductId === item.producto_id}
                           />
                         ))}
                       </div>
@@ -257,7 +267,7 @@ export function HomePublicPage() {
                 </div>
               </div>
 
-              {canNavigateFeatured ? (
+              {!isMobileFeatured && canNavigateFeatured ? (
                 <button
                   type="button"
                   className="home-public-featured-nav next"
@@ -267,9 +277,30 @@ export function HomePublicPage() {
                   ›
                 </button>
               ) : null}
+
+              {isMobileFeatured && canNavigateFeatured ? (
+                <div className="home-public-featured-carousel-controls" aria-label="Navegar productos destacados">
+                  <button
+                    type="button"
+                    className="home-public-featured-nav prev"
+                    onClick={handleFeaturedPrev}
+                    aria-label="Producto destacado anterior"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    className="home-public-featured-nav next"
+                    onClick={handleFeaturedNext}
+                    aria-label="Siguiente producto destacado"
+                  >
+                    ›
+                  </button>
+                </div>
+              ) : null}
             </div>
 
-            {canNavigateFeatured ? (
+            {!isMobileFeatured && canNavigateFeatured ? (
               <div className="home-public-featured-carousel-dots" role="tablist" aria-label="Seleccionar producto destacado">
                 {featuredSlides.map((_, index) => (
                   <button
@@ -290,7 +321,7 @@ export function HomePublicPage() {
                 key={item.home_id}
                 item={item}
                 onQuickBuy={handleQuickBuy}
-                addingToCart={addingToCart}
+                isAdding={addingProductId === item.producto_id}
               />
             ))}
           </div>

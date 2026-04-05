@@ -1,10 +1,4 @@
-function formatMoney(value) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0))
-}
+import { formatCurrency } from '../../../shared/utils/utils'
 
 export function ProductsTable({
   products,
@@ -61,9 +55,9 @@ export function ProductsTable({
                       </div>
                     </td>
                   ) : null}
-                  <td>{formatMoney(product.precio)}</td>
+                  <td>{formatCurrency(product.precio)}</td>
                   <td>{product.enOferta ? 'Si' : 'No'}</td>
-                  <td>{product.enOferta ? formatMoney(product.precioOferta) : '-'}</td>
+                  <td>{product.enOferta ? formatCurrency(product.precioOferta) : '-'}</td>
                   <td>{Number(product.stock ?? 0)}</td>
                   {!isClient ? (
                     <td>

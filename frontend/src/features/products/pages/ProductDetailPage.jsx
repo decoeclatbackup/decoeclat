@@ -1,20 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import { productServices } from '../services/productServices'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
-
-function formatMoney(value) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0))
-}
+import { formatCurrency } from '../../../shared/utils/utils'
 
 function getVariantSizeLabel(variant) {
   return variant?.size || variant?.Size || variant?.valor || `${variant?.size_id || '-'}`
+}
+
+function resolveImage(product) {
+  return (
+    product?.imagen_principal ||
+    product?.imagenPrincipal ||
+    product?.imageUrl ||
+    product?.url ||
+    null
+  )
 }
 
 export function ProductDetailPage() {
@@ -31,8 +34,12 @@ export function ProductDetailPage() {
   const [categories, setCategories] = useState([])
   const [variants, setVariants] = useState([])
   const [images, setImages] = useState([])
+  const [recommendedProducts, setRecommendedProducts] = useState([])
+  const [loadingRecommended, setLoadingRecommended] = useState(false)
 
   const [selectedVariantId, setSelectedVariantId] = useState(null)
+  const [selectedSizeId, setSelectedSizeId] = useState(null)
+  const [selectedRelleno, setSelectedRelleno] = useState(false)
   const [selectedImageUrl, setSelectedImageUrl] = useState(null)
   const [quantity, setQuantity] = useState(1)
 
@@ -71,6 +78,8 @@ export function ProductDetailPage() {
         const defaultVariant = safeVariants.find((variant) => Number(variant.stock ?? 0) > 0) || safeVariants[0] || null
         const defaultVariantId = defaultVariant?.variante_id || null
         setSelectedVariantId(defaultVariantId)
+        setSelectedSizeId(defaultVariant?.size_id || null)
+        setSelectedRelleno(Boolean(defaultVariant?.relleno))
 
         const variantImages = defaultVariantId
           ? safeImages.filter((image) => Number(image.variante_id) === Number(defaultVariantId))
@@ -102,6 +111,54 @@ export function ProductDetailPage() {
     () => variants.find((variant) => Number(variant.variante_id) === Number(selectedVariantId)) || null,
     [variants, selectedVariantId]
   )
+
+  const sizeOptions = useMemo(() => {
+    const bySizeId = new Map()
+    variants.forEach((variant) => {
+      const sizeId = Number(variant?.size_id)
+      if (!Number.isInteger(sizeId) || bySizeId.has(sizeId)) return
+      bySizeId.set(sizeId, {
+        sizeId,
+        label: getVariantSizeLabel(variant),
+      })
+    })
+    return Array.from(bySizeId.values())
+  }, [variants])
+
+  const rellenoOptions = useMemo(() => {
+    if (!selectedSizeId) return []
+    const options = new Set()
+    variants
+      .filter((variant) => Number(variant?.size_id) === Number(selectedSizeId))
+      .forEach((variant) => options.add(Boolean(variant?.relleno)))
+    return Array.from(options.values())
+  }, [selectedSizeId, variants])
+
+  useEffect(() => {
+    if (!selectedVariant) return
+    setSelectedSizeId(selectedVariant.size_id || null)
+    setSelectedRelleno(Boolean(selectedVariant.relleno))
+  }, [selectedVariant])
+
+  function selectVariantByAttributes(nextSizeId, nextRelleno) {
+    const exactVariant = variants.find(
+      (variant) => Number(variant?.size_id) === Number(nextSizeId) && Boolean(variant?.relleno) === Boolean(nextRelleno)
+    )
+
+    if (exactVariant) {
+      setSelectedVariantId(exactVariant.variante_id)
+      setSelectedSizeId(nextSizeId)
+      setSelectedRelleno(Boolean(nextRelleno))
+      return
+    }
+
+    const sameSizeVariant = variants.find((variant) => Number(variant?.size_id) === Number(nextSizeId))
+    if (sameSizeVariant) {
+      setSelectedVariantId(sameSizeVariant.variante_id)
+      setSelectedSizeId(nextSizeId)
+      setSelectedRelleno(Boolean(sameSizeVariant.relleno))
+    }
+  }
 
   const visibleImages = useMemo(() => {
     if (!selectedVariantId) return images
@@ -168,6 +225,48 @@ export function ProductDetailPage() {
     navigate(`/catalogo${query.toString() ? `?${query.toString()}` : ''}`)
   }
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadRecommendedProducts() {
+      const categoryId = Number(product?.categoria_id)
+      const currentProductId = Number(product?.producto_id)
+
+      if (!Number.isInteger(categoryId) || categoryId <= 0 || !Number.isInteger(currentProductId)) {
+        setRecommendedProducts([])
+        return
+      }
+
+      try {
+        setLoadingRecommended(true)
+
+        const categoryProducts = await productServices.list({ categoryId })
+        if (cancelled) return
+
+        const related = (Array.isArray(categoryProducts) ? categoryProducts : [])
+          .filter((item) => Number(item?.producto_id) !== currentProductId)
+          .filter((item) => Boolean(item?.activo))
+          .slice(0, 4)
+
+        setRecommendedProducts(related)
+      } catch {
+        if (!cancelled) {
+          setRecommendedProducts([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingRecommended(false)
+        }
+      }
+    }
+
+    loadRecommendedProducts()
+
+    return () => {
+      cancelled = true
+    }
+  }, [product?.categoria_id, product?.producto_id])
+
   return (
     <MainLayout
       navbar={(
@@ -182,9 +281,10 @@ export function ProductDetailPage() {
       {!loading && error ? <p className="alert">Error: {error}</p> : null}
 
       {!loading && !error && product ? (
-        <section className="product-detail-shell">
-          <article className="product-detail-card">
-            <section className="product-detail-gallery">
+        <>
+          <section className="product-detail-shell">
+            <article className="product-detail-card">
+              <section className="product-detail-gallery">
               <div className="product-detail-main-media">
                 {selectedImageUrl ? (
                   <img src={selectedImageUrl} alt={product.nombre} className="product-detail-main-image" />
@@ -193,35 +293,35 @@ export function ProductDetailPage() {
                 )}
               </div>
 
-              {visibleImages.length > 0 ? (
-                <div className="product-detail-thumbnails" role="list">
-                  {visibleImages.map((image) => (
-                    <button
-                      key={image.img_id}
-                      type="button"
-                      className={`product-thumb-btn ${selectedImageUrl === image.url ? 'active' : ''}`}
-                      onClick={() => setSelectedImageUrl(image.url)}
-                      aria-label="Ver imagen"
-                    >
-                      <img src={image.url} alt={product.nombre} className="product-thumb-img" />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </section>
+                {visibleImages.length > 0 ? (
+                  <div className="product-detail-thumbnails" role="list">
+                    {visibleImages.map((image) => (
+                      <button
+                        key={image.img_id}
+                        type="button"
+                        className={`product-thumb-btn ${selectedImageUrl === image.url ? 'active' : ''}`}
+                        onClick={() => setSelectedImageUrl(image.url)}
+                        aria-label="Ver imagen"
+                      >
+                        <img src={image.url} alt={product.nombre} className="product-thumb-img" />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
 
-            <section className="product-detail-info">
+              <section className="product-detail-info">
               <h1>{String(product.nombre || '').toUpperCase()}</h1>
               <span className="product-detail-tag">{String(product.categoria || 'Producto').toUpperCase()}</span>
 
               <div className="product-detail-price-block">
                 {isOnOffer ? (
                   <div className="product-detail-price-offer">
-                    <span className="product-detail-price-current">{formatMoney(offerPrice)}</span>
-                    <span className="product-detail-price-base">{formatMoney(basePrice)}</span>
+                    <span className="product-detail-price-current">{formatCurrency(offerPrice)}</span>
+                    <span className="product-detail-price-base">{formatCurrency(basePrice)}</span>
                   </div>
                 ) : (
-                  <span className="product-detail-price-current">{formatMoney(basePrice)}</span>
+                  <span className="product-detail-price-current">{formatCurrency(basePrice)}</span>
                 )}
               </div>
 
@@ -235,17 +335,45 @@ export function ProductDetailPage() {
               <section className="product-detail-box">
                 <p className="product-detail-box-title">Medidas disponibles:</p>
                 <div className="product-detail-sizes">
-                  {variants.map((variant) => (
+                  {sizeOptions.map((sizeOption) => (
                     <button
-                      key={variant.variante_id}
+                      key={sizeOption.sizeId}
                       type="button"
-                      className={`product-size-btn ${Number(selectedVariantId) === Number(variant.variante_id) ? 'active' : ''}`}
-                      onClick={() => setSelectedVariantId(variant.variante_id)}
+                      className={`product-size-btn ${Number(selectedSizeId) === Number(sizeOption.sizeId) ? 'active' : ''}`}
+                      onClick={() => selectVariantByAttributes(sizeOption.sizeId, selectedRelleno)}
                     >
-                      {getVariantSizeLabel(variant)}
+                      {sizeOption.label}
                     </button>
                   ))}
                 </div>
+
+                {rellenoOptions.length > 1 ? (
+                  <>
+                    <p className="product-detail-box-title">Relleno:</p>
+                    <div className="product-detail-sizes">
+                      {rellenoOptions.includes(false) ? (
+                        <button
+                          type="button"
+                          className={`product-size-btn ${selectedRelleno === false ? 'active' : ''}`}
+                          onClick={() => selectVariantByAttributes(selectedSizeId, false)}
+                        >
+                          Sin relleno
+                        </button>
+                      ) : null}
+
+                      {rellenoOptions.includes(true) ? (
+                        <button
+                          type="button"
+                          className={`product-size-btn ${selectedRelleno === true ? 'active' : ''}`}
+                          onClick={() => selectVariantByAttributes(selectedSizeId, true)}
+                        >
+                          Con relleno
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
+
                 <small className="product-detail-stock">
                   Stock disponible: {hasStock ? `${stock} unidades` : 'Sin stock'}
                 </small>
@@ -285,9 +413,58 @@ export function ProductDetailPage() {
 
               {cartMessage ? <p className="product-detail-feedback success">{cartMessage}</p> : null}
               {cartError ? <p className="product-detail-feedback error">{cartError}</p> : null}
+              </section>
+            </article>
+          </section>
+
+          {loadingRecommended || recommendedProducts.length > 0 ? (
+            <section className="product-detail-related">
+              <div className="home-public-section-heading">
+                <h2>Productos recomendados</h2>
+              </div>
+
+              {loadingRecommended ? (
+                <p>Cargando recomendados...</p>
+              ) : (
+                <div className="product-detail-related-grid">
+                  {recommendedProducts.map((relatedProduct) => {
+                    const imageUrl = resolveImage(relatedProduct)
+                    const price = Number(
+                      relatedProduct?.enOferta && relatedProduct?.precioOferta
+                        ? relatedProduct.precioOferta
+                        : relatedProduct?.precio || 0
+                    )
+
+                    return (
+                      <Link
+                        key={relatedProduct.producto_id}
+                        to={`/producto/${relatedProduct.producto_id}`}
+                        className="product-detail-related-card"
+                      >
+                        <div className="product-detail-related-image-wrap">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={relatedProduct.nombre}
+                              className="product-detail-related-image"
+                            />
+                          ) : (
+                            <div className="product-detail-related-placeholder">Sin imagen</div>
+                          )}
+                        </div>
+
+                        <div className="product-detail-related-body">
+                          <h3>{relatedProduct.nombre}</h3>
+                          <p>{formatCurrency(price)}</p>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </section>
-          </article>
-        </section>
+          ) : null}
+        </>
       ) : null}
     </MainLayout>
   )

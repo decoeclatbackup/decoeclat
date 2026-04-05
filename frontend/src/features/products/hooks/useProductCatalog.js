@@ -195,6 +195,7 @@ export function useProductCatalog() {
         currentCategory,
         selectedCategoryId,
         filters,
+        setFilters,
         loading,
         sortOrder,
         setSortOrder,

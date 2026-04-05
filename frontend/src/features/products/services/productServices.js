@@ -85,7 +85,11 @@ function normalizeVariantStocks(variantStocks = []) {
 	return variantStocks
 		.map((variant) => ({
 			sizeId: Number(variant?.sizeId ?? variant?.size_id),
+			relleno: Boolean(variant?.relleno),
 			stock: normalizeStockValue(variant?.stock, 0),
+			precio: Number(variant?.precio ?? variant?.price ?? 0),
+			precioOferta: Number(variant?.precioOferta ?? variant?.precio_oferta ?? 0),
+			enOferta: Boolean(variant?.enOferta ?? variant?.en_oferta),
 		}))
 		.filter((variant) => Number.isInteger(variant.sizeId) && variant.sizeId > 0)
 }
@@ -99,6 +103,7 @@ async function attachFirstVariant(product) {
 		variante_id: first?.variante_id || null,
 		size_id: first?.size_id || null,
 		tela_id: first?.tela_id || null,
+		relleno: Boolean(first?.relleno),
 		stock: first?.stock ?? 0,
 		precio: first?.precio || 0,
         precioOferta: first?.precio_oferta || null,
@@ -190,12 +195,19 @@ export const productServices = {
 
 			if (normalizedVariantStocks.length > 0) {
 				for (const variantStock of normalizedVariantStocks) {
+					const variantPrice = Number(variantStock.precio || payload.precio)
 					const createdVariant = await request('/api/variantes', {
 						method: 'POST',
 						body: JSON.stringify({
 							...commonVariantPayload,
 							sizeId: variantStock.sizeId,
+							relleno: variantStock.relleno,
 							stock: variantStock.stock,
+							precio: variantPrice,
+							precioOferta: variantStock.enOferta
+								? (Number(variantStock.precioOferta) || Number(payload.precioOferta) || null)
+								: null,
+							enOferta: variantStock.enOferta || Boolean(payload.enOferta),
 						}),
 					})
 
@@ -255,21 +267,30 @@ export const productServices = {
 
 		if (normalizedVariantStocks.length > 0) {
 			const existingVariants = await request('/api/variantes', {}, { productoId: payload.productId })
-			const existingBySizeId = new Map(
+			const existingBySizeAndRelleno = new Map(
 				(Array.isArray(existingVariants) ? existingVariants : []).map((variant) => [
-					Number(variant.size_id),
+					`${Number(variant.size_id)}-${Boolean(variant.relleno)}`,
 					variant,
 				])
 			)
 
 			for (const variantStock of normalizedVariantStocks) {
-				const existingVariant = existingBySizeId.get(variantStock.sizeId)
+				const existingVariant = existingBySizeAndRelleno.get(`${variantStock.sizeId}-${Boolean(variantStock.relleno)}`)
+				const variantPrice = Number(variantStock.precio || payload.precio)
+				const variantOfferEnabled = variantStock.enOferta || Boolean(payload.enOferta)
+				const variantOfferPrice = variantOfferEnabled
+					? (Number(variantStock.precioOferta) || Number(payload.precioOferta) || null)
+					: null
 
 				if (existingVariant?.variante_id) {
 					await request(`/api/variantes/${existingVariant.variante_id}`, {
 						method: 'PUT',
 						body: JSON.stringify({
-							...commonVariantUpdate,
+							telaId: Number(payload.telaId),
+							relleno: variantStock.relleno,
+							precio: variantPrice,
+							precioOferta: variantOfferPrice,
+							enOferta: variantOfferEnabled,
 							stock: variantStock.stock,
 						}),
 					})
@@ -285,8 +306,12 @@ export const productServices = {
 					body: JSON.stringify({
 						productoId: Number(payload.productId),
 						sizeId: variantStock.sizeId,
+						relleno: variantStock.relleno,
 						stock: variantStock.stock,
-						...commonVariantUpdate,
+						telaId: Number(payload.telaId),
+						precio: variantPrice,
+						precioOferta: variantOfferPrice,
+						enOferta: variantOfferEnabled,
 					}),
 				})
 

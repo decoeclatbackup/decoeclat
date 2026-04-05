@@ -14,22 +14,17 @@ function normalizeWhatsAppNumber(value) {
   return digits
 }
 
-function buildContactWhatsAppMessage({ consultaId, nombre, email, telefono, mensaje }) {
+function buildContactWhatsAppMessage({ consultaId, mensaje }) {
   return [
     '*PEDIDO PERSONALIZADO*',
     '',
-    `Nombre: ${nombre}`,
-    `Email: ${email}`,
-    `Teléfono: ${telefono}`,
+    consultaId ? `Consulta: #${consultaId}` : '',
     'Mensaje:',
     mensaje,
   ].filter(Boolean).join('\n')
 }
 
 const initialFormState = {
-  nombre: '',
-  email: '',
-  telefono: '',
   mensaje: '',
 }
 
@@ -115,42 +110,6 @@ export function ContactPage() {
 
         <form className="contact-form" onSubmit={handleSubmit}>
           <div className="contact-form-grid">
-            <label htmlFor="nombre">Nombre</label>
-            <input
-              id="nombre"
-              name="nombre"
-              type="text"
-              value={formValues.nombre}
-              onChange={handleInputChange}
-              required
-              autoComplete="name"
-              placeholder="Tu nombre"
-            />
-
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formValues.email}
-              onChange={handleInputChange}
-              required
-              autoComplete="email"
-              placeholder="tuemail@ejemplo.com"
-            />
-
-            <label htmlFor="telefono">Teléfono</label>
-            <input
-              id="telefono"
-              name="telefono"
-              type="tel"
-              value={formValues.telefono}
-              onChange={handleInputChange}
-              required
-              autoComplete="tel"
-              placeholder="+54 9 11 1234 5678"
-            />
-
             <label htmlFor="mensaje">Mensaje</label>
             <textarea
               id="mensaje"
@@ -164,7 +123,7 @@ export function ContactPage() {
           </div>
 
           <button type="submit" className="btn home-public-link-btn" disabled={isSubmitting}>
-            {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
+            {isSubmitting ? 'Enviando...' : 'Enviar mensaje por WhatsApp'}
           </button>
 
           {submitError ? (

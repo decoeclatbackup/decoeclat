@@ -1,11 +1,4 @@
-function formatPrice(value) {
-    const amount = Number(value) || 0;
-    return new Intl.NumberFormat("es-AR", {
-        style: "currency",
-        currency: "ARS",
-        minimumFractionDigits: 2,
-    }).format(amount);
-}
+import { formatCurrency } from '../../../shared/utils/utils'
 
 function resolveImageUrl(rawUrl) {
     if (!rawUrl) return null;
@@ -53,9 +46,9 @@ export function CartItem({ item, onRemove, onUpdate, disabled = false }) {
                     Cantidad: <span key={`qty-${cantidad}`} className="cart-item-qty-value cart-item-value-animated">{cantidad}</span>
                 </p>
                 {medida ? <p className="cart-item-meta">Medida: {medida}</p> : null}
-                <p className="cart-item-price">Precio unitario: {formatPrice(safeItem.precio)}</p>
+                <p className="cart-item-price">Precio unitario: {formatCurrency(safeItem.precio)}</p>
                 <p className="cart-item-subtotal">
-                    Subtotal: <span key={`subtotal-${subtotal}`} className="cart-item-value-animated">{formatPrice(subtotal)}</span>
+                    Subtotal: <span key={`subtotal-${subtotal}`} className="cart-item-value-animated">{formatCurrency(subtotal)}</span>
                 </p>
             </div>
 

@@ -1,12 +1,6 @@
+import { formatCurrency } from '../../../shared/utils/utils'
+
 // muestra el total del carrito y botones de accion (vaciar carrito, finalizar compra)
-function formatPrice(value) {
-    const amount = Number(value) || 0;
-    return new Intl.NumberFormat("es-AR", {
-        style: "currency",
-        currency: "ARS",
-        minimumFractionDigits: 2,
-    }).format(amount);
-}
 
 export function CartSummary({
     total,
@@ -20,7 +14,7 @@ export function CartSummary({
     return (
         <section className="cart-summary">
             <h2>Resumen del carrito</h2>
-            <p>Total: {formatPrice(totalNumber)}</p>
+            <p>Total: {formatCurrency(totalNumber)}</p>
             
             <div className="cart-summary-actions">
                 <button

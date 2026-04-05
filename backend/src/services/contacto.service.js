@@ -6,19 +6,17 @@ export const contactoService = {
       throw new Error("No se recibieron datos de contacto");
     }
 
-    const payload = {
-      nombre: data.nombre?.trim(),
-      email: data.email?.trim(),
-      telefono: data.telefono?.trim(),
-      mensaje: data.mensaje?.trim(),
-    };
-
-    const required = ["nombre", "email", "telefono", "mensaje"];
-    for (const field of required) {
-      if (!payload[field]) {
-        throw new Error(`${field} es obligatorio`);
-      }
+    const rawMensaje = data.mensaje?.trim();
+    if (!rawMensaje) {
+      throw new Error("mensaje es obligatorio");
     }
+
+    const payload = {
+      nombre: data.nombre?.trim() || "Consulta web",
+      email: data.email?.trim() || "sin-email@decoeclat.local",
+      telefono: data.telefono?.trim() || "No informado",
+      mensaje: rawMensaje,
+    };
 
     return await contactoRepository.create(payload);
   },

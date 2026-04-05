@@ -30,6 +30,14 @@ function normalizeStockValue(rawValue, fallback = 0) {
   return Math.trunc(parsed)
 }
 
+function normalizePriceValue(rawValue, fallback = 0) {
+  const parsed = Number(rawValue)
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return Math.max(0, Number(fallback) || 0)
+  }
+  return parsed
+}
+
 export function ProductForm({
   form,
   isEditing,
@@ -55,7 +63,7 @@ export function ProductForm({
   const [existingImagesDraft, setExistingImagesDraft] = useState([])
   const [removedExistingImageIds, setRemovedExistingImageIds] = useState([])
   const [existingOrderDrafts, setExistingOrderDrafts] = useState({})
-  const [multiSizeStocks, setMultiSizeStocks] = useState({})
+  const [multiSizeVariants, setMultiSizeVariants] = useState({})
   const [draggingExistingImageId, setDraggingExistingImageId] = useState(null)
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -153,33 +161,49 @@ export function ProductForm({
 
   useEffect(() => {
     if (!isPillowSizeType) {
-      setMultiSizeStocks({})
+      setMultiSizeVariants({})
       return
     }
 
     const variantStocks = Array.isArray(form.variantStocks) ? form.variantStocks : []
-    const stockBySizeId = new Map(
+    const variantBySizeAndFill = new Map(
       variantStocks
         .map((item) => ({
           sizeId: Number(item?.sizeId ?? item?.size_id),
+          relleno: Boolean(item?.relleno),
           stock: normalizeStockValue(item?.stock, 0),
+          precio: normalizePriceValue(item?.precio, 0),
+          precioOferta: normalizePriceValue(item?.precioOferta ?? item?.precio_oferta, 0),
+          enOferta: Boolean(item?.enOferta ?? item?.en_oferta),
         }))
         .filter((item) => Number.isInteger(item.sizeId) && item.sizeId > 0)
-        .map((item) => [item.sizeId, item.stock])
+        .map((item) => [`${item.sizeId}-${item.relleno}`, item])
     )
 
-    const nextStocks = {}
+    const nextVariants = {}
     sizesOfType.forEach((size) => {
       const sizeId = Number(size.size_id)
-      if (stockBySizeId.has(sizeId)) {
-        nextStocks[size.size_id] = String(stockBySizeId.get(sizeId))
-      } else {
-        nextStocks[size.size_id] = ''
+      const sinRelleno = variantBySizeAndFill.get(`${sizeId}-false`)
+      const conRelleno = variantBySizeAndFill.get(`${sizeId}-true`)
+
+      nextVariants[size.size_id] = {
+        sinRellenoStock: sinRelleno ? String(sinRelleno.stock) : '',
+        sinRellenoPrecio: sinRelleno && sinRelleno.precio > 0
+          ? String(sinRelleno.precio)
+          : (form.precio ? String(form.precio) : ''),
+        sinRellenoPrecioOferta: sinRelleno && sinRelleno.enOferta && sinRelleno.precioOferta > 0
+          ? String(sinRelleno.precioOferta)
+          : (form.precioOferta ? String(form.precioOferta) : ''),
+        conRellenoStock: conRelleno ? String(conRelleno.stock) : '',
+        conRellenoPrecio: conRelleno && conRelleno.precio > 0 ? String(conRelleno.precio) : '',
+        conRellenoPrecioOferta: conRelleno && conRelleno.enOferta && conRelleno.precioOferta > 0
+          ? String(conRelleno.precioOferta)
+          : '',
       }
     })
 
-    setMultiSizeStocks(nextStocks)
-  }, [form.productId, form.variantStocks, isPillowSizeType, sizesOfType])
+    setMultiSizeVariants(nextVariants)
+  }, [form.precio, form.productId, form.variantStocks, isPillowSizeType, sizesOfType])
 
   function handleParentChange(e) {
     const pid = e.target.value
@@ -201,20 +225,59 @@ export function ProductForm({
     onChange({ target: { name: 'stock', value: '' } })
   }
 
-  function handleMultiSizeStockChange(sizeId, value) {
-    setMultiSizeStocks((prev) => ({
+  function handleMultiSizeVariantChange(sizeId, field, value) {
+    setMultiSizeVariants((prev) => ({
       ...prev,
-      [sizeId]: value,
+      [sizeId]: {
+        ...(prev[sizeId] || {}),
+        [field]: value,
+      },
     }))
   }
 
   function buildVariantStocksPayload() {
     if (!isPillowSizeType) return []
 
-    return sizesOfType.map((size) => ({
-      sizeId: Number(size.size_id),
-      stock: normalizeStockValue(multiSizeStocks[size.size_id], 0),
-    }))
+    return sizesOfType
+      .map((size) => {
+        const sizeId = Number(size.size_id)
+        const row = multiSizeVariants[size.size_id] || {}
+        const variants = []
+
+        const sinPriceRaw = String(row.sinRellenoPrecio ?? '').trim()
+        if (sinPriceRaw !== '') {
+          const sinPrice = normalizePriceValue(sinPriceRaw, 0)
+          if (sinPrice > 0) {
+            variants.push({
+              sizeId,
+              relleno: false,
+              stock: normalizeStockValue(row.sinRellenoStock, 0),
+              precio: sinPrice,
+              precioOferta: form.enOferta ? normalizePriceValue(row.sinRellenoPrecioOferta, 0) : null,
+              enOferta: Boolean(form.enOferta),
+            })
+          }
+        }
+
+        const conPriceRaw = String(row.conRellenoPrecio ?? '').trim()
+        if (conPriceRaw !== '') {
+          const conPrice = normalizePriceValue(conPriceRaw, 0)
+          if (conPrice > 0) {
+            variants.push({
+              sizeId,
+              relleno: true,
+              stock: normalizeStockValue(row.conRellenoStock, 0),
+              precio: conPrice,
+              precioOferta: form.enOferta ? normalizePriceValue(row.conRellenoPrecioOferta, 0) : null,
+              enOferta: Boolean(form.enOferta),
+            })
+          }
+        }
+
+        return variants
+      })
+      .flat()
+      .filter(Boolean)
   }
 
   function handleImagesChange(event) {
@@ -544,19 +607,66 @@ export function ProductForm({
 
         {sizesOfType.length > 0 && isPillowSizeType ? (
           <div className="field full-width">
-            <span>Medidas y stock</span>
+            <span>Medidas, stock y precio (con o sin relleno)</span>
             <div className="size-stock-grid">
               {sizesOfType.map((size) => (
                 <label key={size.size_id} className="field size-stock-item">
                   <span>{size.valor}</span>
+                  <small>Sin relleno</small>
                   <input
                     type="number"
                     min="0"
-                    value={multiSizeStocks[size.size_id] ?? ''}
-                    onChange={(event) => handleMultiSizeStockChange(size.size_id, event.target.value)}
+                    value={multiSizeVariants[size.size_id]?.sinRellenoStock ?? ''}
+                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoStock', event.target.value)}
                     placeholder="Ej: 10"
                     disabled={isSubmitting}
                   />
+                  <input
+                    type="number"
+                    min="0"
+                    value={multiSizeVariants[size.size_id]?.sinRellenoPrecio ?? ''}
+                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoPrecio', event.target.value)}
+                    placeholder="Precio sin relleno"
+                    disabled={isSubmitting}
+                  />
+                  {form.enOferta ? (
+                    <input
+                      type="number"
+                      min="0"
+                      value={multiSizeVariants[size.size_id]?.sinRellenoPrecioOferta ?? ''}
+                      onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoPrecioOferta', event.target.value)}
+                      placeholder="Oferta sin relleno"
+                      disabled={isSubmitting}
+                    />
+                  ) : null}
+
+                  <small>Con relleno</small>
+                  <input
+                    type="number"
+                    min="0"
+                    value={multiSizeVariants[size.size_id]?.conRellenoStock ?? ''}
+                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoStock', event.target.value)}
+                    placeholder="Stock con relleno"
+                    disabled={isSubmitting}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    value={multiSizeVariants[size.size_id]?.conRellenoPrecio ?? ''}
+                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoPrecio', event.target.value)}
+                    placeholder="Precio con relleno"
+                    disabled={isSubmitting}
+                  />
+                  {form.enOferta ? (
+                    <input
+                      type="number"
+                      min="0"
+                      value={multiSizeVariants[size.size_id]?.conRellenoPrecioOferta ?? ''}
+                      onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoPrecioOferta', event.target.value)}
+                      placeholder="Oferta con relleno"
+                      disabled={isSubmitting}
+                    />
+                  ) : null}
                 </label>
               ))}
             </div>
@@ -576,19 +686,21 @@ export function ProductForm({
           {errors.telaId ? <small className="error">{errors.telaId}</small> : null}
         </label>
 
-        <label className="field">
-          <span>Precio</span>
-          <input
-            type="number"
-            min="0"
-            name="precio"
-            value={form.precio}
-            onChange={onChange}
-            placeholder="Ej: 15000"
-            required
-          />
-          {errors.precio ? <small className="error">{errors.precio}</small> : null}
-        </label>
+        {!isPillowSizeType ? (
+          <label className="field">
+            <span>Precio</span>
+            <input
+              type="number"
+              min="0"
+              name="precio"
+              value={form.precio}
+              onChange={onChange}
+              placeholder="Ej: 15000"
+              required
+            />
+            {errors.precio ? <small className="error">{errors.precio}</small> : null}
+          </label>
+        ) : null}
 
         {!isPillowSizeType ? (
           <label className="field">
@@ -615,7 +727,7 @@ export function ProductForm({
           />
         </label>
 
-        {form.enOferta && (
+        {form.enOferta && !isPillowSizeType ? (
           <label className="field">
             <span>Precio Oferta</span>
             <input
@@ -628,7 +740,7 @@ export function ProductForm({
             />
             {errors.precioOferta ? <small className="error">{errors.precioOferta}</small> : null}
           </label>
-        )}
+        ) : null}
 
         {isEditing && sortedExistingImages.length > 0 ? (
           <div className="field full-width">

@@ -7,6 +7,25 @@ const EMPTY_CARRITO = {
 	total: 0,
 }
 
+const CART_UPDATED_EVENT = 'decoeclat:cart-updated'
+
+function getItemsCount(carrito) {
+	const items = Array.isArray(carrito?.items) ? carrito.items : []
+	if (!items.length) return 0
+
+	return items.reduce((acc, item) => acc + (Number(item?.cantidad) || 0), 0)
+}
+
+function emitCartUpdated(carrito) {
+	if (typeof window === 'undefined') return
+
+	window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, {
+		detail: {
+			itemsCount: getItemsCount(carrito),
+		},
+	}))
+}
+
 function normalizeCarrito(carrito) {
 	if (!carrito) return EMPTY_CARRITO
 
@@ -77,7 +96,9 @@ export const useCarrito = () => {
 				varianteId,
 				cantidad,
 			})
-			setCarrito(normalizeCarrito(carrito))
+			const normalized = normalizeCarrito(carrito)
+			setCarrito(normalized)
+			emitCartUpdated(normalized)
 
 			console.log('Producto agregado al carrito')
 			return carrito
@@ -109,7 +130,9 @@ export const useCarrito = () => {
 				varianteId,
 				cantidad,
 			})
-			setCarrito(normalizeCarrito(carrito))
+			const normalized = normalizeCarrito(carrito)
+			setCarrito(normalized)
+			emitCartUpdated(normalized)
 
 			console.log('Cantidad actualizada en el carrito')
 			return carrito
@@ -135,7 +158,9 @@ export const useCarrito = () => {
 				clienteId,
 				varianteId,
 			})
-			setCarrito(normalizeCarrito(carrito))
+			const normalized = normalizeCarrito(carrito)
+			setCarrito(normalized)
+			emitCartUpdated(normalized)
 
 			console.log('Producto eliminado del carrito')
 			return carrito
@@ -158,7 +183,9 @@ export const useCarrito = () => {
 			}
 			
 			const carrito = await carritoServices.vaciarCarrito(clienteId)
-			setCarrito(normalizeCarrito(carrito))
+			const normalized = normalizeCarrito(carrito)
+			setCarrito(normalized)
+			emitCartUpdated(normalized)
 			console.log('Carrito vaciado')
 			return carrito
 
@@ -178,12 +205,14 @@ export const useCarrito = () => {
 			const clienteId = getClienteTemporalId()
 			if (!clienteId) {
 				setCarrito(EMPTY_CARRITO)
+				emitCartUpdated(EMPTY_CARRITO)
 				return EMPTY_CARRITO
 			}
 
 			const data = await carritoServices.getCarrito(clienteId)
 			const normalized = normalizeCarrito(data)
 			setCarrito(normalized)
+			emitCartUpdated(normalized)
 			return normalized
 		} catch (err) {
 			setError(err?.message || 'Error al obtener carrito')

@@ -24,7 +24,11 @@ function normalizeVariantStocks(variants = []) {
         .map((variant) => ({
             varianteId: Number(variant?.variante_id),
             sizeId: Number(variant?.size_id),
+            relleno: Boolean(variant?.relleno),
             stock: Number(variant?.stock ?? 0),
+            precio: Number(variant?.precio ?? 0),
+            precioOferta: Number(variant?.precio_oferta ?? 0),
+            enOferta: Boolean(variant?.en_oferta),
         }))
         .filter((variant) => Number.isInteger(variant.sizeId) && variant.sizeId > 0)
         .sort((left, right) => left.sizeId - right.sizeId)

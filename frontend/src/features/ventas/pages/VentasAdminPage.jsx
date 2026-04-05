@@ -2,14 +2,7 @@ import { MainLayout } from '../../../layouts/layouts'
 import { useVentasAdmin } from '../hooks/useVentasAdmin'
 import { Fragment, useState } from 'react'
 import AdminNavbar from '../../../shared/components/AdminNavbar'
-
-function formatMoney(value) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0))
-}
+import { formatCurrency } from '../../../shared/utils/utils'
 
 export function VentasAdminPage() {
   const [expandedVentaId, setExpandedVentaId] = useState(null)
@@ -114,7 +107,7 @@ export function VentasAdminPage() {
                             <small>{venta.cliente_telefono || '-'}</small>
                           </div>
                         </td>
-                        <td>{formatMoney(venta.total)}</td>
+                        <td>{formatCurrency(venta.total)}</td>
                         <td>
                           <button
                             type="button"
@@ -178,8 +171,8 @@ export function VentasAdminPage() {
                                     {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
                                   </p>
                                   <p>
-                                    Cantidad: {item.cantidad} · Unitario: {formatMoney(item.precio_unitario)} · Subtotal:{' '}
-                                    {formatMoney(item.subtotal)}
+                                    Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
+                                    {formatCurrency(item.subtotal)}
                                   </p>
                                 </article>
                               ))}

@@ -6,6 +6,7 @@ import { Cart } from '../components/Cart'
 import { CheckoutCustomerStep } from '../components/CheckoutCustomerStep'
 import { useCarrito } from '../hooks/useCarrito'
 import { useVentas } from '../../ventas/hooks/useVentas'
+import { formatCurrency } from '../../../shared/utils/utils'
 
 const INITIAL_CLIENT_FORM = {
   nombre: '',
@@ -28,15 +29,6 @@ function normalizeWhatsAppNumber(value) {
 }
 
 const WHATSAPP_NUMBER = normalizeWhatsAppNumber(RAW_WHATSAPP_NUMBER)
-
-function formatPrice(value) {
-  const amount = Number(value) || 0
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-  }).format(amount)
-}
 
 function buildWhatsAppMessage({ cliente, carrito, ventaId }) {
   const items = Array.isArray(carrito?.items) ? carrito.items : []
@@ -70,12 +62,12 @@ function buildWhatsAppMessage({ cliente, carrito, ventaId }) {
         ? ` | ${variantParts.join(' | ')}`
         : ''
 
-      lines.push(`- ${nombre} x${cantidad}${variantText} (${formatPrice(subtotal)})`)
+      lines.push(`- ${nombre} x${cantidad}${variantText} (${formatCurrency(subtotal)})`)
     })
   }
 
   lines.push('')
-  lines.push(`Total: ${formatPrice(total)}`)
+  lines.push(`Total: ${formatCurrency(total)}`)
   return lines.join('\n')
 }
 

@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { homePublicService } from '../../features/home/services/homePublicService'
+import { carritoServices } from '../../features/carrito/services/carritoService'
+
+const CART_UPDATED_EVENT = 'decoeclat:cart-updated'
+
+function getItemsCount(carrito) {
+  const items = Array.isArray(carrito?.items) ? carrito.items : []
+  if (!items.length) return 0
+
+  return items.reduce((acc, item) => acc + (Number(item?.cantidad) || 0), 0)
+}
 
 function buildCategoryTree(categories) {
   const items = Array.isArray(categories) ? categories : []
@@ -26,6 +36,7 @@ function buildCategoryTree(categories) {
 export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, categories = [] }) {
   const [draftSearchValue, setDraftSearchValue] = useState(searchValue)
   const [internalCategories, setInternalCategories] = useState([])
+  const [cartItemsCount, setCartItemsCount] = useState(0)
   const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [mobileMenuView, setMobileMenuView] = useState('main')
@@ -111,6 +122,42 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
       cancelled = true
     }
   }, [categories])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCartItemsCount() {
+      const clienteId = localStorage.getItem('clienteId')
+      if (!clienteId) {
+        if (!cancelled) setCartItemsCount(0)
+        return
+      }
+
+      try {
+        const carrito = await carritoServices.getCarrito(clienteId)
+        if (!cancelled) {
+          setCartItemsCount(getItemsCount(carrito))
+        }
+      } catch {
+        if (!cancelled) {
+          setCartItemsCount(0)
+        }
+      }
+    }
+
+    function handleCartUpdated(event) {
+      const count = Number(event?.detail?.itemsCount)
+      setCartItemsCount(Number.isFinite(count) ? Math.max(0, count) : 0)
+    }
+
+    loadCartItemsCount()
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated)
+    }
+  }, [])
 
   const categoryTree = useMemo(() => buildCategoryTree(internalCategories), [internalCategories])
   const orderedCategoryTree = useMemo(() => {
@@ -292,6 +339,11 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
                 fill="currentColor"
               />
             </svg>
+            {cartItemsCount > 0 ? (
+              <span className="home-top-cart-badge" aria-label={`${cartItemsCount} producto(s) en el carrito`}>
+                {cartItemsCount > 99 ? '99+' : cartItemsCount}
+              </span>
+            ) : null}
           </Link>
         </div>
       </div>
@@ -336,6 +388,19 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
                   onClick={handleNavLinkClick}
                 >
                   Inicio
+                </NavLink>
+
+                <NavLink
+                  to="/carrito"
+                  className={({ isActive }) => `home-top-nav-link home-top-mobile-cart-link ${isActive ? 'active' : ''}`}
+                  onClick={handleNavLinkClick}
+                >
+                  <span>Carrito</span>
+                  {cartItemsCount > 0 ? (
+                    <span className="home-top-mobile-cart-badge" aria-label={`${cartItemsCount} producto(s) en el carrito`}>
+                      {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                    </span>
+                  ) : null}
                 </NavLink>
 
                 <button

@@ -6,6 +6,22 @@ import { pool } from "../config/db.js";
  */
 
 export const productosRepository = {
+  normalizeListFilter(value) {
+    if (Array.isArray(value)) {
+      return value.map((item) => Number(item)).filter((item) => Number.isFinite(item))
+    }
+
+    if (typeof value === 'string' && value.includes(',')) {
+      return value
+        .split(',')
+        .map((item) => Number(item.trim()))
+        .filter((item) => Number.isFinite(item))
+    }
+
+    const numericValue = Number(value)
+    return Number.isFinite(numericValue) ? [numericValue] : []
+  },
+
   async create({ nombre, descripcion, categoria_id }) {
     const text = `
       INSERT INTO productos (nombre, descripcion, categoria_id)
@@ -23,17 +39,17 @@ export const productosRepository = {
 
   async find(filters = {}) {
     let query = `
-      SELECT p.*, c.nombre AS categoria, img.imagen_principal
+      SELECT p.*, c.nombre AS categoria, img.imagen_principal, img.imagen_secundaria
       FROM productos p
       LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
       LEFT JOIN LATERAL (
-        SELECT iv.url AS imagen_principal
+        SELECT
+          (ARRAY_AGG(iv.url ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC))[1] AS imagen_principal,
+          (ARRAY_AGG(iv.url ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC))[2] AS imagen_secundaria
         FROM variantes_producto vp
         JOIN imagenes_variantes iv ON iv.variante_id = vp.variante_id
         WHERE vp.producto_id = p.producto_id
           AND vp.activo = true
-        ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC
-        LIMIT 1
       ) img ON true
       WHERE 1 = 1
     `;
@@ -71,15 +87,21 @@ export const productosRepository = {
     const variantConditions = [`v.producto_id = p.producto_id`, `v.activo = true`];
 
     if (filters.telaId || filters.tela_id) {
-      variantConditions.push(`v.tela_id = $${idx}`);
-      values.push(filters.telaId || filters.tela_id);
-      idx++;
+      const telaIds = this.normalizeListFilter(filters.telaId || filters.tela_id);
+      if (telaIds.length > 0) {
+        variantConditions.push(`v.tela_id = ANY($${idx}::int[])`);
+        values.push(telaIds);
+        idx++;
+      }
     }
 
     if (filters.sizeId || filters.size_id) {
-      variantConditions.push(`v.size_id = $${idx}`);
-      values.push(filters.sizeId || filters.size_id);
-      idx++;
+      const sizeIds = this.normalizeListFilter(filters.sizeId || filters.size_id);
+      if (sizeIds.length > 0) {
+        variantConditions.push(`v.size_id = ANY($${idx}::int[])`);
+        values.push(sizeIds);
+        idx++;
+      }
     }
 
     if (filters.sizeTypeId || filters.size_type_id || filters.type_id) {
@@ -105,17 +127,17 @@ export const productosRepository = {
 
   async findById(id) {
     const query = `
-      SELECT p.*, c.nombre AS categoria, img.imagen_principal
+      SELECT p.*, c.nombre AS categoria, img.imagen_principal, img.imagen_secundaria
       FROM productos p
       LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
       LEFT JOIN LATERAL (
-        SELECT iv.url AS imagen_principal
+        SELECT
+          (ARRAY_AGG(iv.url ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC))[1] AS imagen_principal,
+          (ARRAY_AGG(iv.url ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC))[2] AS imagen_secundaria
         FROM variantes_producto vp
         JOIN imagenes_variantes iv ON iv.variante_id = vp.variante_id
         WHERE vp.producto_id = p.producto_id
           AND vp.activo = true
-        ORDER BY iv.principal DESC, iv.orden ASC, iv.img_id ASC
-        LIMIT 1
       ) img ON true
       WHERE p.producto_id = $1
     `;

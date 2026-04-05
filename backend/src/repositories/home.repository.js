@@ -13,6 +13,7 @@ export const homeRepository = {
                 p.nombre,
                 p.descripcion,
                 vp.variante_id,
+                vp.stock,
                 vp.precio,
                 vp.precio_oferta,
                 iv.url as imagen_principal,
@@ -22,12 +23,19 @@ export const homeRepository = {
             LEFT JOIN LATERAL (
                 SELECT
                     v.variante_id,
+                    v.stock,
                     v.precio,
                     v.precio_oferta
                 FROM variantes_producto v
                 WHERE v.producto_id = p.producto_id
                   AND v.activo = true
-                ORDER BY v.variante_id ASC
+                ORDER BY
+                    EXISTS (
+                        SELECT 1
+                        FROM imagenes_variantes i
+                        WHERE i.variante_id = v.variante_id
+                    ) DESC,
+                    v.variante_id ASC
                 LIMIT 1
             ) vp ON true
             LEFT JOIN LATERAL (

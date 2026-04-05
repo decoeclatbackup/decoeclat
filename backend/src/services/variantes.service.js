@@ -1,5 +1,16 @@
 import { variantesRepository } from "../repositories/variantes.repository.js";
 
+function normalizeBoolean(value, fallback = false) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true') return true;
+        if (normalized === 'false') return false;
+    }
+    if (value == null) return fallback;
+    return Boolean(value);
+}
+
 
 export const variantesService ={
 
@@ -18,6 +29,7 @@ export const variantesService ={
             productoId: data.productoId,
             telaId: data.telaId,
             sizeId: data.sizeId,
+            relleno: normalizeBoolean(data.relleno, false),
             stock: data.stock || 0,
             precio: data.precio,
             precio_oferta: data.precioOferta || null,
@@ -40,6 +52,9 @@ export const variantesService ={
     async updateVariant(id, updates) {
         if (updates.stock !== undefined && updates.stock < 0) {
             throw new Error("El stock no puede ser negativo");
+        }
+        if (Object.prototype.hasOwnProperty.call(updates, 'relleno')) {
+            updates.relleno = normalizeBoolean(updates.relleno, false);
         }
         const results = await variantesRepository.update(id, updates);
         if (!results) {

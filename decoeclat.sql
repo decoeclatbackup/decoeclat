@@ -67,6 +67,7 @@ CREATE TABLE "variantes_producto" (
   "producto_id" integer NOT NULL,
   "tela_id" integer NOT NULL,
   "size_id" integer NOT NULL,
+  "relleno" boolean DEFAULT false,
   "stock" integer NOT NULL DEFAULT 0,
   -- Los precios ahora viven aquí:
   "precio" numeric(10,2) NOT NULL,
