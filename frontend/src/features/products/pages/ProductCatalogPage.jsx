@@ -185,13 +185,38 @@ export function ProductCatalogPage() {
   useEffect(() => {
     if (pendingRestoreScrollY == null || loading) return
 
-    const rafId = window.requestAnimationFrame(() => {
-      window.scrollTo({ top: pendingRestoreScrollY, left: 0, behavior: 'auto' })
-      sessionStorage.removeItem(CATALOG_VIEW_STATE_KEY)
-      setPendingRestoreScrollY(null)
-    })
+    let cancelled = false
+    let rafId = null
+    let attempts = 0
+    const maxAttempts = 20
 
-    return () => window.cancelAnimationFrame(rafId)
+    const restoreScroll = () => {
+      if (cancelled) return
+
+      const maxScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+      const targetTop = Math.min(pendingRestoreScrollY, maxScrollTop)
+
+      window.scrollTo({ top: targetTop, left: 0, behavior: 'auto' })
+
+      const isCloseEnough = Math.abs(window.scrollY - targetTop) <= 2
+      if (isCloseEnough || attempts >= maxAttempts) {
+        sessionStorage.removeItem(CATALOG_VIEW_STATE_KEY)
+        setPendingRestoreScrollY(null)
+        return
+      }
+
+      attempts += 1
+      rafId = window.requestAnimationFrame(restoreScroll)
+    }
+
+    rafId = window.requestAnimationFrame(restoreScroll)
+
+    return () => {
+      cancelled = true
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId)
+      }
+    }
   }, [loading, pendingRestoreScrollY, visibleCount, products.length])
 
   useEffect(() => {
