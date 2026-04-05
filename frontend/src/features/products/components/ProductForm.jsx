@@ -67,6 +67,7 @@ export function ProductForm({
   const [draggingExistingImageId, setDraggingExistingImageId] = useState(null)
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [expandedSizes, setExpandedSizes] = useState({})
   const selectedImagesRef = useRef([])
 
   useEffect(() => {
@@ -232,6 +233,13 @@ export function ProductForm({
         ...(prev[sizeId] || {}),
         [field]: value,
       },
+    }))
+  }
+
+  function toggleExpandedSize(sizeId) {
+    setExpandedSizes((prev) => ({
+      ...prev,
+      [sizeId]: !prev[sizeId],
     }))
   }
 
@@ -610,64 +618,80 @@ export function ProductForm({
             <span>Medidas, stock y precio (con o sin relleno)</span>
             <div className="size-stock-grid">
               {sizesOfType.map((size) => (
-                <label key={size.size_id} className="field size-stock-item">
-                  <span>{size.valor}</span>
-                  <small>Sin relleno</small>
-                  <input
-                    type="number"
-                    min="0"
-                    value={multiSizeVariants[size.size_id]?.sinRellenoStock ?? ''}
-                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoStock', event.target.value)}
-                    placeholder="Ej: 10"
-                    disabled={isSubmitting}
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    value={multiSizeVariants[size.size_id]?.sinRellenoPrecio ?? ''}
-                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoPrecio', event.target.value)}
-                    placeholder="Precio sin relleno"
-                    disabled={isSubmitting}
-                  />
-                  {form.enOferta ? (
-                    <input
-                      type="number"
-                      min="0"
-                      value={multiSizeVariants[size.size_id]?.sinRellenoPrecioOferta ?? ''}
-                      onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoPrecioOferta', event.target.value)}
-                      placeholder="Oferta sin relleno"
-                      disabled={isSubmitting}
-                    />
-                  ) : null}
+                <div key={size.size_id} className={`size-stock-item ${expandedSizes[size.size_id] ? 'expanded' : ''}`}>
+                  <button
+                    type="button"
+                    className="size-stock-toggle"
+                    onClick={() => toggleExpandedSize(size.size_id)}
+                    aria-expanded={expandedSizes[size.size_id]}
+                    aria-label={`${expandedSizes[size.size_id] ? 'Contraer' : 'Expandir'} medida ${size.valor}`}
+                  >
+                    <span className="size-stock-toggle-text">{size.valor}</span>
+                    <span className="size-stock-toggle-icon" aria-hidden="true">
+                      {expandedSizes[size.size_id] ? '▾' : '▸'}
+                    </span>
+                  </button>
 
-                  <small>Con relleno</small>
-                  <input
-                    type="number"
-                    min="0"
-                    value={multiSizeVariants[size.size_id]?.conRellenoStock ?? ''}
-                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoStock', event.target.value)}
-                    placeholder="Stock con relleno"
-                    disabled={isSubmitting}
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    value={multiSizeVariants[size.size_id]?.conRellenoPrecio ?? ''}
-                    onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoPrecio', event.target.value)}
-                    placeholder="Precio con relleno"
-                    disabled={isSubmitting}
-                  />
-                  {form.enOferta ? (
-                    <input
-                      type="number"
-                      min="0"
-                      value={multiSizeVariants[size.size_id]?.conRellenoPrecioOferta ?? ''}
-                      onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoPrecioOferta', event.target.value)}
-                      placeholder="Oferta con relleno"
-                      disabled={isSubmitting}
-                    />
+                  {expandedSizes[size.size_id] ? (
+                    <div className="size-stock-fields">
+                      <small>Sin relleno</small>
+                      <input
+                        type="number"
+                        min="0"
+                        value={multiSizeVariants[size.size_id]?.sinRellenoStock ?? ''}
+                        onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoStock', event.target.value)}
+                        placeholder="Stock sin relleno"
+                        disabled={isSubmitting}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        value={multiSizeVariants[size.size_id]?.sinRellenoPrecio ?? ''}
+                        onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoPrecio', event.target.value)}
+                        placeholder="Precio sin relleno"
+                        disabled={isSubmitting}
+                      />
+                      {form.enOferta ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={multiSizeVariants[size.size_id]?.sinRellenoPrecioOferta ?? ''}
+                          onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'sinRellenoPrecioOferta', event.target.value)}
+                          placeholder="Oferta sin relleno"
+                          disabled={isSubmitting}
+                        />
+                      ) : null}
+
+                      <small>Con relleno</small>
+                      <input
+                        type="number"
+                        min="0"
+                        value={multiSizeVariants[size.size_id]?.conRellenoStock ?? ''}
+                        onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoStock', event.target.value)}
+                        placeholder="Stock con relleno"
+                        disabled={isSubmitting}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        value={multiSizeVariants[size.size_id]?.conRellenoPrecio ?? ''}
+                        onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoPrecio', event.target.value)}
+                        placeholder="Precio con relleno"
+                        disabled={isSubmitting}
+                      />
+                      {form.enOferta ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={multiSizeVariants[size.size_id]?.conRellenoPrecioOferta ?? ''}
+                          onChange={(event) => handleMultiSizeVariantChange(size.size_id, 'conRellenoPrecioOferta', event.target.value)}
+                          placeholder="Oferta con relleno"
+                          disabled={isSubmitting}
+                        />
+                      ) : null}
+                    </div>
                   ) : null}
-                </label>
+                </div>
               ))}
             </div>
           </div>
@@ -717,15 +741,17 @@ export function ProductForm({
           </label>
         ) : null}
 
-        <label className="field">
-          <span>En Oferta</span>
-          <input
-            type="checkbox"
-            name="enOferta"
-            checked={form.enOferta}
-            onChange={onChange}
-          />
-        </label>
+        <div className="field" style={{ gap: '0.5rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 500, color: '#20363b' }}>
+            <input
+              type="checkbox"
+              name="enOferta"
+              checked={form.enOferta}
+              onChange={onChange}
+            />
+            <span>En Oferta</span>
+          </label>
+        </div>
 
         {form.enOferta && !isPillowSizeType ? (
           <label className="field">

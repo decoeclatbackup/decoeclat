@@ -8,6 +8,7 @@ const EMPTY_CARRITO = {
 }
 
 const CART_UPDATED_EVENT = 'decoeclat:cart-updated'
+const CART_ITEM_ADDED_EVENT = 'decoeclat:cart-item-added'
 
 function getItemsCount(carrito) {
 	const items = Array.isArray(carrito?.items) ? carrito.items : []
@@ -22,6 +23,16 @@ function emitCartUpdated(carrito) {
 	window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, {
 		detail: {
 			itemsCount: getItemsCount(carrito),
+		},
+	}))
+}
+
+function emitCartItemAdded() {
+	if (typeof window === 'undefined') return
+
+	window.dispatchEvent(new CustomEvent(CART_ITEM_ADDED_EVENT, {
+		detail: {
+			message: 'Producto agregado al carrito',
 		},
 	}))
 }
@@ -99,6 +110,7 @@ export const useCarrito = () => {
 			const normalized = normalizeCarrito(carrito)
 			setCarrito(normalized)
 			emitCartUpdated(normalized)
+			emitCartItemAdded()
 
 			console.log('Producto agregado al carrito')
 			return carrito

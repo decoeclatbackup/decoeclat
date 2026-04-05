@@ -111,6 +111,20 @@ export const homeAdminService = {
     })
   },
 
+  async removeBannerImage(carouselId, imageField) {
+    const allowedFields = ['img_desktop_url', 'img_mobile_url']
+    if (!allowedFields.includes(imageField)) {
+      throw new Error('Campo de imagen invalido')
+    }
+
+    return request(`/api/home/carousel/${Number(carouselId)}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        [imageField]: null,
+      }),
+    })
+  },
+
   async removeBanner(carouselId) {
     return request(`/api/home/carousel/${Number(carouselId)}`, {
       method: 'DELETE',
