@@ -61,47 +61,49 @@ export function ProductAdminPage() {
     <MainLayout
       navbar={<AdminNavbar />}
     >
-      {message ? <p className="alert">{message}</p> : null}
+      <div className="product-admin-page">
+        {message ? <p className="alert">{message}</p> : null}
 
-      <section className="card section-toolbar">
-        <div className="actions">
-          <button type="button" className="btn" onClick={handleAddProductClick}>
-            {showCreateForm && !isEditing ? 'Ocultar formulario' : '+ Agregar producto'}
-          </button>
-        </div>
-      </section>
+        <section className="card section-toolbar">
+          <div className="actions">
+            <button type="button" className="btn" onClick={handleAddProductClick}>
+              {showCreateForm && !isEditing ? 'Ocultar formulario' : '+ Agregar producto'}
+            </button>
+          </div>
+        </section>
 
-      {showCreateForm ? (
-        <ProductForm
-          form={form}
-          isEditing={isEditing}
-          onChange={handleFormChange}
-          onSubmit={handleSubmit}
-          onCancel={handleCancelForm}
-          categories={categories}
-          telas={telas}
-          sizes={sizes}
-          existingImages={existingImages}
-        />
-      ) : (
-        <>
-          <ProductFilters
-            filters={filters}
+        {showCreateForm ? (
+          <ProductForm
+            form={form}
+            isEditing={isEditing}
+            onChange={handleFormChange}
+            onSubmit={handleSubmit}
+            onCancel={handleCancelForm}
             categories={categories}
-            onFilterChange={handleFilterChange}
-            onSearch={handleSearch}
-            onClear={clearFilters}
+            telas={telas}
+            sizes={sizes}
+            existingImages={existingImages}
           />
+        ) : (
+          <>
+            <ProductFilters
+              filters={filters}
+              categories={categories}
+              onFilterChange={handleFilterChange}
+              onSearch={handleSearch}
+              onClear={clearFilters}
+            />
 
-          <ProductsTable
-            products={products}
-            loading={loading}
-            onEdit={handleEdit}
-            onRemove={removeProduct}
-            onToggleActive={toggleProductActive}
-          />
-        </>
-      )}
+            <ProductsTable
+              products={products}
+              loading={loading}
+              onEdit={handleEdit}
+              onRemove={removeProduct}
+              onToggleActive={toggleProductActive}
+            />
+          </>
+        )}
+      </div>
     </MainLayout>
   )
 }

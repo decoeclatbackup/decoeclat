@@ -594,7 +594,7 @@
   border-radius: 14px;
   overflow: hidden;
   background: rgba(245, 245, 220, 0.92);
-  box-shadow: 0 8px 20px rgba(74, 74, 74, 0.08);
+  box-shadow: 0 4px 12px rgba(74, 74, 74, 0.07);
 }
 
 .size-stock-toggle {
@@ -785,7 +785,7 @@ select {
   border-radius: 10px;
   padding: 0.62rem 0.75rem;
   font-size: 0.95rem;
-  background: rgba(245, 245, 220, 0.95);
+  background: #e9ebea;
   color: var(--color-texto);
   cursor: pointer;
   font-weight: 500;
@@ -828,7 +828,7 @@ select:disabled {
   gap: 0.2rem;
   border: 1px solid rgba(194, 163, 133, 0.72);
   border-radius: 12px;
-  background: rgba(248, 251, 251, 0.98);
+  background: #e9ebea;
   box-shadow: 0 12px 22px rgba(5, 39, 48, 0.12);
   overflow: hidden;
   max-height: 280px;
@@ -854,7 +854,7 @@ select:disabled {
 }
 
 .home-admin-search-suggestion:hover {
-  background: rgba(194, 163, 133, 0.15);
+  background: #e9ebea;
 }
 
 .home-admin-search-suggestion-name {
@@ -867,7 +867,7 @@ select:disabled {
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid rgba(194, 163, 133, 0.55);
-  background: rgba(194, 163, 133, 0.12);
+  background: #e9ebea;
 }
 
 .home-admin-search-suggestion-image-fallback {
@@ -878,7 +878,7 @@ select:disabled {
   justify-content: center;
   border-radius: 10px;
   border: 1px solid rgba(194, 163, 133, 0.55);
-  background: rgba(194, 163, 133, 0.12);
+  background: #e9ebea;
   font-size: 0.58rem;
   font-weight: 700;
   color: rgba(35, 69, 75, 0.74);
@@ -1087,7 +1087,7 @@ table select {
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
-  background: rgba(245, 245, 220, 0.92);
+  background: #e9ebea;
   color: var(--color-texto);
   text-transform: capitalize;
   border: 1px solid rgba(194, 163, 133, 0.55);
@@ -1131,7 +1131,7 @@ table select {
 }
 
 .ventas-search-select input[type='search'] {
-  background: rgba(245, 245, 220, 0.95);
+  background: #e9ebea;
   border: 1px solid rgba(194, 163, 133, 0.72);
   border-radius: 12px;
   padding: 0.68rem 0.78rem;
@@ -1151,7 +1151,7 @@ table select {
 }
 
 .ventas-search-suggestions {
-  background: rgba(245, 245, 220, 0.98);
+  background: #e9ebea;
   border-color: rgba(194, 163, 133, 0.72);
   box-shadow: 0 12px 22px rgba(5, 39, 48, 0.12);
 }
@@ -1159,11 +1159,11 @@ table select {
 .ventas-search-suggestion {
   align-items: start;
   padding: 0.65rem 0.75rem;
-  background: rgba(245, 245, 220, 0.96);
+  background: #e9ebea;
 }
 
 .ventas-search-suggestion:hover {
-  background: rgba(233, 219, 186, 0.62);
+  background: #e9ebea;
 }
 
 .ventas-manual-item-actions {
@@ -1183,7 +1183,7 @@ table select {
 .ventas-detalle-box {
   display: grid;
   gap: 0.5rem;
-  background: rgba(245, 245, 220, 0.92);
+  background: #e9ebea;
   border: 1px solid rgba(194, 163, 133, 0.62);
   border-radius: 14px;
   padding: 0.9rem;
@@ -1230,11 +1230,30 @@ table select {
   border-radius: 10px;
   padding: 0.62rem 0.75rem;
   font-size: 0.95rem;
-  background: rgba(245, 245, 220, 0.95);
+  background: #e9ebea;
   color: var(--color-texto);
 }
 
 .ventas-periodo-field input:focus {
+  border-color: var(--color-azul-aero);
+  outline: 2px solid rgba(194, 163, 133, 0.35);
+}
+
+.ventas-admin-page .field input,
+.ventas-admin-page .field select,
+.ventas-admin-page select,
+.ventas-admin-page .ventas-periodo-field input,
+.ventas-admin-page .ventas-search-select input[type='search'] {
+  background: #e9ebea;
+  border-color: rgba(194, 163, 133, 0.72);
+  color: var(--color-texto);
+}
+
+.ventas-admin-page .field input:focus,
+.ventas-admin-page .field select:focus,
+.ventas-admin-page select:focus,
+.ventas-admin-page .ventas-periodo-field input:focus,
+.ventas-admin-page .ventas-search-select input[type='search']:focus {
   border-color: var(--color-azul-aero);
   outline: 2px solid rgba(194, 163, 133, 0.35);
 }
@@ -1248,11 +1267,22 @@ table select {
   gap: 1rem;
 }
 
+.product-admin-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.ventas-admin-page {
+  display: grid;
+  gap: 1rem;
+}
+
 .home-admin-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
   align-items: center;
+  background: #e9ebea;
 }
 
 .home-admin-hero-copy {
@@ -1286,6 +1316,7 @@ table select {
 .home-admin-section-card {
   display: grid;
   gap: 1rem;
+  background: #e9ebea;
 }
 
 .home-admin-section-header {
@@ -1304,7 +1335,7 @@ table select {
   height: 2.1rem;
   border-radius: 999px;
   border: 1px solid rgba(194, 163, 133, 0.72);
-  background: rgba(245, 245, 220, 0.95);
+  background: #e9ebea;
   color: #23454b;
   display: inline-flex;
   align-items: center;
@@ -1316,7 +1347,7 @@ table select {
 }
 
 .home-admin-section-toggle:hover {
-  background: rgba(194, 163, 133, 0.22);
+  background: #e9ebea;
   border-color: rgba(194, 163, 133, 0.9);
 }
 
@@ -1342,7 +1373,7 @@ table select {
   border: 1px solid rgba(194, 163, 133, 0.62);
   border-radius: 14px;
   padding: 0.9rem;
-  background: rgba(245, 245, 220, 0.92);
+  background: #e9ebea;
   display: grid;
   gap: 0.6rem;
   box-shadow: 0 8px 20px rgba(74, 74, 74, 0.08);
@@ -1369,7 +1400,7 @@ table select {
   object-fit: cover;
   border-radius: 12px;
   border: 1px solid rgba(194, 163, 133, 0.55);
-  background: rgba(194, 163, 133, 0.12);
+  background: #e9ebea;
 }
 
 .home-admin-featured-grid {
@@ -1382,7 +1413,7 @@ table select {
   border: 1px solid rgba(194, 163, 133, 0.62);
   border-radius: 14px;
   padding: 0.9rem;
-  background: rgba(245, 245, 220, 0.92);
+  background: #e9ebea;
   display: grid;
   gap: 0.6rem;
   box-shadow: 0 8px 20px rgba(74, 74, 74, 0.08);
@@ -1394,7 +1425,7 @@ table select {
   object-fit: cover;
   border-radius: 12px;
   border: 1px solid rgba(194, 163, 133, 0.55);
-  background: rgba(194, 163, 133, 0.12);
+  background: #e9ebea;
 }
 
 .home-admin-featured-thumb-empty {
@@ -1459,7 +1490,7 @@ table select {
   border: 1px solid rgba(194, 163, 133, 0.75);
   border-radius: 10px;
   padding: 0.5rem 0.6rem;
-  background: rgba(245, 245, 220, 0.95);
+  background: #e9ebea;
   color: var(--color-texto);
 }
 
@@ -1468,12 +1499,49 @@ table select {
   outline: 2px solid rgba(194, 163, 133, 0.35);
 }
 
+.home-admin-page .btn,
+.section-toolbar .btn {
+  background: #e9ebea;
+  color: var(--color-texto);
+  border: 1px solid rgba(194, 163, 133, 0.72);
+}
+
+.home-admin-page .btn:hover,
+.section-toolbar .btn:hover {
+  background: #e9ebea;
+  color: var(--color-texto);
+}
+
+.home-admin-page .btn.ghost,
+.home-admin-page .btn.danger,
+.home-admin-page .btn.success,
+.section-toolbar .btn.ghost,
+.section-toolbar .btn.danger,
+.section-toolbar .btn.success {
+  background: #e9ebea;
+  color: var(--color-texto);
+}
+
+.home-admin-page .field input,
+.home-admin-page .field select,
+.home-admin-page select,
+.home-admin-page .home-admin-order-inline-controls input,
+.home-admin-page .home-admin-search-select input[type='search'] {
+  background: #e9ebea;
+}
+
+.home-admin-page .home-admin-featured-card,
+.home-admin-page .home-admin-media-card,
+.home-admin-page .home-admin-section-card {
+  background: #e9ebea;
+}
+
 .home-admin-empty-state {
   margin: 0;
   padding: 0.85rem 1rem;
   border: 1px dashed rgba(194, 163, 133, 0.65);
   border-radius: 12px;
-  background: rgba(194, 163, 133, 0.1);
+  background: #e9ebea;
   color: rgba(35, 69, 75, 0.85);
 }
 
@@ -1485,7 +1553,7 @@ table select {
   justify-content: center;
   border-radius: 12px;
   border: 1px dashed rgba(194, 163, 133, 0.65);
-  background: rgba(194, 163, 133, 0.1);
+  background: #e9ebea;
   color: rgba(35, 69, 75, 0.78);
   font-weight: 700;
 }
@@ -1728,9 +1796,9 @@ table select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(194, 163, 133, 0.75);
+  border: none;
   border-radius: 2px;
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
   min-height: 42px;
   width: 44px;
@@ -1785,7 +1853,7 @@ table select {
   list-style: none;
   border: 1px solid rgba(194, 163, 133, 0.75);
   border-radius: 10px;
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
   padding: 0.58rem 0.85rem;
   font-size: 0.9rem;
@@ -1821,14 +1889,14 @@ table select {
   padding: 0.7rem;
   border-radius: 12px;
   border: 1px solid rgba(194, 163, 133, 0.75);
-  background: var(--color-hueso);
+  background: #e9ebea;
   box-shadow: 0 12px 24px rgba(74, 74, 74, 0.16);
 }
 
 .catalog-clear-inline {
   border: 1px solid rgba(194, 163, 133, 0.75);
   border-radius: 10px;
-  background: rgba(194, 163, 133, 0.18);
+  background: #e9ebea;
   color: var(--color-texto);
   padding: 0.58rem 0.85rem;
   font-weight: 700;
@@ -1997,7 +2065,7 @@ table select {
   height: 100%;
   border-radius: 18px 0 0 18px;
   border: 1px solid rgba(194, 163, 133, 0.62);
-  background: var(--color-hueso);
+  background: #e9ebea;
   box-shadow: -12px 0 36px rgba(0, 0, 0, 0.2);
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -2065,7 +2133,7 @@ table select {
   min-height: 42px;
   border: 1px solid rgba(194, 163, 133, 0.75);
   border-radius: 2px;
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
   padding: 0.55rem 0.75rem;
   font-weight: 700;
@@ -2210,7 +2278,7 @@ table select {
   gap: 0.4rem;
   border: 1px solid rgba(194, 163, 133, 0.75);
   border-radius: 2px;
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
   min-height: 42px;
   padding: 0.55rem 0.8rem;
@@ -2887,7 +2955,7 @@ table select {
   overflow: hidden;
   border-radius: 14px;
   background: rgba(194, 163, 133, 0.18);
-  box-shadow: 0 4px 10px rgba(74, 74, 74, 0.12);
+  box-shadow: 0 3px 10px rgba(74, 74, 74, 0.08);
   animation: fadeIn 0.4s ease-out;
 }
 
@@ -3573,7 +3641,7 @@ table select {
   padding: 1rem;
   border: 1px solid rgba(194, 163, 133, 0.7);
   border-radius: 0;
-  background: var(--color-hueso);
+  background: #e9ebea;
   box-shadow: 0 14px 26px rgba(74, 74, 74, 0.14);
   grid-template-columns: repeat(var(--desktop-products-columns, 1), minmax(0, 1fr));
   gap: 0.85rem 1rem;
@@ -3685,6 +3753,7 @@ table select {
   margin-inline: auto;
   display: grid;
   gap: 0.9rem;
+  background: #e9ebea;
 }
 
 .admin-login-header {
@@ -4087,7 +4156,7 @@ table select {
     align-content: flex-start;
     padding: 0.75rem 1rem 1rem;
     border-top: 1px solid rgba(194, 163, 133, 0.55);
-    background: var(--color-hueso);
+    background: #e9ebea;
     position: fixed;
     left: 0;
     right: auto;
@@ -4271,7 +4340,37 @@ table select {
 .card {
   background: var(--color-hueso);
   border-color: rgba(194, 163, 133, 0.66);
-  box-shadow: 0 8px 20px rgba(74, 74, 74, 0.12);
+  box-shadow: 0 4px 12px rgba(74, 74, 74, 0.08);
+}
+
+.home-admin-page .card,
+.ventas-admin-page .card {
+  background: #e9ebea;
+}
+
+.product-admin-page .card,
+.home-admin-page > .card,
+.ventas-admin-page > .card,
+.product-admin-page > .card {
+  margin-bottom: 1rem;
+}
+
+.product-admin-page .card,
+.product-admin-page .field input,
+.product-admin-page .field select,
+.product-admin-page .field textarea,
+.product-admin-page select,
+.product-admin-page .size-stock-item,
+.product-admin-page .image-preview-card {
+  background: #e9ebea;
+}
+
+.product-admin-page .size-stock-fields {
+  background: #e9ebea;
+}
+
+.card.admin-login-card {
+  background: #e9ebea;
 }
 
 .card h2,
@@ -4291,6 +4390,12 @@ th,
   border-color: rgba(194, 163, 133, 0.78);
   background: var(--color-hueso);
   color: var(--color-texto);
+}
+
+.admin-login-card .field input,
+.admin-login-card .field select,
+.admin-login-card .field textarea {
+  background: #e9ebea;
 }
 
 .field input:focus,
@@ -4378,12 +4483,12 @@ th {
 
 .catalog-filter-btn {
   border-color: rgba(194, 163, 133, 0.75);
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
 }
 
 .catalog-filter-btn:hover {
-  background: rgba(194, 163, 133, 0.34);
+  background: #e9ebea;
 }
 
 .catalog-filter-btn.active {
@@ -4395,7 +4500,7 @@ th {
 .catalog-sidebar select,
 .catalog-sort-control select {
   border-color: rgba(194, 163, 133, 0.75);
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
 }
 
@@ -4412,7 +4517,7 @@ th {
 .catalog-card {
   background: var(--color-hueso);
   border-color: rgba(194, 163, 133, 0.68);
-  box-shadow: 0 8px 20px rgba(74, 74, 74, 0.12);
+  box-shadow: 0 4px 12px rgba(74, 74, 74, 0.08);
 }
 
 .catalog-card-image {
@@ -4444,7 +4549,7 @@ th {
 
 .product-detail-main-media {
   border-color: rgba(194, 163, 133, 0.75);
-  background: rgba(245, 245, 220, 0.85);
+  background: #e9ebea;
 }
 
 .product-detail-main-placeholder {
@@ -4453,7 +4558,7 @@ th {
 
 .product-thumb-btn {
   border-color: rgba(194, 163, 133, 0.75);
-  background: var(--color-hueso);
+  background: #e9ebea;
 }
 
 .product-thumb-btn.active {
@@ -4474,14 +4579,24 @@ th {
 
 .product-detail-box {
   border-color: rgba(194, 163, 133, 0.75);
-  background: rgba(245, 245, 220, 0.76);
+  background: #e9ebea;
 }
 
 .product-size-btn,
 .qty-btn {
   border-color: rgba(194, 163, 133, 0.75);
-  background: var(--color-hueso);
+  background: #e9ebea;
   color: var(--color-texto);
+}
+
+.product-detail-related-card {
+  border-color: rgba(194, 163, 133, 0.62);
+  background: #e9ebea;
+  box-shadow: 0 3px 10px rgba(74, 74, 74, 0.07);
+}
+
+.product-detail-related-image-wrap {
+  background: #e9ebea;
 }
 
 .product-size-btn.active {
@@ -4505,7 +4620,7 @@ th {
   padding: 1rem;
   border: 1px solid rgba(194, 163, 133, 0.66);
   border-radius: 16px;
-  background: linear-gradient(130deg, rgba(245, 245, 220, 0.92) 0%, rgba(194, 163, 133, 0.24) 100%);
+  background: #e9ebea;
 }
 
 .cart-page-header h1 {
@@ -4544,8 +4659,8 @@ th {
   padding: 0.75rem;
   border: 1px solid rgba(194, 163, 133, 0.62);
   border-radius: 14px;
-  background: rgba(245, 245, 220, 0.92);
-  box-shadow: 0 8px 16px rgba(74, 74, 74, 0.08);
+  background: #e9ebea;
+  box-shadow: 0 4px 12px rgba(74, 74, 74, 0.07);
 }
 
 .cart-item-media {
@@ -4642,8 +4757,8 @@ th {
 .cart-summary {
   border: 1px solid rgba(194, 163, 133, 0.68);
   border-radius: 16px;
-  background: rgba(245, 245, 220, 0.96);
-  box-shadow: 0 10px 22px rgba(74, 74, 74, 0.12);
+  background: #e9ebea;
+  box-shadow: 0 6px 16px rgba(74, 74, 74, 0.08);
   padding: 1rem;
   display: grid;
   gap: 0.8rem;
@@ -4864,6 +4979,9 @@ th {
   .home-public-featured-carousel-controls .home-public-featured-nav {
     display: inline-flex;
     position: static;
+    background: #e9ebea;
+    border-color: rgba(74, 74, 74, 0.25);
+    color: var(--color-texto);
   }
 
   .home-public-featured-carousel-dots {

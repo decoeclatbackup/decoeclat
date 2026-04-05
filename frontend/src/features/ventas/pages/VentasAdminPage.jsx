@@ -265,424 +265,426 @@ export function VentasAdminPage() {
 
   return (
     <MainLayout navbar={<AdminNavbar />}>
-      {message ? <p className="alert">{message}</p> : null}
-      {error ? <p className="alert">{error}</p> : null}
+      <div className="ventas-admin-page">
+        {message ? <p className="alert">{message}</p> : null}
+        {error ? <p className="alert">{error}</p> : null}
 
-      <section className="card section-toolbar">
-        <div className="actions">
-          <h3 style={{ margin: '0 0 1rem 0' }}>Filtros y reportes</h3>
-
+        <section className="card section-toolbar">
           <div className="actions">
-            <label className="field ventas-periodo-field">
-              <span>Periodo</span>
-              <input
-                type="month"
-                value={periodoSeleccionado}
-                onChange={(event) => setPeriodoSeleccionado(event.target.value)}
-              />
-            </label>
-            <button type="button" className="btn ghost" onClick={descargarReporteMensual} disabled={saving}>
-              Descargar ventas del mes
-            </button>
-            <button type="button" className="btn ghost" onClick={descargarReporteResumen} disabled={saving}>
-              Descargar productos/clientes top
-            </button>
-            <button type="button" className="btn" onClick={recargarTodo} disabled={loading || saving}>
-              Actualizar ventas
+            <h3 style={{ margin: '0 0 1rem 0' }}>Filtros y reportes</h3>
+
+            <div className="actions">
+              <label className="field ventas-periodo-field">
+                <span>Periodo</span>
+                <input
+                  type="month"
+                  value={periodoSeleccionado}
+                  onChange={(event) => setPeriodoSeleccionado(event.target.value)}
+                />
+              </label>
+              <button type="button" className="btn ghost" onClick={descargarReporteMensual} disabled={saving}>
+                Descargar ventas del mes
+              </button>
+              <button type="button" className="btn ghost" onClick={descargarReporteResumen} disabled={saving}>
+                Descargar productos/clientes top
+              </button>
+              <button type="button" className="btn" onClick={recargarTodo} disabled={loading || saving}>
+                Actualizar ventas
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <h2 style={{ margin: 0 }}>Administración de Ventas</h2>
+            <button
+              type="button"
+              className="home-admin-section-toggle"
+              onClick={() => toggleSection('administracion')}
+              aria-expanded={expandedSections.administracion}
+              aria-label={expandedSections.administracion ? 'Ocultar administración' : 'Mostrar administración'}
+            >
+              <span aria-hidden="true">{expandedSections.administracion ? '▾' : '▸'}</span>
             </button>
           </div>
-        </div>
-      </section>
 
-      <section className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0 }}>Administración de Ventas</h2>
-          <button
-            type="button"
-            className="home-admin-section-toggle"
-            onClick={() => toggleSection('administracion')}
-            aria-expanded={expandedSections.administracion}
-            aria-label={expandedSections.administracion ? 'Ocultar administración' : 'Mostrar administración'}
-          >
-            <span aria-hidden="true">{expandedSections.administracion ? '▾' : '▸'}</span>
-          </button>
-        </div>
+          {expandedSections.administracion && (
+            <>
 
-        {expandedSections.administracion && (
-          <>
+          {loading ? <p>Cargando ventas...</p> : null}
 
-        {loading ? <p>Cargando ventas...</p> : null}
+          {!loading && ventas.length === 0 ? <p>No hay ventas registradas.</p> : null}
 
-        {!loading && ventas.length === 0 ? <p>No hay ventas registradas.</p> : null}
+          {!loading && ventas.length > 0 ? (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Venta</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Total</th>
+                    <th>Detalle</th>
+                    <th>Estado actual</th>
+                    <th>Nuevo estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ventas.map((venta) => {
+                    const detalleItems = Array.isArray(venta.detalle_items) ? venta.detalle_items : []
+                    const isExpanded = Number(expandedVentaId) === Number(venta.venta_id)
 
-        {!loading && ventas.length > 0 ? (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Venta</th>
-                  <th>Fecha</th>
-                  <th>Cliente</th>
-                  <th>Total</th>
-                  <th>Detalle</th>
-                  <th>Estado actual</th>
-                  <th>Nuevo estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ventas.map((venta) => {
-                  const detalleItems = Array.isArray(venta.detalle_items) ? venta.detalle_items : []
-                  const isExpanded = Number(expandedVentaId) === Number(venta.venta_id)
-
-                  return (
-                    <Fragment key={venta.venta_id}>
-                      <tr>
-                        <td>#{venta.venta_id}</td>
-                        <td>{new Date(venta.created_at).toLocaleString('es-AR')}</td>
-                        <td>
-                          <div className="ventas-cliente-cell">
-                            <strong>{venta.cliente_nombre || `Cliente ${venta.cliente_id}`}</strong>
-                            <small>{venta.cliente_email || '-'}</small>
-                            <small>{venta.cliente_telefono || '-'}</small>
-                          </div>
-                        </td>
-                        <td>{formatCurrency(venta.total)}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn ghost tiny"
-                            onClick={() => handleToggleDetalle(venta.venta_id)}
-                          >
-                            {isExpanded ? 'Ocultar' : `Ver (${detalleItems.length})`}
-                          </button>
-                        </td>
-                        <td>
-                          <span className="ventas-status-pill">{venta.estado_nombre || `Estado ${venta.estado_id}`}</span>
-                        </td>
-                        <td>
-                          <select
-                            value={estadoSeleccionado[Number(venta.venta_id)] || Number(venta.estado_id)}
-                            onChange={(event) =>
-                              cambiarEstadoSeleccionado(venta.venta_id, Number(event.target.value))
-                            }
-                            disabled={saving}
-                          >
-                            {estados.map((estado) => (
-                              <option key={estado.estado_id} value={estado.estado_id}>
-                                {estado.descripcion}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          <div className="actions compact">
+                    return (
+                      <Fragment key={venta.venta_id}>
+                        <tr>
+                          <td>#{venta.venta_id}</td>
+                          <td>{new Date(venta.created_at).toLocaleString('es-AR')}</td>
+                          <td>
+                            <div className="ventas-cliente-cell">
+                              <strong>{venta.cliente_nombre || `Cliente ${venta.cliente_id}`}</strong>
+                              <small>{venta.cliente_email || '-'}</small>
+                              <small>{venta.cliente_telefono || '-'}</small>
+                            </div>
+                          </td>
+                          <td>{formatCurrency(venta.total)}</td>
+                          <td>
                             <button
                               type="button"
-                              className="btn tiny"
-                              onClick={() => guardarEstadoVenta(venta.venta_id)}
+                              className="btn ghost tiny"
+                              onClick={() => handleToggleDetalle(venta.venta_id)}
+                            >
+                              {isExpanded ? 'Ocultar' : `Ver (${detalleItems.length})`}
+                            </button>
+                          </td>
+                          <td>
+                            <span className="ventas-status-pill">{venta.estado_nombre || `Estado ${venta.estado_id}`}</span>
+                          </td>
+                          <td>
+                            <select
+                              value={estadoSeleccionado[Number(venta.venta_id)] || Number(venta.estado_id)}
+                              onChange={(event) =>
+                                cambiarEstadoSeleccionado(venta.venta_id, Number(event.target.value))
+                              }
                               disabled={saving}
                             >
-                              Guardar
-                            </button>
-                            <button
-                              type="button"
-                              className="btn danger tiny"
-                              onClick={() => eliminarVenta(venta.venta_id)}
-                              disabled={saving}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      {isExpanded ? (
-                        <tr key={`detalle-${venta.venta_id}`}>
-                          <td colSpan={8}>
-                            <div className="ventas-detalle-box">
-                              {detalleItems.length === 0 ? <p>La venta no tiene detalle de items.</p> : null}
-                              {detalleItems.map((item) => (
-                                <article key={item.detalle_id} className="ventas-detalle-item">
-                                  <p>
-                                    <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
-                                  </p>
-                                  <p>
-                                    {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
-                                  </p>
-                                  <p>
-                                    Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
-                                    {formatCurrency(item.subtotal)}
-                                  </p>
-                                </article>
+                              {estados.map((estado) => (
+                                <option key={estado.estado_id} value={estado.estado_id}>
+                                  {estado.descripcion}
+                                </option>
                               ))}
+                            </select>
+                          </td>
+                          <td>
+                            <div className="actions compact">
+                              <button
+                                type="button"
+                                className="btn tiny"
+                                onClick={() => guardarEstadoVenta(venta.venta_id)}
+                                disabled={saving}
+                              >
+                                Guardar
+                              </button>
+                              <button
+                                type="button"
+                                className="btn danger tiny"
+                                onClick={() => eliminarVenta(venta.venta_id)}
+                                disabled={saving}
+                              >
+                                Eliminar
+                              </button>
                             </div>
                           </td>
                         </tr>
-                      ) : null}
-                    </Fragment>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-          </>
-        )}
-      </section>
 
-      <section className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0 }}>Registrar Venta Manual</h2>
-          <button
-            type="button"
-            className="home-admin-section-toggle"
-            onClick={() => toggleSection('manual')}
-            aria-expanded={expandedSections.manual}
-            aria-label={expandedSections.manual ? 'Ocultar registrar venta' : 'Mostrar registrar venta'}
-          >
-            <span aria-hidden="true">{expandedSections.manual ? '▾' : '▸'}</span>
-          </button>
-        </div>
-
-        {expandedSections.manual && (
-          <>
-
-        <div className="grid two ventas-manual-grid">
-          <label className="field">
-            <span>Cliente</span>
-            <div className="home-admin-search-select ventas-search-select">
-              <input
-                type="search"
-                disabled={manualForm.usarClienteNuevo}
-                value={clienteQuery}
-                onFocus={() => setShowClienteSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowClienteSuggestions(false), 120)}
-                onChange={(event) => {
-                  const value = event.target.value
-                  setClienteQuery(value)
-                  cambiarManualFormCampo('clienteId', '')
-                  setShowClienteSuggestions(true)
-                }}
-                placeholder="Buscar cliente por nombre, email o telefono"
-                autoComplete="off"
-              />
-
-              {!manualForm.usarClienteNuevo && showClienteSuggestions && clientesFiltrados.length > 0 ? (
-                <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Clientes sugeridos">
-                  {clientesFiltrados.map((cliente) => (
-                    <button
-                      key={cliente.cliente_id}
-                      type="button"
-                      className="home-admin-search-suggestion ventas-search-suggestion"
-                      onMouseDown={(event) => {
-                        event.preventDefault()
-                        handleClienteSelect(cliente)
-                      }}
-                    >
-                      <span className="home-admin-search-suggestion-name">
-                        {cliente.nombre} {cliente.email ? `(${cliente.email})` : ''}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+                        {isExpanded ? (
+                          <tr key={`detalle-${venta.venta_id}`}>
+                            <td colSpan={8}>
+                              <div className="ventas-detalle-box">
+                                {detalleItems.length === 0 ? <p>La venta no tiene detalle de items.</p> : null}
+                                {detalleItems.map((item) => (
+                                  <article key={item.detalle_id} className="ventas-detalle-item">
+                                    <p>
+                                      <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
+                                    </p>
+                                    <p>
+                                      {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
+                                    </p>
+                                    <p>
+                                      Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
+                                      {formatCurrency(item.subtotal)}
+                                    </p>
+                                  </article>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
-            {manualForm.clienteId && clienteSeleccionado ? (
-              <small>Seleccionado: {clienteSeleccionado.nombre}</small>
-            ) : null}
-          </label>
+          ) : null}
+            </>
+          )}
+        </section>
 
-          <label className="field ventas-manual-toggle">
-            <span>Modo de cliente</span>
-            <label className="ventas-checkbox-line">
-              <input
-                type="checkbox"
-                checked={manualForm.usarClienteNuevo}
-                onChange={(event) => {
-                  const checked = event.target.checked
-                  cambiarManualFormCampo('usarClienteNuevo', checked)
-                  if (checked) {
+        <section className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <h2 style={{ margin: 0 }}>Registrar Venta Manual</h2>
+            <button
+              type="button"
+              className="home-admin-section-toggle"
+              onClick={() => toggleSection('manual')}
+              aria-expanded={expandedSections.manual}
+              aria-label={expandedSections.manual ? 'Ocultar registrar venta' : 'Mostrar registrar venta'}
+            >
+              <span aria-hidden="true">{expandedSections.manual ? '▾' : '▸'}</span>
+            </button>
+          </div>
+
+          {expandedSections.manual && (
+            <>
+
+          <div className="grid two ventas-manual-grid">
+            <label className="field">
+              <span>Cliente</span>
+              <div className="home-admin-search-select ventas-search-select">
+                <input
+                  type="search"
+                  disabled={manualForm.usarClienteNuevo}
+                  value={clienteQuery}
+                  onFocus={() => setShowClienteSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowClienteSuggestions(false), 120)}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setClienteQuery(value)
                     cambiarManualFormCampo('clienteId', '')
-                    setClienteQuery('')
-                  }
-                }}
-              />
-              Cargar cliente nuevo manualmente
-            </label>
-          </label>
-        </div>
+                    setShowClienteSuggestions(true)
+                  }}
+                  placeholder="Buscar cliente por nombre, email o telefono"
+                  autoComplete="off"
+                />
 
-        {manualForm.usarClienteNuevo ? (
-          <div className="grid three ventas-manual-grid">
-            <label className="field">
-              <span>Nombre cliente</span>
-              <input
-                type="text"
-                value={manualForm.clienteNombre}
-                onChange={(event) => cambiarManualFormCampo('clienteNombre', event.target.value)}
-                placeholder="Nombre y apellido"
-              />
+                {!manualForm.usarClienteNuevo && showClienteSuggestions && clientesFiltrados.length > 0 ? (
+                  <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Clientes sugeridos">
+                    {clientesFiltrados.map((cliente) => (
+                      <button
+                        key={cliente.cliente_id}
+                        type="button"
+                        className="home-admin-search-suggestion ventas-search-suggestion"
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          handleClienteSelect(cliente)
+                        }}
+                      >
+                        <span className="home-admin-search-suggestion-name">
+                          {cliente.nombre} {cliente.email ? `(${cliente.email})` : ''}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              {manualForm.clienteId && clienteSeleccionado ? (
+                <small>Seleccionado: {clienteSeleccionado.nombre}</small>
+              ) : null}
             </label>
 
-            <label className="field">
-              <span>Email cliente</span>
-              <input
-                type="email"
-                value={manualForm.clienteEmail}
-                onChange={(event) => cambiarManualFormCampo('clienteEmail', event.target.value)}
-                placeholder="cliente@email.com"
-              />
-            </label>
-
-            <label className="field">
-              <span>Telefono cliente</span>
-              <input
-                type="text"
-                value={manualForm.clienteTelefono}
-                onChange={(event) => cambiarManualFormCampo('clienteTelefono', event.target.value)}
-                placeholder="11 5555 5555"
-              />
+            <label className="field ventas-manual-toggle">
+              <span>Modo de cliente</span>
+              <label className="ventas-checkbox-line">
+                <input
+                  type="checkbox"
+                  checked={manualForm.usarClienteNuevo}
+                  onChange={(event) => {
+                    const checked = event.target.checked
+                    cambiarManualFormCampo('usarClienteNuevo', checked)
+                    if (checked) {
+                      cambiarManualFormCampo('clienteId', '')
+                      setClienteQuery('')
+                    }
+                  }}
+                />
+                Cargar cliente nuevo manualmente
+              </label>
             </label>
           </div>
-        ) : null}
 
-        <div className="grid two ventas-manual-grid">
-          <label className="field">
-            <span>Metodo de pago</span>
-            <select
-              value={manualForm.metodoId}
-              onChange={(event) => cambiarManualFormCampo('metodoId', event.target.value)}
-            >
-              <option value="">Seleccionar metodo</option>
-              {metodos.map((metodo) => (
-                <option key={metodo.metodo_id} value={metodo.metodo_id}>
-                  {metodo.descripcion}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="ventas-manual-items">
-          {manualForm.items.map((item, index) => (
-            <div key={`manual-item-${index}`} className="grid three ventas-manual-item-row">
+          {manualForm.usarClienteNuevo ? (
+            <div className="grid three ventas-manual-grid">
               <label className="field">
-                <span>Producto y variante</span>
-                <div className="home-admin-search-select ventas-search-select">
-                  <input
-                    type="search"
-                    value={itemProductoQueries[index] ?? getSelectedProductoLabel(index, item.variante_id)}
-                    onFocus={() => setFocusedProductoIndex(index)}
-                    onBlur={() => setTimeout(() => setFocusedProductoIndex(null), 120)}
-                    onChange={(event) => handleProductoQueryChange(index, event.target.value)}
-                    placeholder="Buscar producto por nombre"
-                    autoComplete="off"
-                  />
-
-                  {focusedProductoIndex === index ? (
-                    <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Productos sugeridos">
-                      {(productosFiltradosPorItem[index] || productosDisponibles.slice(0, 8)).map((producto) => (
-                        <button
-                          key={producto.producto_id}
-                          type="button"
-                          className="home-admin-search-suggestion ventas-search-suggestion"
-                          onMouseDown={(event) => {
-                            event.preventDefault()
-                            handleProductoSelect(index, producto)
-                          }}
-                        >
-                          <span className="home-admin-search-suggestion-name">{producto.producto_nombre}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-
-                {(() => {
-                  const selectedProductoId = getSelectedProductoId(index, item.variante_id)
-                  const variantesProducto = selectedProductoId > 0 ? getVariantesPorProducto(selectedProductoId) : []
-
-                  if (selectedProductoId <= 0) return null
-
-                  if (variantesProducto.length <= 1) {
-                    return item.variante_id ? <small>Variante unica seleccionada automaticamente</small> : null
-                  }
-
-                  return (
-                    <div className="home-admin-search-select ventas-search-select ventas-variant-picker">
-                      <input
-                        type="search"
-                        value={itemVarianteQueries[index] ?? ''}
-                        onFocus={() => setFocusedVarianteIndex(index)}
-                        onBlur={() => setTimeout(() => setFocusedVarianteIndex(null), 120)}
-                        onChange={(event) => handleVarianteQueryChange(index, event.target.value)}
-                        placeholder="Seleccionar variante"
-                        autoComplete="off"
-                      />
-
-                      {focusedVarianteIndex === index ? (
-                        <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Variantes sugeridas">
-                          {getVariantesFiltradas(selectedProductoId, itemVarianteQueries[index] ?? '').map((variante) => (
-                            <button
-                              key={variante.variante_id}
-                              type="button"
-                              className="home-admin-search-suggestion ventas-search-suggestion"
-                              onMouseDown={(event) => {
-                                event.preventDefault()
-                                handleVarianteSelect(index, variante)
-                              }}
-                            >
-                              <span className="home-admin-search-suggestion-name">{getVarianteLabel(variante)}</span>
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  )
-                })()}
-              </label>
-
-              <label className="field">
-                <span>Cantidad</span>
+                <span>Nombre cliente</span>
                 <input
-                  type="number"
-                  min="1"
-                  value={item.cantidad}
-                  onChange={(event) => cambiarManualItem(index, 'cantidad', event.target.value)}
+                  type="text"
+                  value={manualForm.clienteNombre}
+                  onChange={(event) => cambiarManualFormCampo('clienteNombre', event.target.value)}
+                  placeholder="Nombre y apellido"
                 />
               </label>
 
-              <div className="actions ventas-manual-item-actions">
-                <button
-                  type="button"
-                  className="btn ghost tiny"
-                  onClick={handleAgregarItemManual}
-                  disabled={saving}
-                >
-                  + Item
-                </button>
-                <button
-                  type="button"
-                  className="btn danger tiny"
-                  onClick={() => handleQuitarItemManual(index)}
-                  disabled={saving}
-                >
-                  Quitar
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+              <label className="field">
+                <span>Email cliente</span>
+                <input
+                  type="email"
+                  value={manualForm.clienteEmail}
+                  onChange={(event) => cambiarManualFormCampo('clienteEmail', event.target.value)}
+                  placeholder="cliente@email.com"
+                />
+              </label>
 
-        <div className="actions">
-          <button type="button" className="btn success" onClick={guardarVentaManual} disabled={saving}>
-            Registrar venta manual
-          </button>
-        </div>
-          </>
-        )}
-      </section>
+              <label className="field">
+                <span>Telefono cliente</span>
+                <input
+                  type="text"
+                  value={manualForm.clienteTelefono}
+                  onChange={(event) => cambiarManualFormCampo('clienteTelefono', event.target.value)}
+                  placeholder="11 5555 5555"
+                />
+              </label>
+            </div>
+          ) : null}
+
+          <div className="grid two ventas-manual-grid">
+            <label className="field">
+              <span>Metodo de pago</span>
+              <select
+                value={manualForm.metodoId}
+                onChange={(event) => cambiarManualFormCampo('metodoId', event.target.value)}
+              >
+                <option value="">Seleccionar metodo</option>
+                {metodos.map((metodo) => (
+                  <option key={metodo.metodo_id} value={metodo.metodo_id}>
+                    {metodo.descripcion}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="ventas-manual-items">
+            {manualForm.items.map((item, index) => (
+              <div key={`manual-item-${index}`} className="grid three ventas-manual-item-row">
+                <label className="field">
+                  <span>Producto y variante</span>
+                  <div className="home-admin-search-select ventas-search-select">
+                    <input
+                      type="search"
+                      value={itemProductoQueries[index] ?? getSelectedProductoLabel(index, item.variante_id)}
+                      onFocus={() => setFocusedProductoIndex(index)}
+                      onBlur={() => setTimeout(() => setFocusedProductoIndex(null), 120)}
+                      onChange={(event) => handleProductoQueryChange(index, event.target.value)}
+                      placeholder="Buscar producto por nombre"
+                      autoComplete="off"
+                    />
+
+                    {focusedProductoIndex === index ? (
+                      <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Productos sugeridos">
+                        {(productosFiltradosPorItem[index] || productosDisponibles.slice(0, 8)).map((producto) => (
+                          <button
+                            key={producto.producto_id}
+                            type="button"
+                            className="home-admin-search-suggestion ventas-search-suggestion"
+                            onMouseDown={(event) => {
+                              event.preventDefault()
+                              handleProductoSelect(index, producto)
+                            }}
+                          >
+                            <span className="home-admin-search-suggestion-name">{producto.producto_nombre}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {(() => {
+                    const selectedProductoId = getSelectedProductoId(index, item.variante_id)
+                    const variantesProducto = selectedProductoId > 0 ? getVariantesPorProducto(selectedProductoId) : []
+
+                    if (selectedProductoId <= 0) return null
+
+                    if (variantesProducto.length <= 1) {
+                      return item.variante_id ? <small>Variante unica seleccionada automaticamente</small> : null
+                    }
+
+                    return (
+                      <div className="home-admin-search-select ventas-search-select ventas-variant-picker">
+                        <input
+                          type="search"
+                          value={itemVarianteQueries[index] ?? ''}
+                          onFocus={() => setFocusedVarianteIndex(index)}
+                          onBlur={() => setTimeout(() => setFocusedVarianteIndex(null), 120)}
+                          onChange={(event) => handleVarianteQueryChange(index, event.target.value)}
+                          placeholder="Seleccionar variante"
+                          autoComplete="off"
+                        />
+
+                        {focusedVarianteIndex === index ? (
+                          <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Variantes sugeridas">
+                            {getVariantesFiltradas(selectedProductoId, itemVarianteQueries[index] ?? '').map((variante) => (
+                              <button
+                                key={variante.variante_id}
+                                type="button"
+                                className="home-admin-search-suggestion ventas-search-suggestion"
+                                onMouseDown={(event) => {
+                                  event.preventDefault()
+                                  handleVarianteSelect(index, variante)
+                                }}
+                              >
+                                <span className="home-admin-search-suggestion-name">{getVarianteLabel(variante)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    )
+                  })()}
+                </label>
+
+                <label className="field">
+                  <span>Cantidad</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.cantidad}
+                    onChange={(event) => cambiarManualItem(index, 'cantidad', event.target.value)}
+                  />
+                </label>
+
+                <div className="actions ventas-manual-item-actions">
+                  <button
+                    type="button"
+                    className="btn ghost tiny"
+                    onClick={handleAgregarItemManual}
+                    disabled={saving}
+                  >
+                    + Item
+                  </button>
+                  <button
+                    type="button"
+                    className="btn danger tiny"
+                    onClick={() => handleQuitarItemManual(index)}
+                    disabled={saving}
+                  >
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="actions">
+            <button type="button" className="btn success" onClick={guardarVentaManual} disabled={saving}>
+              Registrar venta manual
+            </button>
+          </div>
+            </>
+          )}
+        </section>
+      </div>
     </MainLayout>
   )
 }
