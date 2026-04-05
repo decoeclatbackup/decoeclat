@@ -4,6 +4,22 @@ import { homePublicService } from '../../features/home/services/homePublicServic
 import { carritoServices } from '../../features/carrito/services/carritoService'
 
 const CART_UPDATED_EVENT = 'decoeclat:cart-updated'
+const CATEGORY_DISPLAY_ORDER = [
+  'textiles',
+  'kids',
+  'combos',
+  'cesteria',
+  'para la cocina',
+  'para la mesa',
+]
+
+function normalizeCategoryName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
 
 function getItemsCount(carrito) {
   const items = Array.isArray(carrito?.items) ? carrito.items : []
@@ -161,11 +177,24 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
 
   const categoryTree = useMemo(() => buildCategoryTree(internalCategories), [internalCategories])
   const orderedCategoryTree = useMemo(() => {
+    const orderIndexByName = new Map(
+      CATEGORY_DISPLAY_ORDER.map((name, index) => [name, index])
+    )
+
     const items = [...categoryTree]
     items.sort((a, b) => {
-      const aHasChildren = a.children.length > 0 ? 1 : 0
-      const bHasChildren = b.children.length > 0 ? 1 : 0
-      if (aHasChildren !== bHasChildren) return bHasChildren - aHasChildren
+      const aOrder = orderIndexByName.get(normalizeCategoryName(a.name))
+      const bOrder = orderIndexByName.get(normalizeCategoryName(b.name))
+      const aHasCustomOrder = Number.isInteger(aOrder)
+      const bHasCustomOrder = Number.isInteger(bOrder)
+
+      if (aHasCustomOrder && bHasCustomOrder) {
+        return aOrder - bOrder
+      }
+
+      if (aHasCustomOrder) return -1
+      if (bHasCustomOrder) return 1
+
       return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
     })
     return items
@@ -437,7 +466,7 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
                   <span>Productos</span>
                 </div>
 
-                <Link to="/catalogo" className="home-top-mobile-products-link" onClick={handleCategoryClick}>
+                <Link to="/catalogo" className="home-top-mobile-products-link home-top-mobile-products-link-all" onClick={handleCategoryClick}>
                   Ver todo
                 </Link>
 
@@ -482,7 +511,7 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
 
                 <Link
                   to={`/categoria/${mobileActiveCategory.id}`}
-                  className="home-top-mobile-products-link"
+                  className="home-top-mobile-products-link home-top-mobile-products-link-all"
                   onClick={handleCategoryClick}
                 >
                   Ver todo
