@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 const CART_ITEM_ADDED_EVENT = 'decoeclat:cart-item-added'
 const SEO_DEFAULT_TITLE = 'DECOECLAT | Textiles y deco para el hogar en Argentina'
 const SEO_DEFAULT_DESCRIPTION = 'DECOECLAT: textiles, fundas y deco para transformar tu hogar con estilo.'
-const SEO_DEFAULT_IMAGE_PATH = '/deco2%20-%20Editado.jpg'
+const SEO_DEFAULT_IMAGE_PATH = '/deco2-editado.jpg'
 
 function upsertMetaTag({ name, property, content }) {
   if (typeof document === 'undefined') return
