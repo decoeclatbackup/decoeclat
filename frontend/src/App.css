@@ -3944,6 +3944,10 @@ table select {
   gap: 1rem;
 }
 
+.card.contact-page {
+  background: #e9ebea;
+}
+
 .contact-page-header {
   display: grid;
   gap: 0.45rem;
@@ -3976,6 +3980,11 @@ table select {
   color: var(--color-texto);
   padding: 0.6rem 0.75rem;
   font: inherit;
+}
+
+.contact-page .contact-form-grid input,
+.contact-page .contact-form-grid textarea {
+  background: #e9ebea;
 }
 
 .contact-form-grid textarea {
