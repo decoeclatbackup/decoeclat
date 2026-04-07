@@ -6,8 +6,17 @@ import { useCarrito } from '../../carrito/hooks/useCarrito'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { formatCurrency } from '../../../shared/utils/utils'
 
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
 function getVariantSizeLabel(variant) {
-  return variant?.size || variant?.Size || variant?.valor || `${variant?.size_id || '-'}`
+  const label = variant?.size || variant?.Size || variant?.valor || `${variant?.size_id || '-'}`
+  return normalizeText(label) === 'talle unico' ? 'Medida única' : label
 }
 
 function resolveImage(product) {

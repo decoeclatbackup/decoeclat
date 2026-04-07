@@ -14,13 +14,30 @@ function buildBannerTarget(banner) {
 
 function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
   const hasStock = Number(item?.stock ?? 0) > 0
+  const basePrice = Number(item?.precio ?? 0)
+  const offerPrice = Number(item?.precio_oferta ?? 0)
+  const hasOffer = offerPrice > 0 && basePrice > offerPrice
+  const discountPercentage = hasOffer
+    ? Math.round(((basePrice - offerPrice) / basePrice) * 100)
+    : 0
+  const offerBadgeLevelClass = discountPercentage > 30
+    ? 'is-high'
+    : discountPercentage > 15
+      ? 'is-medium'
+      : 'is-low'
 
   return (
-    <article className={`home-public-featured-card ${className}`.trim()}>
+    <article className={`home-public-featured-card ${hasOffer ? 'has-offer' : ''} ${className}`.trim()}>
       <Link
         to={`/producto/${item.producto_id}`}
         className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''}`}
       >
+        {hasOffer ? (
+          <span className={`product-offer-badge ${offerBadgeLevelClass}`}>
+            PROMO{discountPercentage > 0 ? ` -${discountPercentage}%` : ''}
+          </span>
+        ) : null}
+
         {item.imagen_principal ? (
           <div className="home-public-featured-media-stack">
             <img
@@ -43,8 +60,8 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
       <div className="home-public-featured-body">
         <h3>{item.nombre}</h3>
         <div className="home-public-featured-footer">
-          <div className="home-public-featured-price">
-            {item.precio_oferta ? (
+          <div className={`home-public-featured-price ${hasOffer ? 'has-offer' : ''}`}>
+            {hasOffer ? (
               <>
                 <span className="original-price">{formatCurrency(item.precio)}</span>
                 <span className="offer-price">{formatCurrency(item.precio_oferta)}</span>

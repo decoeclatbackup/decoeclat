@@ -14,11 +14,12 @@ import sizesRoutes from "./routes/sizes.routes.js";
 import carritoRoutes from "./routes/carrito.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
 import path from "path";
+import { pool } from "./config/db.js";
 
 export const app = express();
 
 app.use(cors({
-  origin: ["https://decoeclat.vercel.app", "http://localhost:5173", "http://localhost:3000"],
+  origin: ["https://decoeclat.vercel.app", "http://localhost:5173", "http://localhost:3000", "http://decoeclat.com.ar", "https://www.decoeclat.com.ar"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));
@@ -40,6 +41,29 @@ app.use("/api", contactoRoutes);
 app.use("/api/imagenes", imagenesRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
+
+async function healthHandler(_req, res) {
+  try {
+    await pool.query("SELECT 1");
+    return res.status(200).json({
+      status: "ok",
+      database: "ok",
+      service: "decoeclat-backend",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: "degraded",
+      database: "unavailable",
+      service: "decoeclat-backend",
+      timestamp: new Date().toISOString(),
+      error: "Database connection failed",
+    });
+  }
+}
+
+app.get("/health", healthHandler);
+app.get("/api/health", healthHandler);
 
 
 app.get("/", (req, res) => {

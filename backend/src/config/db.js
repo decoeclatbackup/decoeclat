@@ -48,12 +48,20 @@ async function ensureDefaultCategories() {
   `);
 }
 
+async function ensureProductDescriptionSchema() {
+  await pool.query(`
+    ALTER TABLE IF EXISTS productos
+    ALTER COLUMN descripcion TYPE text
+  `);
+}
+
 pool.query("SELECT 1")
   .then(async () => {
     console.log("✅ Conectado a PostgreSQL");
     await ensureImageSchema();
     await ensureContactSchema();
     await ensureDefaultCategories();
+    await ensureProductDescriptionSchema();
   })
   .catch((err) => {
     console.error("❌ Error de conexión a la base de datos");

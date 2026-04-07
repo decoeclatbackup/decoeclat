@@ -58,6 +58,17 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
         const productImage = resolveImage(product)
         const secondaryImage = resolveSecondaryImage(product)
         const hasStock = Number(product?.stock ?? 0) > 0
+        const basePrice = Number(product?.precio ?? 0)
+        const offerPrice = Number(product?.precioOferta ?? 0)
+        const hasOffer = Boolean(product?.enOferta) && offerPrice > 0 && basePrice > offerPrice
+        const discountPercentage = hasOffer
+          ? Math.round(((basePrice - offerPrice) / basePrice) * 100)
+          : 0
+        const offerBadgeLevelClass = discountPercentage > 30
+          ? 'is-high'
+          : discountPercentage > 15
+            ? 'is-medium'
+            : 'is-low'
         return (
           <Link
             key={product.producto_id}
@@ -66,10 +77,16 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
             data-catalog-product-id={product.producto_id}
             onClick={() => onProductNavigate?.(product.producto_id)}
           >
-            <article className="home-public-featured-card catalog-product-card">
+            <article className={`home-public-featured-card catalog-product-card ${hasOffer ? 'has-offer' : ''}`.trim()}>
               <div
                 className={`home-public-featured-media ${secondaryImage ? 'has-secondary' : ''} ${productImage ? '' : 'catalog-product-media-placeholder'}`}
               >
+                {hasOffer ? (
+                  <span className={`product-offer-badge ${offerBadgeLevelClass}`}>
+                    PROMO{discountPercentage > 0 ? ` -${discountPercentage}%` : ''}
+                  </span>
+                ) : null}
+
                 {productImage ? (
                   <div className="home-public-featured-media-stack">
                     <img
@@ -95,8 +112,8 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
                 <p className="catalog-product-category">{product.categoria || 'Categoria general'}</p>
 
                 <div className="home-public-featured-footer catalog-product-footer">
-                  <div className="home-public-featured-price catalog-product-price">
-                    {product.enOferta && product.precioOferta ? (
+                  <div className={`home-public-featured-price catalog-product-price ${hasOffer ? 'has-offer' : ''}`}>
+                    {hasOffer ? (
                       <>
                         <span className="original-price">{formatCurrency(product.precio)}</span>
                         <span className="offer-price">{formatCurrency(product.precioOferta)}</span>

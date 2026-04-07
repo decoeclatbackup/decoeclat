@@ -1,5 +1,11 @@
 import { productosRepository } from "../repositories/productos.repository.js";
 
+function normalizeProductName(value) {
+  const rawName = String(value ?? '').trim();
+  if (!rawName) return rawName;
+  return rawName.toLocaleUpperCase('es-AR');
+}
+
 /**
  * Service layer para Productos.
  * Ahora solo maneja la información general del producto.
@@ -16,7 +22,7 @@ export const productosService = {
     }
 
     const payload = {
-      nombre: data.name,
+      nombre: normalizeProductName(data.name),
       categoria_id: data.categoryId,
       descripcion: data.description ?? null,
     };
@@ -51,6 +57,14 @@ export const productosService = {
       if (Object.prototype.hasOwnProperty.call(updates, k)) {
         payload[k] = updates[k];
       }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'name')) {
+      payload.name = normalizeProductName(payload.name);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'nombre')) {
+      payload.nombre = normalizeProductName(payload.nombre);
     }
 
     if (Object.keys(payload).length === 0) return null;

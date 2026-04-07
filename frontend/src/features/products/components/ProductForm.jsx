@@ -38,6 +38,20 @@ function normalizePriceValue(rawValue, fallback = 0) {
   return parsed
 }
 
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+function formatSizeLabel(value) {
+  const rawLabel = String(value || '').trim()
+  if (normalizeText(rawLabel) === 'talle unico') return 'Medida única'
+  return rawLabel
+}
+
 export function ProductForm({
   form,
   isEditing,
@@ -68,6 +82,15 @@ export function ProductForm({
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [expandedSizes, setExpandedSizes] = useState({})
+  const [comboPriceMode, setComboPriceMode] = useState('single')
+  const [comboVariants, setComboVariants] = useState({
+    sinRellenoStock: '',
+    sinRellenoPrecio: '',
+    sinRellenoPrecioOferta: '',
+    conRellenoStock: '',
+    conRellenoPrecio: '',
+    conRellenoPrecioOferta: '',
+  })
   const selectedImagesRef = useRef([])
 
   useEffect(() => {
@@ -159,6 +182,20 @@ export function ProductForm({
   )
   const selectedSizeType = sizeTypes.find((type) => String(type.type_id) === String(localSizeTypeId))
   const isPillowSizeType = String(selectedSizeType?.type_nombre || '').toLowerCase().includes('almohad')
+  const selectedCategory = categories.find((category) => String(category.categoria_id) === String(form.categoryId))
+  const isComboCategory = normalizeText(selectedCategory?.nombre).includes('combo')
+
+  const comboDefaultSize = useMemo(() => {
+    if (!Array.isArray(sizes) || sizes.length === 0) return null
+
+    const byUniqueName = sizes.find((size) => normalizeText(size?.valor).includes('unico'))
+    if (byUniqueName) return byUniqueName
+
+    const byUniqueType = sizes.find((size) => normalizeText(size?.type_nombre).includes('unico'))
+    if (byUniqueType) return byUniqueType
+
+    return sizes[0]
+  }, [sizes])
 
   useEffect(() => {
     if (!isPillowSizeType) {
@@ -206,6 +243,64 @@ export function ProductForm({
     setMultiSizeVariants(nextVariants)
   }, [form.precio, form.productId, form.variantStocks, isPillowSizeType, sizesOfType])
 
+  useEffect(() => {
+    if (!isComboCategory) {
+      setComboPriceMode('single')
+      setComboVariants({
+        sinRellenoStock: '',
+        sinRellenoPrecio: '',
+        sinRellenoPrecioOferta: '',
+        conRellenoStock: '',
+        conRellenoPrecio: '',
+        conRellenoPrecioOferta: '',
+      })
+      return
+    }
+
+    if (comboDefaultSize?.type_id != null) {
+      const nextTypeId = String(comboDefaultSize.type_id)
+      if (String(localSizeTypeId) !== nextTypeId) {
+        setLocalSizeTypeId(nextTypeId)
+      }
+    }
+
+    if (comboDefaultSize?.size_id != null && String(form.sizeId || '') !== String(comboDefaultSize.size_id)) {
+      onChange({ target: { name: 'sizeId', value: String(comboDefaultSize.size_id) } })
+    }
+
+    const variantStocks = Array.isArray(form.variantStocks) ? form.variantStocks : []
+    const hasSinRelleno = variantStocks.some((variant) => Boolean(variant?.relleno) === false)
+    const hasConRelleno = variantStocks.some((variant) => Boolean(variant?.relleno) === true)
+    const nextMode = hasSinRelleno && hasConRelleno ? 'fill-options' : 'single'
+    setComboPriceMode(nextMode)
+
+    const sinRelleno = variantStocks.find((variant) => Boolean(variant?.relleno) === false)
+    const conRelleno = variantStocks.find((variant) => Boolean(variant?.relleno) === true)
+
+    setComboVariants({
+      sinRellenoStock: sinRelleno ? String(normalizeStockValue(sinRelleno.stock, 0)) : '',
+      sinRellenoPrecio: sinRelleno && Number(sinRelleno.precio) > 0
+        ? String(normalizePriceValue(sinRelleno.precio, 0))
+        : '',
+      sinRellenoPrecioOferta: sinRelleno && Boolean(sinRelleno.enOferta) && Number(sinRelleno.precioOferta) > 0
+        ? String(normalizePriceValue(sinRelleno.precioOferta, 0))
+        : '',
+      conRellenoStock: conRelleno ? String(normalizeStockValue(conRelleno.stock, 0)) : '',
+      conRellenoPrecio: conRelleno && Number(conRelleno.precio) > 0
+        ? String(normalizePriceValue(conRelleno.precio, 0))
+        : '',
+      conRellenoPrecioOferta: conRelleno && Boolean(conRelleno.enOferta) && Number(conRelleno.precioOferta) > 0
+        ? String(normalizePriceValue(conRelleno.precioOferta, 0))
+        : '',
+    })
+  }, [
+    comboDefaultSize,
+    form.sizeId,
+    form.variantStocks,
+    isComboCategory,
+    localSizeTypeId,
+  ])
+
   function handleParentChange(e) {
     const pid = e.target.value
     setLocalParentId(pid)
@@ -236,6 +331,13 @@ export function ProductForm({
     }))
   }
 
+  function handleComboVariantChange(field, value) {
+    setComboVariants((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
   function toggleExpandedSize(sizeId) {
     setExpandedSizes((prev) => ({
       ...prev,
@@ -244,6 +346,59 @@ export function ProductForm({
   }
 
   function buildVariantStocksPayload() {
+    if (isComboCategory) {
+      const comboSizeId = Number(comboDefaultSize?.size_id || form.sizeId)
+      if (!Number.isInteger(comboSizeId) || comboSizeId <= 0) return []
+
+      if (comboPriceMode === 'single') {
+        const singlePrice = normalizePriceValue(form.precio, 0)
+        if (singlePrice <= 0) return []
+
+        return [{
+          sizeId: comboSizeId,
+          relleno: false,
+          stock: normalizeStockValue(form.stock, 0),
+          precio: singlePrice,
+          precioOferta: form.enOferta ? normalizePriceValue(form.precioOferta, 0) : null,
+          enOferta: Boolean(form.enOferta),
+        }]
+      }
+
+      const variants = []
+
+      const sinPriceRaw = String(comboVariants.sinRellenoPrecio ?? '').trim()
+      if (sinPriceRaw !== '') {
+        const sinPrice = normalizePriceValue(sinPriceRaw, 0)
+        if (sinPrice > 0) {
+          variants.push({
+            sizeId: comboSizeId,
+            relleno: false,
+            stock: normalizeStockValue(comboVariants.sinRellenoStock, 0),
+            precio: sinPrice,
+            precioOferta: form.enOferta ? normalizePriceValue(comboVariants.sinRellenoPrecioOferta, 0) : null,
+            enOferta: Boolean(form.enOferta),
+          })
+        }
+      }
+
+      const conPriceRaw = String(comboVariants.conRellenoPrecio ?? '').trim()
+      if (conPriceRaw !== '') {
+        const conPrice = normalizePriceValue(conPriceRaw, 0)
+        if (conPrice > 0) {
+          variants.push({
+            sizeId: comboSizeId,
+            relleno: true,
+            stock: normalizeStockValue(comboVariants.conRellenoStock, 0),
+            precio: conPrice,
+            precioOferta: form.enOferta ? normalizePriceValue(comboVariants.conRellenoPrecioOferta, 0) : null,
+            enOferta: Boolean(form.enOferta),
+          })
+        }
+      }
+
+      return variants
+    }
+
     if (!isPillowSizeType) return []
 
     return sizesOfType
@@ -585,27 +740,29 @@ export function ProductForm({
           />
         </label>
 
-        <label className="field">
-          <span>Tipo de medida</span>
-          <select value={localSizeTypeId} onChange={handleSizeTypeChange} required>
-            <option value="">Seleccionar tipo</option>
-            {sizeTypes.map((type) => (
-              <option key={type.type_id} value={type.type_id}>
-                {type.type_nombre}
-              </option>
-            ))}
-          </select>
-          {errors.sizeId && !localSizeTypeId ? <small className="error">{errors.sizeId}</small> : null}
-        </label>
+        {!isComboCategory ? (
+          <label className="field">
+            <span>Tipo de medida</span>
+            <select value={localSizeTypeId} onChange={handleSizeTypeChange} required>
+              <option value="">Seleccionar tipo</option>
+              {sizeTypes.map((type) => (
+                <option key={type.type_id} value={type.type_id}>
+                  {type.type_nombre}
+                </option>
+              ))}
+            </select>
+            {errors.sizeId && !localSizeTypeId ? <small className="error">{errors.sizeId}</small> : null}
+          </label>
+        ) : null}
 
-        {sizesOfType.length > 0 && !isPillowSizeType ? (
+        {sizesOfType.length > 0 && !isPillowSizeType && !isComboCategory ? (
           <label className="field">
             <span>Medida</span>
             <select name="sizeId" value={form.sizeId} onChange={onChange} required>
               <option value="">Seleccionar medida</option>
               {sizesOfType.map((size) => (
                 <option key={size.size_id} value={size.size_id}>
-                  {size.valor}
+                  {formatSizeLabel(size.valor)}
                 </option>
               ))}
             </select>
@@ -613,7 +770,7 @@ export function ProductForm({
           </label>
         ) : null}
 
-        {sizesOfType.length > 0 && isPillowSizeType ? (
+        {sizesOfType.length > 0 && isPillowSizeType && !isComboCategory ? (
           <div className="field full-width">
             <span>Medidas, stock y precio (con o sin relleno)</span>
             <div className="size-stock-grid">
@@ -624,9 +781,9 @@ export function ProductForm({
                     className="size-stock-toggle"
                     onClick={() => toggleExpandedSize(size.size_id)}
                     aria-expanded={expandedSizes[size.size_id]}
-                    aria-label={`${expandedSizes[size.size_id] ? 'Contraer' : 'Expandir'} medida ${size.valor}`}
+                    aria-label={`${expandedSizes[size.size_id] ? 'Contraer' : 'Expandir'} medida ${formatSizeLabel(size.valor)}`}
                   >
-                    <span className="size-stock-toggle-text">{size.valor}</span>
+                    <span className="size-stock-toggle-text">{formatSizeLabel(size.valor)}</span>
                     <span className="size-stock-toggle-icon" aria-hidden="true">
                       {expandedSizes[size.size_id] ? '▾' : '▸'}
                     </span>
@@ -710,7 +867,36 @@ export function ProductForm({
           {errors.telaId ? <small className="error">{errors.telaId}</small> : null}
         </label>
 
-        {!isPillowSizeType ? (
+        {isComboCategory ? (
+          <div className="field full-width product-form-combo-mode">
+            <span className="product-form-combo-title">Precio para combos</span>
+            <div className="product-form-combo-mode-options" role="radiogroup" aria-label="Modo de precio para combos">
+              <label className={`product-form-combo-option ${comboPriceMode === 'single' ? 'active' : ''}`}>
+                <input
+                  type="radio"
+                  name="comboPriceMode"
+                  checked={comboPriceMode === 'single'}
+                  onChange={() => setComboPriceMode('single')}
+                  disabled={isSubmitting}
+                />
+                <span>Precio solo</span>
+              </label>
+
+              <label className={`product-form-combo-option ${comboPriceMode === 'fill-options' ? 'active' : ''}`}>
+                <input
+                  type="radio"
+                  name="comboPriceMode"
+                  checked={comboPriceMode === 'fill-options'}
+                  onChange={() => setComboPriceMode('fill-options')}
+                  disabled={isSubmitting}
+                />
+                <span>Con relleno / Sin relleno</span>
+              </label>
+            </div>
+          </div>
+        ) : null}
+
+        {!isPillowSizeType && (!isComboCategory || comboPriceMode === 'single') ? (
           <label className="field">
             <span>Precio</span>
             <input
@@ -726,7 +912,7 @@ export function ProductForm({
           </label>
         ) : null}
 
-        {!isPillowSizeType ? (
+        {!isPillowSizeType && (!isComboCategory || comboPriceMode === 'single') ? (
           <label className="field">
             <span>Stock</span>
             <input
@@ -741,6 +927,73 @@ export function ProductForm({
           </label>
         ) : null}
 
+        {isComboCategory && comboPriceMode === 'fill-options' ? (
+          <div className="field full-width product-form-combo-variants">
+            <span className="product-form-combo-title">Stock y precio por opción de relleno</span>
+            <div className="product-form-combo-variants-grid">
+              <div className="product-form-combo-variant-card">
+                <small className="product-form-combo-variant-heading">Sin relleno</small>
+                <input
+                  type="number"
+                  min="0"
+                  value={comboVariants.sinRellenoStock}
+                  onChange={(event) => handleComboVariantChange('sinRellenoStock', event.target.value)}
+                  placeholder="Stock sin relleno"
+                  disabled={isSubmitting}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={comboVariants.sinRellenoPrecio}
+                  onChange={(event) => handleComboVariantChange('sinRellenoPrecio', event.target.value)}
+                  placeholder="Precio sin relleno"
+                  disabled={isSubmitting}
+                />
+                {form.enOferta ? (
+                  <input
+                    type="number"
+                    min="0"
+                    value={comboVariants.sinRellenoPrecioOferta}
+                    onChange={(event) => handleComboVariantChange('sinRellenoPrecioOferta', event.target.value)}
+                    placeholder="Oferta sin relleno"
+                    disabled={isSubmitting}
+                  />
+                ) : null}
+              </div>
+
+              <div className="product-form-combo-variant-card">
+                <small className="product-form-combo-variant-heading">Con relleno</small>
+                <input
+                  type="number"
+                  min="0"
+                  value={comboVariants.conRellenoStock}
+                  onChange={(event) => handleComboVariantChange('conRellenoStock', event.target.value)}
+                  placeholder="Stock con relleno"
+                  disabled={isSubmitting}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={comboVariants.conRellenoPrecio}
+                  onChange={(event) => handleComboVariantChange('conRellenoPrecio', event.target.value)}
+                  placeholder="Precio con relleno"
+                  disabled={isSubmitting}
+                />
+                {form.enOferta ? (
+                  <input
+                    type="number"
+                    min="0"
+                    value={comboVariants.conRellenoPrecioOferta}
+                    onChange={(event) => handleComboVariantChange('conRellenoPrecioOferta', event.target.value)}
+                    placeholder="Oferta con relleno"
+                    disabled={isSubmitting}
+                  />
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="field" style={{ gap: '0.5rem' }}>
           <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 500, color: '#20363b' }}>
             <input
@@ -753,7 +1006,7 @@ export function ProductForm({
           </label>
         </div>
 
-        {form.enOferta && !isPillowSizeType ? (
+        {form.enOferta && !isPillowSizeType && (!isComboCategory || comboPriceMode === 'single') ? (
           <label className="field">
             <span>Precio Oferta</span>
             <input
