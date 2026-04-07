@@ -211,16 +211,8 @@ export function CartPage() {
     })
 
     const encodedMessage = encodeURIComponent(message)
-    const appUrl = `whatsapp://send?phone=${WHATSAPP_NUMBER}&text=${encodedMessage}`
     const webUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`
-
-    window.location.assign(appUrl)
-
-    setTimeout(() => {
-      if (document.visibilityState === 'visible') {
-        window.location.assign(webUrl)
-      }
-    }, 900)
+    window.open(webUrl, '_blank', 'noopener,noreferrer')
   }
 
   const handleNavbarSearch = () => {
