@@ -19,10 +19,6 @@ export default function AdminNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    setIsMobileMenuOpen(false)
-  }, [location.pathname])
-
-  useEffect(() => {
     if (typeof window === 'undefined') return undefined
 
     const mediaQuery = window.matchMedia('(max-width: 900px)')

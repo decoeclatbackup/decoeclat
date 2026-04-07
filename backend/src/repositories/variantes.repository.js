@@ -87,7 +87,7 @@ export const variantesRepository = {
     async delete(id) {
         const query = `
             UPDATE variantes_producto
-            SET activo=false
+            SET activo = false
             WHERE variante_id = $1
             RETURNING *
         `;

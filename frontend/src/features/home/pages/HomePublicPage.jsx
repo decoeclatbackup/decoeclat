@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
+import { SEO } from '../../../shared/components/SEO'
 import { useHomePublic } from '../hooks/useHomePublic'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import { formatCurrency } from '../../../shared/utils/utils'
@@ -250,20 +251,43 @@ export function HomePublicPage() {
   }
 
   return (
-    <MainLayout
-      title="Inicio | Textiles, fundas y deco"
-      description="Descubri textiles, fundas y accesorios deco para cada ambiente. Compra online en DECOECLAT con envios a todo el pais."
-      navbar={(
-        <HomePublicNavbar
-          categories={categories}
-          searchValue=""
-          onSearchSubmit={handleNavbarSearch}
-        />
-      )}
-    >
-      {error ? <p className="alert">{error}</p> : null}
+    <>
+      <SEO
+        title="Textiles, fundas y deco para el hogar en DECOECLAT"
+        description="Comprá textiles, fundas, accesorios y decoración para renovar tu hogar con estilo. Descubrí promociones, destacados y envíos a todo el país."
+        keywords="textiles para el hogar, fundas, deco para el hogar, decoración, compras online"
+        image="/d.jpg"
+      />
+      <MainLayout
+        seoDisabled
+        navbar={(
+          <HomePublicNavbar
+            categories={categories}
+            searchValue=""
+            onSearchSubmit={handleNavbarSearch}
+          />
+        )}
+      >
+        <h1
+          id="home-public-title"
+          style={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            padding: 0,
+            margin: '-1px',
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+        >
+          Textiles y deco para transformar tu hogar
+        </h1>
 
-      <section className="home-public-hero">
+        {error ? <p className="alert">{error}</p> : null}
+
+        <section className="home-public-hero">
         <div
           className="home-public-banner-shell"
           onTouchStart={handleBannerTouchStart}
@@ -303,9 +327,9 @@ export function HomePublicPage() {
             </div>
           ) : null}
         </div>
-      </section>
+        </section>
 
-      <section className="home-public-featured">
+        <section className="home-public-featured">
         <div className="home-public-section-heading centered">
           <h2>Productos destacados</h2>
           <Link to="/catalogo" className="home-public-see-all">Ver todos</Link>
@@ -409,9 +433,9 @@ export function HomePublicPage() {
             ))}
           </div>
         )}
-      </section>
+        </section>
 
-      <section className="home-public-values" aria-label="Valores de la marca">
+        <section className="home-public-values" aria-label="Valores de la marca">
         <div className="home-public-values-grid">
           <article className="home-public-value-card">
             <div className="home-public-value-icon" aria-hidden="true">
@@ -436,7 +460,8 @@ export function HomePublicPage() {
             </p>
           </article>
         </div>
-      </section>
-    </MainLayout>
+        </section>
+      </MainLayout>
+    </>
   )
 }

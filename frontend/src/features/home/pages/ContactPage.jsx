@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
+import { SEO } from '../../../shared/components/SEO'
 import { homePublicService } from '../services/homePublicService'
 
 const RAW_WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || ''
@@ -91,56 +92,63 @@ export function ContactPage() {
   }
 
   return (
-    <MainLayout
-      title="Contacto | Pedido personalizado"
-      description="Contactate con DECOECLAT para pedidos personalizados de textiles, medidas y asesoramiento por WhatsApp."
-      navbar={(
-        <HomePublicNavbar
-          searchValue=""
-          onSearchSubmit={handleNavbarSearch}
-        />
-      )}
-    >
-      <section className="card contact-page">
-        <div className="contact-page-header">
-          <p className="kicker">Contacto</p>
-          <h1>Armemos tu decoración</h1>
-          <p>
-            Completa el formulario con tu consulta para ayudarte con telas, medidas y recomendaciones para tu espacio.
-          </p>
-        </div>
-
-        <form className="contact-form" onSubmit={handleSubmit}>
-          <div className="contact-form-grid">
-            <label htmlFor="mensaje">Mensaje</label>
-            <textarea
-              id="mensaje"
-              name="mensaje"
-              value={formValues.mensaje}
-              onChange={handleInputChange}
-              required
-              rows={5}
-              placeholder="Contanos que estas buscando"
-            />
+    <>
+      <SEO
+        title="Contacto y pedidos personalizados"
+        description="Contactate con DECOECLAT por WhatsApp para pedidos personalizados, medidas y asesoramiento en textiles y decoración."
+        keywords="contacto, whatsapp, pedidos personalizados, textiles, decoración"
+        image="/d.jpg"
+      />
+      <MainLayout
+        seoDisabled
+        navbar={(
+          <HomePublicNavbar
+            searchValue=""
+            onSearchSubmit={handleNavbarSearch}
+          />
+        )}
+      >
+        <section className="card contact-page">
+          <div className="contact-page-header">
+            <p className="kicker">Contacto</p>
+            <h1>Armemos tu decoración</h1>
+            <p>
+              Completa el formulario con tu consulta para ayudarte con telas, medidas y recomendaciones para tu espacio.
+            </p>
           </div>
 
-          <button type="submit" className="btn home-public-link-btn" disabled={isSubmitting}>
-            {isSubmitting ? 'Enviando...' : 'Enviar mensaje por WhatsApp'}
-          </button>
+          <form className="contact-form" onSubmit={handleSubmit}>
+            <div className="contact-form-grid">
+              <label htmlFor="mensaje">Mensaje</label>
+              <textarea
+                id="mensaje"
+                name="mensaje"
+                value={formValues.mensaje}
+                onChange={handleInputChange}
+                required
+                rows={5}
+                placeholder="Contanos que estas buscando"
+              />
+            </div>
 
-          {submitError ? (
-            <p className="contact-form-error" role="alert">
-              {submitError}
-            </p>
-          ) : null}
+            <button type="submit" className="btn home-public-link-btn" disabled={isSubmitting}>
+              {isSubmitting ? 'Enviando...' : 'Enviar mensaje por WhatsApp'}
+            </button>
 
-          {isSubmitted ? (
-            <p className="contact-form-success" role="status">
-              Consulta guardada. Te abrimos WhatsApp para que la envies ahora.
-            </p>
-          ) : null}
-        </form>
-      </section>
-    </MainLayout>
+            {submitError ? (
+              <p className="contact-form-error" role="alert">
+                {submitError}
+              </p>
+            ) : null}
+
+            {isSubmitted ? (
+              <p className="contact-form-success" role="status">
+                Consulta guardada. Te abrimos WhatsApp para que la envies ahora.
+              </p>
+            ) : null}
+          </form>
+        </section>
+      </MainLayout>
+    </>
   )
 }

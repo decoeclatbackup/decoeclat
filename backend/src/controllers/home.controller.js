@@ -1,5 +1,9 @@
 import { homeService } from "../services/home.service.js";
 
+function resolveUploadedImage(file) {
+    return file?.path || file?.secure_url || null;
+}
+
 export const homeController = {
     async getHomeData(req, res) {
         try {
@@ -64,9 +68,8 @@ export const homeController = {
                 return res.status(400).json({ error: "Se requiere al menos una imagen (desktop o mobile)" });
             }
 
-            // Construir rutas (usar null si no se subió)
-            const desktopPath = req.files.desktop ? `/uploads/banners/${req.files.desktop[0].filename}` : null;
-            const mobilePath = req.files.mobile ? `/uploads/banners/${req.files.mobile[0].filename}` : null;
+            const desktopPath = req.files.desktop ? resolveUploadedImage(req.files.desktop[0]) : null;
+            const mobilePath = req.files.mobile ? resolveUploadedImage(req.files.mobile[0]) : null;
 
             const nuevoItem = await homeService.addCarouselItem(
                 desktopPath,
@@ -90,10 +93,10 @@ export const homeController = {
             // Si se suben nuevas imágenes, actualizar rutas
             if (req.files) {
                 if (req.files.desktop) {
-                    updates.img_desktop_url = `/uploads/banners/${req.files.desktop[0].filename}`;
+                    updates.img_desktop_url = resolveUploadedImage(req.files.desktop[0]);
                 }
                 if (req.files.mobile) {
-                    updates.img_mobile_url = `/uploads/banners/${req.files.mobile[0].filename}`;
+                    updates.img_mobile_url = resolveUploadedImage(req.files.mobile[0]);
                 }
             }
 

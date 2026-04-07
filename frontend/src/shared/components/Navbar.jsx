@@ -38,13 +38,6 @@ export default function Navbar({
 	})
 
 	useEffect(() => {
-		setOpenCategoryId(null)
-		if (isMobileViewport) {
-			setIsMobileMenuOpen(false)
-		}
-	}, [selectedCategoryId])
-
-	useEffect(() => {
 		if (typeof window === 'undefined') return undefined
 
 		const mediaQuery = window.matchMedia('(max-width: 900px)')

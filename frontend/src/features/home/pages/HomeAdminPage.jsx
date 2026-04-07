@@ -44,7 +44,6 @@ export function HomeAdminPage() {
     updateBannerForm,
     updateFeaturedForm,
     submitBanner,
-    removeBanner,
     toggleBannerActivo,
     submitFeaturedProduct,
     removeFeaturedProduct,
@@ -109,28 +108,6 @@ export function HomeAdminPage() {
       document.removeEventListener('keydown', handleEscape)
     }
   }, [])
-
-  useEffect(() => {
-    setBannerOrderDrafts((prev) => {
-      const next = {}
-      banners.forEach((banner) => {
-        const key = String(banner.carousel_id)
-        next[key] = prev[key] ?? ''
-      })
-      return next
-    })
-  }, [banners])
-
-  useEffect(() => {
-    setFeaturedOrderDrafts((prev) => {
-      const next = {}
-      productosDestacados.forEach((item) => {
-        const key = String(item.home_id)
-        next[key] = prev[key] ?? ''
-      })
-      return next
-    })
-  }, [productosDestacados])
 
   const bannerSelectedProduct = useMemo(
     () => productos.find((producto) => String(producto.producto_id) === String(bannerForm.productoId)),

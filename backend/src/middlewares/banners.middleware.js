@@ -1,25 +1,15 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { cloudinary } from '../config/cloudinary.js';
 
-// Directorio para banners dentro de carpeta publica servida por /uploads
-const bannersDir = './public/uploads/banners';
-
-// Crear carpeta si no existe
-if (!fs.existsSync(bannersDir)){
-    fs.mkdirSync(bannersDir, { recursive: true });
-    console.log('✅ Carpeta de banners creada con éxito');
-}
-
-// Configuración de almacenamiento para banners
-const bannersStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'public/uploads/banners/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
+const bannersStorage = new CloudinaryStorage({
+    cloudinary,
+    params: async (_req, file) => ({
+        folder: 'decoeclat/banners',
+        resource_type: 'image',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+    }),
 });
 
 // Filtro para imágenes

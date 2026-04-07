@@ -63,7 +63,13 @@ export function useProductAdmin() {
     const [sizes, setSizes] = useState([])
     const [form, setForm] = useState(emptyForm)
     const [existingImages, setExistingImages] = useState([])
-    const [message, setMessage] = useState('')
+    const [statusMessage, setStatusMessage] = useState('')
+
+    const message = useMemo(() => {
+        if (statusMessage) return statusMessage
+        if (error) return `Error: ${error}`
+        return ''
+    }, [error, statusMessage])
 
     const isEditing = useMemo(() => Boolean(form.productId), [form.productId])
 
@@ -79,17 +85,11 @@ export function useProductAdmin() {
                 setTelas(Array.isArray(telasData) ? telasData : [])
                 setSizes(Array.isArray(sizesData) ? sizesData : [])
             } catch (error) {
-                setMessage(`Error en catálogos: ${error.message}`)
+                setStatusMessage(`Error en catálogos: ${error.message}`)
             }
         }
         loadCatalogs()
     }, [])
-
-    useEffect(() => {
-        if (error) {
-            setMessage(`Error: ${error}`)
-        }
-    }, [error])
 
     useEffect(() => {
         let cancelled = false
@@ -126,30 +126,30 @@ export function useProductAdmin() {
 
     async function submitForm(images = [], existingImageChanges = null, variantConfig = null) {
         try {
-            setMessage('')
+            setStatusMessage('')
             const variantStocks = Array.isArray(variantConfig?.variantStocks)
                 ? variantConfig.variantStocks
                 : []
 
             if (isEditing) {
                 await productServices.update({ ...form, images, existingImageChanges, variantStocks })
-                setMessage('Producto actualizado correctamente')
+                setStatusMessage('Producto actualizado correctamente')
             } else {
                 await productServices.create({ ...form, images, variantStocks })
-                setMessage('Producto registrado correctamente')
+                setStatusMessage('Producto registrado correctamente')
             }
             setForm(emptyForm)
             setExistingImages([])
             await reload(filters)
             return true
         } catch (error) {
-            setMessage(`Operación fallida: ${error.message}`)
+            setStatusMessage(`Operación fallida: ${error.message}`)
             return false
         }
     }
 
     async function startEdit(product) {
-        setMessage('')
+        setStatusMessage('')
         try {
             const variants = await productServices.listVariantsByProduct(product.producto_id)
             const safeVariants = Array.isArray(variants) ? variants : []
@@ -199,28 +199,28 @@ export function useProductAdmin() {
         if (!window.confirm(`¿Eliminar "${product.nombre}"?`)) return
         try {
             await productServices.remove(product.producto_id)
-            setMessage('Eliminado correctamente')
+            setStatusMessage('Eliminado correctamente')
             if (form.productId === product.producto_id) {
                 setForm(emptyForm)
             }
             await reload(filters)
         } catch (error) {
-            setMessage(`Error: ${error.message}`)
+            setStatusMessage(`Error: ${error.message}`)
         }
     }
 
     async function toggleProductActive(product) {
         try {
             await productServices.setActive(product.producto_id, !product.activo)
-            setMessage('Estado actualizado')
+            setStatusMessage('Estado actualizado')
             await reload(filters)
         } catch (error) {
-            setMessage(`Error: ${error.message}`)
+            setStatusMessage(`Error: ${error.message}`)
         }
     }
 
     async function handleClearFilters() {
-        setMessage('')
+        setStatusMessage('')
         await clearFilters(emptyFilters)
     }
 

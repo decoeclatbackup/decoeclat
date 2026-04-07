@@ -197,18 +197,29 @@ export const productosRepository = {
     try {
       await client.query("BEGIN");
       await client.query(
-        `DELETE FROM imagenes_variantes iv
-         USING variantes_producto vp
-         WHERE iv.variante_id = vp.variante_id
-         AND vp.producto_id = $1`,
+        `UPDATE variantes_producto
+         SET activo = false
+         WHERE producto_id = $1`,
         [id]
       );
-      await client.query("DELETE FROM variantes_producto WHERE producto_id = $1", [id]);
-      await client.query("DELETE FROM productos_home WHERE producto_id = $1", [id]);
-      await client.query("DELETE FROM carousel_home WHERE producto_id = $1", [id]);
+      await client.query(
+        `UPDATE productos_home
+         SET activo = false
+         WHERE producto_id = $1`,
+        [id]
+      );
+      await client.query(
+        `UPDATE carousel_home
+         SET activo = false
+         WHERE producto_id = $1`,
+        [id]
+      );
 
       const { rows } = await client.query(
-        "DELETE FROM productos WHERE producto_id = $1 RETURNING *",
+        `UPDATE productos
+         SET activo = false
+         WHERE producto_id = $1
+         RETURNING *`,
         [id]
       );
 

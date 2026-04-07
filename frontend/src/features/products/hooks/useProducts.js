@@ -9,6 +9,26 @@ const emptyFilters = {
     telaId: '',
 }
 
+function sortProducts(products = [], onlyActive = false) {
+    const items = [...products]
+
+    items.sort((left, right) => {
+        if (!onlyActive) {
+            const leftActive = Number(Boolean(left?.activo))
+            const rightActive = Number(Boolean(right?.activo))
+            if (leftActive !== rightActive) {
+                return rightActive - leftActive
+            }
+        }
+
+        const leftName = String(left?.nombre || '').toLocaleUpperCase('es-AR')
+        const rightName = String(right?.nombre || '').toLocaleUpperCase('es-AR')
+        return leftName.localeCompare(rightName, 'es-AR')
+    })
+
+    return items
+}
+
 export function useProducts(options = {}) {
     const { initialFilters = emptyFilters, onlyActive = false } = options
     const [products, setProducts] = useState([])
@@ -25,7 +45,8 @@ export function useProducts(options = {}) {
             setError(null)
             const data = await productServices.list(searchFilters)
             const safeData = Array.isArray(data) ? data : []
-            setProducts(onlyActive ? safeData.filter((product) => Boolean(product.activo)) : safeData)
+            const filteredData = onlyActive ? safeData.filter((product) => Boolean(product.activo)) : safeData
+            setProducts(sortProducts(filteredData, onlyActive))
         } catch (err) {
             setError(err.message)
         } finally {

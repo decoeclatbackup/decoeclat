@@ -197,7 +197,7 @@ export function CartPage() {
       } catch {
         // Si falla el vaciado no bloqueamos el flujo de WhatsApp.
       }
-    } catch (err) {
+    } catch {
       setCheckoutNotice({
         type: 'success',
         text: 'No se pudo registrar automaticamente el pedido, pero puedes continuar por WhatsApp para finalizar la compra.',

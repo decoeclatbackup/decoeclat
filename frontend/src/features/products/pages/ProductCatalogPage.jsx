@@ -4,6 +4,7 @@ import { MainLayout } from '../../../layouts/layouts'
 import { CatalogProductGrid, CatalogSidebar } from '../components/components'
 import { useProductCatalog } from '../hooks/useProductCatalog'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
+import { SEO } from '../../../shared/components/SEO'
 
 const PRODUCTS_BATCH_SIZE = 12
 const CATALOG_VIEW_STATE_KEY = 'decoeclat:catalog-view-state'
@@ -63,15 +64,6 @@ export function ProductCatalogPage() {
 
   const [mobileDraftFilters, setMobileDraftFilters] = useState(() => buildMobileDraftFilters(filters))
   const [mobileDraftSortOrder, setMobileDraftSortOrder] = useState(sortOrder)
-
-  const pageTitle = currentCategory
-    ? `Catalogo: ${currentCategory.nombre}`
-    : 'Catalogo de Productos'
-
-  const pageSubtitle = 'Explora productos activos por categoria o nombre'
-  const seoDescription = currentCategory
-    ? `Explora ${currentCategory.nombre} en DECOECLAT: textiles, disenos y medidas para decorar tu hogar.`
-    : 'Explora el catalogo de DECOECLAT con textiles, fundas y deco para todos los ambientes.'
 
   const activeFilters = useMemo(() => {
     const chips = []
@@ -326,244 +318,253 @@ export function ProductCatalogPage() {
   const mobileSelectedTelaIds = toList(mobileDraftFilters.telaId)
 
   return (
-    <MainLayout
-      title={pageTitle}
-      description={seoDescription}
-      navbar={(
-        <HomePublicNavbar
-          categories={categories}
-          searchValue={filters.name}
-          onSearchSubmit={handleNavbarSearch}
-        />
-      )}
-    >
-      {message ? <p className="alert">{message}</p> : null}
+    <>
+      <SEO
+        title={currentCategory ? `Catálogo de ${currentCategory.nombre} en DECOECLAT` : 'Catálogo de productos para el hogar en DECOECLAT'}
+        description={currentCategory
+          ? `Explorá ${currentCategory.nombre} en DECOECLAT: textiles, diseños y medidas para decorar tu hogar.`
+          : 'Explorá el catálogo de DECOECLAT con textiles, fundas y deco por categoría, diseño o medida.'}
+        keywords="catalogo de productos, textiles, fundas, deco para el hogar, decoración"
+        image="/d.jpg"
+      />
+      <MainLayout
+        seoDisabled
+        navbar={(
+          <HomePublicNavbar
+            categories={categories}
+            searchValue={filters.name}
+            onSearchSubmit={handleNavbarSearch}
+          />
+        )}
+      >
+        {message ? <p className="alert">{message}</p> : null}
 
-      <section className="catalog-layout">
-        <section className="catalog-results">
-          {currentCategory?.nombre ? (
-            <div className="catalog-selected-category">
-              <strong className="catalog-selected-category-name">{currentCategory.nombre}</strong>
-            </div>
-          ) : null}
+        <section className="catalog-layout">
+          <section className="catalog-results">
+            {currentCategory?.nombre ? (
+              <div className="catalog-selected-category">
+                <strong className="catalog-selected-category-name">{currentCategory.nombre}</strong>
+              </div>
+            ) : null}
 
-          <div className="catalog-results-toolbar catalog-results-toolbar-top">
-            <div className="catalog-mobile-toolbar">
-              <button
-                type="button"
-                className="catalog-mobile-toolbar-btn"
-                onClick={() => openMobileFiltersSheet('filters')}
-              >
-                <span>FILTROS</span>
-                <span className="catalog-mobile-toolbar-icon" aria-hidden="true">⇅</span>
-              </button>
+            <div className="catalog-results-toolbar catalog-results-toolbar-top">
+              <div className="catalog-mobile-toolbar">
+                <button
+                  type="button"
+                  className="catalog-mobile-toolbar-btn"
+                  onClick={() => openMobileFiltersSheet('filters')}
+                >
+                  <span>FILTROS</span>
+                  <span className="catalog-mobile-toolbar-icon" aria-hidden="true">⇅</span>
+                </button>
 
-              <button
-                type="button"
-                className="catalog-mobile-toolbar-btn"
-                onClick={() => openMobileFiltersSheet('sort')}
-              >
-                <span>ORDENAR</span>
-                <svg viewBox="0 0 20 20" className="catalog-mobile-toolbar-chevron" aria-hidden="true" focusable="false">
-                  <path d="M5 7.5L10 12.5L15 7.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="catalog-desktop-toolbar-controls">
-              <CatalogSidebar
-                filters={filters}
-                sizes={sizes}
-                telas={telas}
-                isFundasCategory={isFundasCategory}
-                isMobileFiltersOpen={isMobileFiltersOpen}
-                onToggleMobileFilters={() => setIsMobileFiltersOpen((current) => !current)}
-                onCloseMobileFilters={() => setIsMobileFiltersOpen(false)}
-                onFilterChange={handleFilterChange}
-              />
-
-              <label className="catalog-sort-control">
-                <span className="catalog-sort-control-label">
-                  <span className="catalog-sort-control-icon" aria-hidden="true">⇅</span>
-                  <select
-                    className="catalog-sort-control-select"
-                    value={sortOrder}
-                    onChange={(event) => setSortOrder(event.target.value)}
-                  >
-                    <option value="none">ORDENAR</option>
-                    <option value="price-asc">Menor a mayor</option>
-                    <option value="price-desc">Mayor a menor</option>
-                  </select>
-                  <svg viewBox="0 0 20 20" className="catalog-sort-control-chevron" aria-hidden="true" focusable="false">
+                <button
+                  type="button"
+                  className="catalog-mobile-toolbar-btn"
+                  onClick={() => openMobileFiltersSheet('sort')}
+                >
+                  <span>ORDENAR</span>
+                  <svg viewBox="0 0 20 20" className="catalog-mobile-toolbar-chevron" aria-hidden="true" focusable="false">
                     <path d="M5 7.5L10 12.5L15 7.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                </span>
-              </label>
-            </div>
-          </div>
+                </button>
+              </div>
 
-          {isMobileFiltersSheetOpen ? (
-            <div
-              className="catalog-mobile-filters-backdrop"
-              role="presentation"
-              onClick={closeMobileFiltersSheet}
-            >
-              <div
-                className="catalog-mobile-filters-sheet"
-                role="dialog"
-                aria-modal="true"
-                aria-label={mobileFiltersSheetMode === 'sort' ? 'Ordenar productos' : 'Filtros de productos'}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="catalog-mobile-filters-header">
-                  <div>
-                    <p className="catalog-mobile-filters-kicker">
-                      {mobileFiltersSheetMode === 'sort' ? 'Ordenar' : 'Filtros'}
-                    </p>
-                    <h3>{mobileFiltersSheetMode === 'sort' ? 'Elegí cómo ordenar' : 'Elegí tus filtros'}</h3>
-                  </div>
+              <div className="catalog-desktop-toolbar-controls">
+                <CatalogSidebar
+                  filters={filters}
+                  sizes={sizes}
+                  telas={telas}
+                  isFundasCategory={isFundasCategory}
+                  isMobileFiltersOpen={isMobileFiltersOpen}
+                  onToggleMobileFilters={() => setIsMobileFiltersOpen((current) => !current)}
+                  onCloseMobileFilters={() => setIsMobileFiltersOpen(false)}
+                  onFilterChange={handleFilterChange}
+                />
 
-                  <button
-                    type="button"
-                    className="catalog-mobile-filters-close"
-                    onClick={closeMobileFiltersSheet}
-                    aria-label="Cerrar"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className={`catalog-mobile-filters-body ${mobileFiltersSheetMode === 'sort' ? 'sort-first' : ''}`}>
-                  <div className="catalog-mobile-filters-section catalog-mobile-filters-sort-section">
-                    <label className="catalog-mobile-filters-label" htmlFor="mobile-sort-order">
-                      Ordenar por
-                    </label>
+                <label className="catalog-sort-control">
+                  <span className="catalog-sort-control-label">
+                    <span className="catalog-sort-control-icon" aria-hidden="true">⇅</span>
                     <select
-                      id="mobile-sort-order"
-                      className="catalog-mobile-filters-select"
-                      value={mobileDraftSortOrder}
-                      onChange={(event) => setMobileDraftSortOrder(event.target.value)}
+                      className="catalog-sort-control-select"
+                      value={sortOrder}
+                      onChange={(event) => setSortOrder(event.target.value)}
                     >
-                      <option value="none">Ordenar por</option>
+                      <option value="none">ORDENAR</option>
                       <option value="price-asc">Menor a mayor</option>
                       <option value="price-desc">Mayor a menor</option>
                     </select>
+                    <svg viewBox="0 0 20 20" className="catalog-sort-control-chevron" aria-hidden="true" focusable="false">
+                      <path d="M5 7.5L10 12.5L15 7.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {isMobileFiltersSheetOpen ? (
+              <div
+                className="catalog-mobile-filters-backdrop"
+                role="presentation"
+                onClick={closeMobileFiltersSheet}
+              >
+                <div
+                  className="catalog-mobile-filters-sheet"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={mobileFiltersSheetMode === 'sort' ? 'Ordenar productos' : 'Filtros de productos'}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="catalog-mobile-filters-header">
+                    <div>
+                      <p className="catalog-mobile-filters-kicker">
+                        {mobileFiltersSheetMode === 'sort' ? 'Ordenar' : 'Filtros'}
+                      </p>
+                      <h3>{mobileFiltersSheetMode === 'sort' ? 'Elegí cómo ordenar' : 'Elegí tus filtros'}</h3>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="catalog-mobile-filters-close"
+                      onClick={closeMobileFiltersSheet}
+                      aria-label="Cerrar"
+                    >
+                      ×
+                    </button>
                   </div>
 
-                  {isFundasCategory ? (
+                  <div className={`catalog-mobile-filters-body ${mobileFiltersSheetMode === 'sort' ? 'sort-first' : ''}`}>
+                    <div className="catalog-mobile-filters-section catalog-mobile-filters-sort-section">
+                      <label className="catalog-mobile-filters-label" htmlFor="mobile-sort-order">
+                        Ordenar por
+                      </label>
+                      <select
+                        id="mobile-sort-order"
+                        className="catalog-mobile-filters-select"
+                        value={mobileDraftSortOrder}
+                        onChange={(event) => setMobileDraftSortOrder(event.target.value)}
+                      >
+                        <option value="none">Ordenar por</option>
+                        <option value="price-asc">Menor a mayor</option>
+                        <option value="price-desc">Mayor a menor</option>
+                      </select>
+                    </div>
+
+                    {isFundasCategory ? (
+                      <details className="catalog-mobile-filters-tab" open>
+                        <summary className="catalog-mobile-filters-tab-trigger">
+                          <span>Medidas</span>
+                          <span aria-hidden="true">▾</span>
+                        </summary>
+                        <div className="catalog-mobile-filters-buttons">
+                          <button
+                            type="button"
+                            className={`catalog-filter-btn ${mobileSelectedSizeIds.length === 0 ? 'active' : ''}`}
+                            onClick={() => setMobileDraftFilters((prev) => ({ ...prev, sizeId: [] }))}
+                          >
+                            Todos
+                          </button>
+                          {sizes.map((size) => (
+                            <button
+                              key={size.size_id}
+                              type="button"
+                              className={`catalog-filter-btn ${mobileSelectedSizeIds.includes(String(size.size_id)) ? 'active' : ''}`}
+                              onClick={() => toggleMobileDraftListValue('sizeId', String(size.size_id))}
+                            >
+                              {size.valor}
+                            </button>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
+
                     <details className="catalog-mobile-filters-tab" open>
                       <summary className="catalog-mobile-filters-tab-trigger">
-                        <span>Medidas</span>
+                        <span>Diseño</span>
                         <span aria-hidden="true">▾</span>
                       </summary>
                       <div className="catalog-mobile-filters-buttons">
                         <button
                           type="button"
-                          className={`catalog-filter-btn ${mobileSelectedSizeIds.length === 0 ? 'active' : ''}`}
-                          onClick={() => setMobileDraftFilters((prev) => ({ ...prev, sizeId: [] }))}
+                          className={`catalog-filter-btn ${mobileSelectedTelaIds.length === 0 ? 'active' : ''}`}
+                          onClick={() => setMobileDraftFilters((prev) => ({ ...prev, telaId: [] }))}
                         >
-                          Todos
+                          Todas
                         </button>
-                        {sizes.map((size) => (
+                        {telas.map((tela) => (
                           <button
-                            key={size.size_id}
+                            key={tela.tela_id}
                             type="button"
-                            className={`catalog-filter-btn ${mobileSelectedSizeIds.includes(String(size.size_id)) ? 'active' : ''}`}
-                            onClick={() => toggleMobileDraftListValue('sizeId', String(size.size_id))}
+                            className={`catalog-filter-btn ${mobileSelectedTelaIds.includes(String(tela.tela_id)) ? 'active' : ''}`}
+                            onClick={() => toggleMobileDraftListValue('telaId', String(tela.tela_id))}
                           >
-                            {size.valor}
+                            {tela.nombre}
                           </button>
                         ))}
                       </div>
                     </details>
-                  ) : null}
+                  </div>
 
-                  <details className="catalog-mobile-filters-tab" open>
-                    <summary className="catalog-mobile-filters-tab-trigger">
-                      <span>Diseño</span>
-                      <span aria-hidden="true">▾</span>
-                    </summary>
-                    <div className="catalog-mobile-filters-buttons">
-                      <button
-                        type="button"
-                        className={`catalog-filter-btn ${mobileSelectedTelaIds.length === 0 ? 'active' : ''}`}
-                        onClick={() => setMobileDraftFilters((prev) => ({ ...prev, telaId: [] }))}
-                      >
-                        Todas
-                      </button>
-                      {telas.map((tela) => (
-                        <button
-                          key={tela.tela_id}
-                          type="button"
-                          className={`catalog-filter-btn ${mobileSelectedTelaIds.includes(String(tela.tela_id)) ? 'active' : ''}`}
-                          onClick={() => toggleMobileDraftListValue('telaId', String(tela.tela_id))}
-                        >
-                          {tela.nombre}
-                        </button>
-                      ))}
-                    </div>
-                  </details>
-                </div>
-
-                <div className="catalog-mobile-filters-footer">
-                  <button type="button" className="btn catalog-mobile-filters-apply" onClick={applyMobileFilters}>
-                    Aplicar filtros
-                  </button>
+                  <div className="catalog-mobile-filters-footer">
+                    <button type="button" className="btn catalog-mobile-filters-apply" onClick={applyMobileFilters}>
+                      Aplicar filtros
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          {hasActiveFilters ? (
-            <div className="catalog-active-filters">
-              <div className="catalog-active-filters-chips">
-                {activeFilters.map((filter) => (
-                  <button
-                    key={filter.key}
-                    type="button"
-                    className="catalog-active-filter-chip"
-                    onClick={filter.removable ? filter.clear : undefined}
-                    disabled={!filter.removable}
-                    aria-label={filter.removable ? `Quitar ${filter.label}` : filter.label}
-                  >
-                    <span className="catalog-active-filter-chip-label">{filter.label}</span>
-                    {filter.removable ? (
-                      <span className="catalog-active-filter-chip-close" aria-hidden="true">×</span>
-                    ) : null}
-                  </button>
-                ))}
+            {hasActiveFilters ? (
+              <div className="catalog-active-filters">
+                <div className="catalog-active-filters-chips">
+                  {activeFilters.map((filter) => (
+                    <button
+                      key={filter.key}
+                      type="button"
+                      className="catalog-active-filter-chip"
+                      onClick={filter.removable ? filter.clear : undefined}
+                      disabled={!filter.removable}
+                      aria-label={filter.removable ? `Quitar ${filter.label}` : filter.label}
+                    >
+                      <span className="catalog-active-filter-chip-label">{filter.label}</span>
+                      {filter.removable ? (
+                        <span className="catalog-active-filter-chip-close" aria-hidden="true">×</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="catalog-active-filters-clear"
+                  onClick={handleClearFilters}
+                >
+                  <span>BORRAR TODO</span>
+                  <span className="catalog-active-filters-clear-icon" aria-hidden="true">⊗</span>
+                </button>
               </div>
+            ) : null}
 
-              <button
-                type="button"
-                className="catalog-active-filters-clear"
-                onClick={handleClearFilters}
-              >
-                <span>BORRAR TODO</span>
-                <span className="catalog-active-filters-clear-icon" aria-hidden="true">⊗</span>
-              </button>
-            </div>
-          ) : null}
+            <CatalogProductGrid
+              products={visibleProducts}
+              loading={loading}
+              onProductNavigate={handleProductNavigate}
+            />
 
-          <CatalogProductGrid
-            products={visibleProducts}
-            loading={loading}
-            onProductNavigate={handleProductNavigate}
-          />
-
-          {!loading && hasMoreProducts ? (
-            <div className="catalog-load-more">
-              <button
-                type="button"
-                className="btn"
-                onClick={handleLoadMore}
-              >
-                Cargar mas
-              </button>
-            </div>
-          ) : null}
+            {!loading && hasMoreProducts ? (
+              <div className="catalog-load-more">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={handleLoadMore}
+                >
+                  Cargar mas
+                </button>
+              </div>
+            ) : null}
+          </section>
         </section>
-      </section>
-    </MainLayout>
+      </MainLayout>
+    </>
   )
 }
