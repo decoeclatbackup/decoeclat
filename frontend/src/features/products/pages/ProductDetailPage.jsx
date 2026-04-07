@@ -41,6 +41,7 @@ export function ProductDetailPage() {
   const [selectedSizeId, setSelectedSizeId] = useState(null)
   const [selectedRelleno, setSelectedRelleno] = useState(false)
   const [selectedImageUrl, setSelectedImageUrl] = useState(null)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
 
   useEffect(() => {
@@ -166,9 +167,15 @@ export function ProductDetailPage() {
     return byVariant.length > 0 ? byVariant : images
   }, [images, selectedVariantId])
 
+  const selectedImageIndex = useMemo(
+    () => visibleImages.findIndex((image) => image.url === selectedImageUrl),
+    [visibleImages, selectedImageUrl]
+  )
+
   useEffect(() => {
     if (visibleImages.length === 0) {
       setSelectedImageUrl(null)
+      setIsLightboxOpen(false)
       return
     }
 
@@ -178,6 +185,76 @@ export function ProductDetailPage() {
     const nextImage = visibleImages.find((image) => Boolean(image.principal)) || visibleImages[0]
     setSelectedImageUrl(nextImage?.url || null)
   }, [visibleImages, selectedImageUrl])
+
+  useEffect(() => {
+    if (!isLightboxOpen) return undefined
+
+    function onKeyDown(event) {
+      if (event.key === 'Escape') {
+        setIsLightboxOpen(false)
+        return
+      }
+
+      if (visibleImages.length <= 1) return
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        setSelectedImageUrl((prevUrl) => {
+          const currentIndex = visibleImages.findIndex((image) => image.url === prevUrl)
+          const safeIndex = currentIndex >= 0 ? currentIndex : 0
+          const nextIndex = (safeIndex + 1) % visibleImages.length
+          return visibleImages[nextIndex]?.url || prevUrl
+        })
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        setSelectedImageUrl((prevUrl) => {
+          const currentIndex = visibleImages.findIndex((image) => image.url === prevUrl)
+          const safeIndex = currentIndex >= 0 ? currentIndex : 0
+          const nextIndex = (safeIndex - 1 + visibleImages.length) % visibleImages.length
+          return visibleImages[nextIndex]?.url || prevUrl
+        })
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isLightboxOpen, visibleImages])
+
+  function openLightbox() {
+    if (!selectedImageUrl) return
+    setIsLightboxOpen(true)
+  }
+
+  function closeLightbox() {
+    setIsLightboxOpen(false)
+  }
+
+  function goToPrevImage() {
+    if (visibleImages.length <= 1) return
+    setSelectedImageUrl((prevUrl) => {
+      const currentIndex = visibleImages.findIndex((image) => image.url === prevUrl)
+      const safeIndex = currentIndex >= 0 ? currentIndex : 0
+      const nextIndex = (safeIndex - 1 + visibleImages.length) % visibleImages.length
+      return visibleImages[nextIndex]?.url || prevUrl
+    })
+  }
+
+  function goToNextImage() {
+    if (visibleImages.length <= 1) return
+    setSelectedImageUrl((prevUrl) => {
+      const currentIndex = visibleImages.findIndex((image) => image.url === prevUrl)
+      const safeIndex = currentIndex >= 0 ? currentIndex : 0
+      const nextIndex = (safeIndex + 1) % visibleImages.length
+      return visibleImages[nextIndex]?.url || prevUrl
+    })
+  }
 
   const stock = Number(selectedVariant?.stock ?? 0)
   const hasStock = stock > 0
@@ -297,7 +374,14 @@ export function ProductDetailPage() {
               <section className="product-detail-gallery">
               <div className="product-detail-main-media">
                 {selectedImageUrl ? (
-                  <img src={selectedImageUrl} alt={product.nombre} className="product-detail-main-image" />
+                  <button
+                    type="button"
+                    className="product-detail-main-image-button"
+                    onClick={openLightbox}
+                    aria-label="Ver imagen ampliada"
+                  >
+                    <img src={selectedImageUrl} alt={product.nombre} className="product-detail-main-image" />
+                  </button>
                 ) : (
                   <div className="product-detail-main-placeholder">Sin imagen</div>
                 )}
@@ -473,6 +557,66 @@ export function ProductDetailPage() {
                 </div>
               )}
             </section>
+          ) : null}
+
+          {isLightboxOpen && selectedImageUrl ? (
+            <div
+              className="product-detail-lightbox"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Visor de imagenes del producto"
+              onClick={closeLightbox}
+            >
+              <button
+                type="button"
+                className="product-detail-lightbox-close"
+                aria-label="Cerrar visor"
+                onClick={closeLightbox}
+              >
+                <span className="product-detail-lightbox-icon">×</span>
+              </button>
+
+              {visibleImages.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    className="product-detail-lightbox-nav prev"
+                    aria-label="Imagen anterior"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      goToPrevImage()
+                    }}
+                  >
+                    <span className="product-detail-lightbox-icon">{'<'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="product-detail-lightbox-nav next"
+                    aria-label="Imagen siguiente"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      goToNextImage()
+                    }}
+                  >
+                    <span className="product-detail-lightbox-icon">{'>'}</span>
+                  </button>
+                </>
+              ) : null}
+
+              <div className="product-detail-lightbox-body" onClick={(event) => event.stopPropagation()}>
+                <img
+                  src={selectedImageUrl}
+                  alt={product.nombre}
+                  className="product-detail-lightbox-image"
+                />
+                {visibleImages.length > 1 && selectedImageIndex >= 0 ? (
+                  <p className="product-detail-lightbox-counter">
+                    {selectedImageIndex + 1} / {visibleImages.length}
+                  </p>
+                ) : null}
+              </div>
+            </div>
           ) : null}
         </>
       ) : null}

@@ -3,6 +3,31 @@ import { request } from '../../carrito/services/http'
 const AUTH_TOKEN_KEY = 'authToken'
 const AUTH_USER_KEY = 'authUser'
 
+function decodeJwtPayload(token) {
+	if (!token || typeof token !== 'string') return null
+	const parts = token.split('.')
+	if (parts.length !== 3) return null
+
+	try {
+		const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+		const paddedPayload = payloadBase64.padEnd(Math.ceil(payloadBase64.length / 4) * 4, '=')
+		const payload = atob(paddedPayload)
+		return JSON.parse(payload)
+	} catch {
+		return null
+	}
+}
+
+function isTokenExpired(token) {
+	const payload = decodeJwtPayload(token)
+	const exp = Number(payload?.exp)
+
+	if (!Number.isFinite(exp)) return false
+
+	const nowInSeconds = Math.floor(Date.now() / 1000)
+	return exp <= nowInSeconds
+}
+
 function safeParseUser(value) {
 	if (!value) return null
 	try {
@@ -75,8 +100,18 @@ export const authService = {
 	},
 
 	getSession() {
+		if (typeof window === 'undefined') {
+			return { token: null, user: null }
+		}
+
 		const token = localStorage.getItem(AUTH_TOKEN_KEY)
 		const user = safeParseUser(localStorage.getItem(AUTH_USER_KEY))
+
+		if (!token || !user || isTokenExpired(token)) {
+			this.logout()
+			return { token: null, user: null }
+		}
+
 		return { token, user }
 	},
 

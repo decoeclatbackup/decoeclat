@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { homePublicService } from '../../features/home/services/homePublicService'
 import { carritoServices } from '../../features/carrito/services/carritoService'
+import { authService } from '../../features/auth/services/authService'
 import { formatCurrency } from '../utils/utils'
 
 const CART_UPDATED_EVENT = 'decoeclat:cart-updated'
@@ -70,28 +71,35 @@ export default function HomePublicNavbar({ searchValue = '', onSearchSubmit, cat
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [mobileMenuView, setMobileMenuView] = useState('main')
   const [mobileActiveCategory, setMobileActiveCategory] = useState(null)
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => authService.isAdminAuthenticated())
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.matchMedia('(max-width: 900px)').matches
   })
   const closeTimerRef = useRef(null)
-  const adminAccount = (() => {
-    if (typeof window === 'undefined') return '/admin/login'
-    const token = localStorage.getItem('authToken')
-    const rawUser = localStorage.getItem('authUser')
+  const adminAccount = {
+    path: isAdminLoggedIn ? '/admin/home' : '/admin/login',
+    isLoggedIn: isAdminLoggedIn,
+  }
 
-    if (!token || !rawUser) {
-      return { path: '/admin/login', isLoggedIn: false }
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    function syncAdminAuthState() {
+      setIsAdminLoggedIn(authService.isAdminAuthenticated())
     }
 
-    try {
-      const user = JSON.parse(rawUser)
-      const isLoggedIn = Number(user?.rol) === 1
-      return { path: isLoggedIn ? '/admin/home' : '/admin/login', isLoggedIn }
-    } catch {
-      return { path: '/admin/login', isLoggedIn: false }
+    syncAdminAuthState()
+    window.addEventListener('focus', syncAdminAuthState)
+    window.addEventListener('storage', syncAdminAuthState)
+    document.addEventListener('visibilitychange', syncAdminAuthState)
+
+    return () => {
+      window.removeEventListener('focus', syncAdminAuthState)
+      window.removeEventListener('storage', syncAdminAuthState)
+      document.removeEventListener('visibilitychange', syncAdminAuthState)
     }
-  })()
+  }, [])
 
   useEffect(() => {
     setDraftSearchValue(searchValue || '')

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
@@ -9,7 +9,7 @@ import { formatCurrency } from '../../../shared/utils/utils'
 function buildBannerTarget(banner) {
   if (banner?.producto_id) return `/producto/${banner.producto_id}`
   if (banner?.categoria_id) return `/categoria/${banner.categoria_id}`
-  return '/catalogo'
+  return null
 }
 
 function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
@@ -82,6 +82,9 @@ export function HomePublicPage() {
     return window.matchMedia('(max-width: 575px)').matches
   })
   const [featuredCarouselIndex, setFeaturedCarouselIndex] = useState(0)
+  const bannerTouchStartXRef = useRef(null)
+  const bannerTouchStartYRef = useRef(null)
+  const preventBannerClickRef = useRef(false)
 
   const safeActiveBannerIndex = useMemo(() => {
     if (banners.length === 0) return 0
@@ -89,6 +92,54 @@ export function HomePublicPage() {
   }, [activeBannerIndex, banners.length])
 
   const activeBanner = banners[safeActiveBannerIndex] || null
+  const activeBannerTarget = buildBannerTarget(activeBanner)
+
+  const handleBannerTouchStart = (event) => {
+    const touch = event.touches?.[0]
+    if (!touch) return
+    bannerTouchStartXRef.current = touch.clientX
+    bannerTouchStartYRef.current = touch.clientY
+    preventBannerClickRef.current = false
+  }
+
+  const handleBannerTouchEnd = (event) => {
+    if (banners.length <= 1) return
+
+    const touch = event.changedTouches?.[0]
+    const startX = bannerTouchStartXRef.current
+    const startY = bannerTouchStartYRef.current
+
+    bannerTouchStartXRef.current = null
+    bannerTouchStartYRef.current = null
+
+    if (!touch || startX == null || startY == null) return
+
+    const deltaX = touch.clientX - startX
+    const deltaY = touch.clientY - startY
+    const absDeltaX = Math.abs(deltaX)
+    const absDeltaY = Math.abs(deltaY)
+
+    const SWIPE_THRESHOLD_PX = 40
+    if (absDeltaX < SWIPE_THRESHOLD_PX || absDeltaX <= absDeltaY) return
+
+    preventBannerClickRef.current = true
+
+    setActiveBannerIndex((prev) => {
+      if (deltaX > 0) {
+        return (prev - 1 + banners.length) % banners.length
+      }
+
+      return (prev + 1) % banners.length
+    })
+  }
+
+  const handleBannerClickCapture = (event) => {
+    if (!preventBannerClickRef.current) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    preventBannerClickRef.current = false
+  }
 
   useEffect(() => {
     if (banners.length <= 1) return undefined
@@ -196,14 +247,27 @@ export function HomePublicPage() {
       {error ? <p className="alert">{error}</p> : null}
 
       <section className="home-public-hero">
-        <div className="home-public-banner-shell">
+        <div
+          className="home-public-banner-shell"
+          onTouchStart={handleBannerTouchStart}
+          onTouchEnd={handleBannerTouchEnd}
+        >
           {!loading && activeBanner ? (
-            <Link className="home-public-banner" to={buildBannerTarget(activeBanner)}>
-              <img
-                src={activeBanner.imageUrl}
-                alt={activeBanner.producto_nombre || activeBanner.categoria_nombre || 'Banner principal'}
-              />
-            </Link>
+            activeBannerTarget ? (
+              <Link className="home-public-banner" to={activeBannerTarget} onClickCapture={handleBannerClickCapture}>
+                <img
+                  src={activeBanner.imageUrl}
+                  alt={activeBanner.producto_nombre || activeBanner.categoria_nombre || 'Banner principal'}
+                />
+              </Link>
+            ) : (
+              <div className="home-public-banner" onClickCapture={handleBannerClickCapture}>
+                <img
+                  src={activeBanner.imageUrl}
+                  alt={activeBanner.producto_nombre || activeBanner.categoria_nombre || 'Banner principal'}
+                />
+              </div>
+            )
           ) : null}
 
           {!loading && !activeBanner ? <div className="home-public-banner empty" aria-hidden="true" /> : null}

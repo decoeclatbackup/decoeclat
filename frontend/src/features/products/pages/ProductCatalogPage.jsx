@@ -5,7 +5,7 @@ import { CatalogProductGrid, CatalogSidebar } from '../components/components'
 import { useProductCatalog } from '../hooks/useProductCatalog'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 
-const PRODUCTS_BATCH_SIZE = 9
+const PRODUCTS_BATCH_SIZE = 12
 const CATALOG_VIEW_STATE_KEY = 'decoeclat:catalog-view-state'
 const CATALOG_VIEW_STATE_MAX_AGE_MS = 30 * 60 * 1000
 
