@@ -402,30 +402,20 @@ export function HomePublicPage() {
             </div>
             <h3>Calidad garantizada</h3>
             <p>
-              Seleccionamos textiles y terminaciones que resisten el uso diario, para que cada producto te
-              acompañe por mucho tiempo.
+              Creamos deco con amor y dedicación, pensada para convertir tus espacios en hogar.
             </p>
           </article>
 
-          <article className="home-public-value-card">
-            <div className="home-public-value-icon" aria-hidden="true">
-              <img src="/valores/manos-corazon.webp" alt="" loading="lazy" decoding="async" />
-            </div>
-            <h3>Transparencia</h3>
-            <p>
-              Trabajamos de forma cercana y clara en cada etapa, para que sepas que estas llevando y como fue
-              hecho.
-            </p>
-          </article>
-
+        
           <article className="home-public-value-card">
             <div className="home-public-value-icon" aria-hidden="true">
               <img src="/valores/corazon.webp" alt="" loading="lazy" decoding="async" />
             </div>
             <h3>Familia</h3>
             <p>
-              Somos un proyecto familiar donde cada detalle se piensa con dedicacion, cercania y una mirada
-              calida del hogar.
+              Creemos en el valor de lo personal,
+              por eso brindamos atención personalizada
+              para que cada pieza sea ideal para vos.
             </p>
           </article>
         </div>

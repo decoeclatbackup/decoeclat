@@ -3256,7 +3256,8 @@ table select {
 .home-public-values-grid {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
+  justify-content: center;
   gap: clamp(0.8rem, 1.8vw, 1.3rem);
 }
 
@@ -3264,8 +3265,9 @@ table select {
   display: grid;
   justify-items: center;
   text-align: center;
-  gap: 0.55rem;
-  padding: 0.95rem 0.8rem;
+  align-content: start;
+  gap: 0.7rem;
+  padding: 1.05rem 1rem;
   border-radius: 14px;
   background: rgba(194, 163, 133, 0.18);
   border: 1px solid rgba(74, 74, 74, 0.12);
@@ -3295,15 +3297,16 @@ table select {
   color: var(--color-texto);
   font-size: clamp(1rem, 1.5vw, 1.2rem);
   text-transform: uppercase;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.015em;
+  line-height: 1.2;
 }
 
 .home-public-value-card p {
   margin: 0;
-  max-width: 38ch;
+  max-width: 100%;
   color: rgba(74, 74, 74, 0.88);
   font-size: clamp(0.88rem, 1.2vw, 0.97rem);
-  line-height: 1.55;
+  line-height: 1.62;
 }
 
 
@@ -5181,8 +5184,8 @@ th {
   }
 
   .home-public-value-card {
-    justify-items: start;
-    text-align: left;
+    justify-items: center;
+    text-align: center;
     padding: 0.85rem 0.85rem;
   }
 
