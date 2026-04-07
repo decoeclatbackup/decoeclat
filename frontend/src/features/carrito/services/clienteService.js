@@ -7,6 +7,16 @@ export const clienteService = {
         })
     },
 
+    async verificarEmailExistente(email) {
+        try {
+            const clientes = await request('/api/clientes', {}, { email })
+            return Array.isArray(clientes) && clientes.length > 0
+        } catch {
+            // Si hay error en la búsqueda, asumimos que no existe
+            return false
+        }
+    },
+
     async completarClienteTemporal(clienteId, payload) {
         if (!clienteId) {
             throw new Error('clienteId es obligatorio para completar cliente temporal')

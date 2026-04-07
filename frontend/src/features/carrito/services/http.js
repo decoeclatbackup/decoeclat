@@ -1,5 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
+// Log the API URL being used (useful for debugging production issues)
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  console.log('📡 API_BASE_URL:', API_BASE_URL || '(empty - using relative URLs)')
+}
+
 function buildUrl(path, query = {}) {
   const params = new URLSearchParams()
 
@@ -10,7 +15,14 @@ function buildUrl(path, query = {}) {
   })
 
   const qs = params.toString()
-  return `${API_BASE_URL}${path}${qs ? `?${qs}` : ''}`
+  const fullUrl = `${API_BASE_URL}${path}${qs ? `?${qs}` : ''}`
+  
+  // Log in production when making requests to ventas/web
+  if (path.includes('/ventas/web')) {
+    console.log('🚀 Request URL:', fullUrl)
+  }
+  
+  return fullUrl
 }
 
 export async function request(path, options = {}, query) {
@@ -27,7 +39,9 @@ export async function request(path, options = {}, query) {
     ...(customHeaders || {}),
   }
 
-  const response = await fetch(buildUrl(path, query), {
+  const fullUrl = buildUrl(path, query)
+  
+  const response = await fetch(fullUrl, {
     ...fetchOptions,
     headers: finalHeaders,
   })
@@ -51,6 +65,11 @@ export async function request(path, options = {}, query) {
     } catch {
       message = response.statusText || message
     }
+    
+    // Enhanced error logging
+    const errorMsg = `[${response.status}] ${message} - URL: ${fullUrl}`
+    console.error('❌ API Error:', errorMsg)
+    
     throw new Error(message)
   }
 

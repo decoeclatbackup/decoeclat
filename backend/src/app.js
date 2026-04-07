@@ -19,7 +19,14 @@ import { pool } from "./config/db.js";
 export const app = express();
 
 app.use(cors({
-  origin: ["https://decoeclat.vercel.app", "http://localhost:5173", "http://localhost:3000", "http://decoeclat.com.ar", "https://www.decoeclat.com.ar"],
+  origin: [
+    "https://decoeclat.vercel.app",
+    "https://decoeclat.com.ar",
+    "https://www.decoeclat.com.ar",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:4000",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));

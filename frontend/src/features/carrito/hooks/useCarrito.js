@@ -73,6 +73,8 @@ export const useCarrito = () => {
 
 		try {
 			const clienteId = getClienteTemporalId()
+			console.log('Completando cliente temporal:', { clienteId, nombre, email })
+			
 			if (!clienteId) {
 				throw new Error('No hay cliente temporal activo para completar')
 			}
@@ -83,8 +85,10 @@ export const useCarrito = () => {
 				telefono,
 			})
 
+			console.log('Cliente actualizado:', clienteActualizado)
 			return clienteActualizado
 		} catch (err) {
+			console.error('Error completar cliente:', err?.message || err)
 			setError(err?.message || 'Error al completar datos del cliente')
 			throw err
 		} finally {

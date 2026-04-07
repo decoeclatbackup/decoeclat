@@ -75,15 +75,20 @@ export const ventaService = {
       throw new Error('No hay items validos para registrar la venta')
     }
 
+    const payload = {
+      cliente_id: Number(clienteId),
+      metodo_id: Number(metodoId),
+      items: normalizedItems,
+    }
+    
+    console.log('📦 Enviando venta al backend:', payload)
+
     const response = await request('/api/ventas/web', {
       method: 'POST',
-      body: JSON.stringify({
-        cliente_id: Number(clienteId),
-        metodo_id: Number(metodoId),
-        items: normalizedItems,
-      }),
+      body: JSON.stringify(payload),
     })
 
+    console.log('✅ Respuesta del backend:', response)
     return response?.data || response
   },
 

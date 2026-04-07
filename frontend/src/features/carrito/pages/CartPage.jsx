@@ -6,6 +6,7 @@ import { Cart } from '../components/Cart'
 import { CheckoutCustomerStep } from '../components/CheckoutCustomerStep'
 import { useCarrito } from '../hooks/useCarrito'
 import { useVentas } from '../../ventas/hooks/useVentas'
+import { clienteService } from '../services/clienteService'
 import { formatCurrency } from '../../../shared/utils/utils'
 
 const INITIAL_CLIENT_FORM = {
@@ -148,6 +149,8 @@ export function CartPage() {
       telefono: clientForm.telefono.trim() || null,
     }
 
+    console.log('Iniciando checkout con datos:', payload)
+
     if (!payload.nombre || !payload.email) {
       setCheckoutNotice({
         type: 'error',
@@ -165,23 +168,40 @@ export function CartPage() {
       return
     }
 
+    // Verificar si el email ya existe
+    console.log('Verificando si el email ya existe...')
+    const emailExists = await clienteService.verificarEmailExistente(payload.email)
+    if (emailExists) {
+      setCheckoutNotice({
+        type: 'error',
+        text: 'Este email ya está registrado. Por favor, ingresa un email diferente o inicia sesión en tu cuenta.',
+      })
+      return
+    }
+
     const carritoSnapshot = {
       ...carrito,
       items: Array.isArray(carrito?.items) ? [...carrito.items] : [],
     }
 
+    console.log('Carrito snapshot:', carritoSnapshot)
+
     let clienteParaMensaje = payload
     let ventaId = null
 
     try {
+      console.log('Completando datos del cliente temporal...')
       const clienteActualizado = await completarDatosClienteTemporal(payload)
       setClienteGuardado(clienteActualizado)
       clienteParaMensaje = clienteActualizado
 
+      console.log('Registrando venta web...')
       const ventaRegistrada = await registrarVentaWeb({
         clienteId: getClienteTemporalId(),
         items: carrito?.items || [],
       })
+
+      console.log('Venta registrada:', ventaRegistrada)
 
       ventaId = ventaRegistrada?.venta_id || ventaRegistrada?.id || null
 
@@ -197,7 +217,8 @@ export function CartPage() {
       } catch {
         // Si falla el vaciado no bloqueamos el flujo de WhatsApp.
       }
-    } catch {
+    } catch (err) {
+      console.error('Error al registrar pedido:', err?.message || err)
       setCheckoutNotice({
         type: 'success',
         text: 'No se pudo registrar automaticamente el pedido, pero puedes continuar por WhatsApp para finalizar la compra.',
