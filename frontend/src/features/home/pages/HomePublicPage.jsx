@@ -13,7 +13,7 @@ function buildBannerTarget(banner) {
   return null
 }
 
-function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
+function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }) {
   const hasStock = Number(item?.stock ?? 0) > 0
   const basePrice = Number(item?.precio ?? 0)
   const offerPrice = Number(item?.precio_oferta ?? 0)
@@ -27,12 +27,24 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
       ? 'is-medium'
       : 'is-low'
 
+  const handleCardKeyDown = (event) => {
+    if (!onNavigate) return
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onNavigate(item.producto_id)
+    }
+  }
+
   return (
-    <article className={`home-public-featured-card ${hasOffer ? 'has-offer' : ''} ${className}`.trim()}>
-      <Link
-        to={`/producto/${item.producto_id}`}
-        className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''}`}
-      >
+    <article
+      className={`home-public-featured-card ${hasOffer ? 'has-offer' : ''} ${className}`.trim()}
+      role={onNavigate ? 'link' : undefined}
+      tabIndex={onNavigate ? 0 : undefined}
+      onClick={() => onNavigate?.(item.producto_id)}
+      onKeyDown={handleCardKeyDown}
+    >
+      <div className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''}`}>
         {hasOffer ? (
           <span className={`product-offer-badge ${offerBadgeLevelClass}`}>
             PROMO{discountPercentage > 0 ? ` -${discountPercentage}%` : ''}
@@ -57,7 +69,7 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
         ) : (
           <div className="home-public-featured-placeholder">Sin imagen</div>
         )}
-      </Link>
+      </div>
       <div className="home-public-featured-body">
         <h3>{item.nombre}</h3>
         <div className="home-public-featured-footer">
@@ -75,7 +87,10 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding }) {
             <button
               type="button"
               className="btn home-public-featured-buy-btn"
-              onClick={(e) => onQuickBuy(e, item)}
+              onClick={(e) => {
+                e.stopPropagation()
+                onQuickBuy(e, item)
+              }}
               disabled={isAdding}
             >
               {isAdding ? 'Agregando...' : 'Comprar'}
@@ -366,6 +381,7 @@ export function HomePublicPage() {
                             className="is-carousel-item"
                             onQuickBuy={handleQuickBuy}
                             isAdding={addingProductId === item.producto_id}
+                            onNavigate={(productId) => navigate(`/producto/${productId}`)}
                           />
                         ))}
                       </div>
@@ -429,6 +445,7 @@ export function HomePublicPage() {
                 item={item}
                 onQuickBuy={handleQuickBuy}
                 isAdding={addingProductId === item.producto_id}
+                onNavigate={(productId) => navigate(`/producto/${productId}`)}
               />
             ))}
           </div>
