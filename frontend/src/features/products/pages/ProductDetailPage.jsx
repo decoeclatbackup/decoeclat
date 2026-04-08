@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MainLayout } from '../../../layouts/layouts'
 import { productServices } from '../services/productServices'
+import { sortVariantsForDisplay } from '../services/productServices'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { formatCurrency } from '../../../shared/utils/utils'
@@ -71,7 +72,7 @@ export function ProductDetailPage() {
         if (cancelled) return
 
         const safeCategories = Array.isArray(categoriesData) ? categoriesData : []
-        const safeVariants = Array.isArray(variantsData) ? variantsData : []
+        const safeVariants = sortVariantsForDisplay(Array.isArray(variantsData) ? variantsData : [])
         const safeImages = (Array.isArray(imagesData) ? imagesData : []).sort((left, right) => {
           const principalDiff = Number(Boolean(right.principal)) - Number(Boolean(left.principal))
           if (principalDiff !== 0) return principalDiff
@@ -85,7 +86,7 @@ export function ProductDetailPage() {
         setVariants(safeVariants)
         setImages(safeImages)
 
-        const defaultVariant = safeVariants.find((variant) => Number(variant.stock ?? 0) > 0) || safeVariants[0] || null
+        const defaultVariant = safeVariants[0] || null
         const defaultVariantId = defaultVariant?.variante_id || null
         setSelectedVariantId(defaultVariantId)
         setSelectedSizeId(defaultVariant?.size_id || null)
@@ -428,13 +429,6 @@ export function ProductDetailPage() {
                 )}
               </div>
 
-              {productDescription ? (
-                <section className="product-detail-box">
-                  <p className="product-detail-box-title">Descripción:</p>
-                  <p className="product-detail-description-text">{productDescription}</p>
-                </section>
-              ) : null}
-
               <section className="product-detail-box">
                 <p className="product-detail-box-title">Medidas disponibles:</p>
                 <div className="product-detail-sizes">
@@ -513,6 +507,15 @@ export function ProductDetailPage() {
               >
                 {addingToCart ? 'Agregando...' : 'Agregar al carrito'}
               </button>
+
+              {productDescription ? (
+                <section className="product-detail-box">
+                  <p className="product-detail-box-title">Descripción:</p>
+                  <p className="product-detail-description-text">{productDescription}</p>
+                </section>
+              ) : null}
+
+              
 
               {cartMessage ? <p className="product-detail-feedback success">{cartMessage}</p> : null}
               {cartError ? <p className="product-detail-feedback error">{cartError}</p> : null}

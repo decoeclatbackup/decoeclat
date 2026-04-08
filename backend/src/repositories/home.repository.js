@@ -12,10 +12,10 @@ export const homeRepository = {
                 p.producto_id,
                 p.nombre,
                 p.descripcion,
-                vp.variante_id,
-                vp.stock,
-                vp.precio,
-                vp.precio_oferta,
+                vp_precio.variante_id,
+                vp_precio.stock,
+                vp_precio.precio,
+                vp_precio.precio_oferta,
                 iv.url as imagen_principal,
                 iv2.url as imagen_secundaria
             FROM productos_home ph
@@ -30,31 +30,43 @@ export const homeRepository = {
                 WHERE v.producto_id = p.producto_id
                   AND v.activo = true
                 ORDER BY
+                    v.relleno ASC,
+                    v.variante_id ASC
+                LIMIT 1
+            ) vp_precio ON true
+            LEFT JOIN LATERAL (
+                SELECT
+                    v.variante_id
+                FROM variantes_producto v
+                WHERE v.producto_id = p.producto_id
+                  AND v.activo = true
+                ORDER BY
                     EXISTS (
                         SELECT 1
                         FROM imagenes_variantes i
                         WHERE i.variante_id = v.variante_id
                     ) DESC,
+                    v.relleno ASC,
                     v.variante_id ASC
                 LIMIT 1
-            ) vp ON true
+            ) vp_imagen ON true
             LEFT JOIN LATERAL (
                 SELECT i.url
                 FROM imagenes_variantes i
-                WHERE i.variante_id = vp.variante_id
+                WHERE i.variante_id = vp_imagen.variante_id
                 ORDER BY i.principal DESC, i.orden ASC, i.img_id ASC
                 LIMIT 1
             ) iv ON true
             LEFT JOIN LATERAL (
                 SELECT i.url
                 FROM imagenes_variantes i
-                WHERE i.variante_id = vp.variante_id
+                WHERE i.variante_id = vp_imagen.variante_id
                 ORDER BY i.principal DESC, i.orden ASC, i.img_id ASC
                 OFFSET 1
                 LIMIT 1
             ) iv2 ON true
             WHERE ph.activo = true
-            ORDER BY ph.orden ASC, ph.home_id ASC, vp.variante_id ASC
+            ORDER BY ph.orden ASC, ph.home_id ASC, vp_precio.variante_id ASC
         `;
         const { rows } = await pool.query(query);
         return rows;

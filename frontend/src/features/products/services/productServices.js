@@ -94,9 +94,29 @@ function normalizeVariantStocks(variantStocks = []) {
 		.filter((variant) => Number.isInteger(variant.sizeId) && variant.sizeId > 0)
 }
 
+export function sortVariantsForDisplay(variants = []) {
+	if (!Array.isArray(variants)) return []
+
+	return [...variants].sort((left, right) => {
+		const leftRelleno = Number(Boolean(left?.relleno))
+		const rightRelleno = Number(Boolean(right?.relleno))
+		if (leftRelleno !== rightRelleno) return leftRelleno - rightRelleno
+
+		const leftVariantId = Number(left?.variante_id ?? 0)
+		const rightVariantId = Number(right?.variante_id ?? 0)
+		if (leftVariantId !== rightVariantId) return leftVariantId - rightVariantId
+
+		const leftSizeId = Number(left?.size_id ?? 0)
+		const rightSizeId = Number(right?.size_id ?? 0)
+		if (leftSizeId !== rightSizeId) return leftSizeId - rightSizeId
+
+		return 0
+	})
+}
+
 async function attachFirstVariant(product) {
 	const variants = await request('/api/variantes', {}, { productoId: product.producto_id })
-	const first = Array.isArray(variants) ? variants[0] : null
+	const first = sortVariantsForDisplay(variants)[0] || null
 
 	return {
 		...product,
