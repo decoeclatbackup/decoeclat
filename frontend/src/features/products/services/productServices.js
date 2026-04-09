@@ -219,7 +219,12 @@ export function sortVariantsForDisplay(variants = []) {
 }
 
 async function attachFirstVariant(product) {
-	const variants = await request('/api/variantes', {}, { productoId: product.producto_id })
+	let variants = []
+	try {
+		variants = await request('/api/variantes', {}, { productoId: product.producto_id })
+	} catch {
+		variants = []
+	}
 	const first = sortVariantsForDisplay(variants)[0] || null
 
 	return {
@@ -321,14 +326,26 @@ export const productServices = {
 		return request(`/api/products/${productId}`)
 	},
 
-	async listVariantsByProduct(productId) {
+	async listVariantsByProduct(productId, options = {}) {
 		if (!productId) return []
-		return request('/api/variantes', {}, { productoId: productId })
+		const strict = Boolean(options?.strict)
+		try {
+			return await request('/api/variantes', {}, { productoId: productId })
+		} catch (error) {
+			if (strict) throw error
+			return []
+		}
 	},
 
-	async listImagesByProduct(productId) {
+	async listImagesByProduct(productId, options = {}) {
 		if (!productId) return []
-		return request(`/api/imagenes/producto/${productId}`)
+		const strict = Boolean(options?.strict)
+		try {
+			return await request(`/api/imagenes/producto/${productId}`)
+		} catch (error) {
+			if (strict) throw error
+			return []
+		}
 	},
 
 	async updateImage(imageId, updates = {}) {

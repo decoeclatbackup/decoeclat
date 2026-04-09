@@ -107,6 +107,8 @@ function buildWhatsAppMessage({ cliente, carrito, ventaId }) {
 
       const variantParts = []
       if (item?.size_valor) variantParts.push(`Medida: ${item.size_valor}`)
+      if (item?.color) variantParts.push(`Color: ${item.color}`)
+      if (item?.relleno != null) variantParts.push(item.relleno ? 'Con relleno' : 'Sin relleno')
       if (item?.tela_nombre) variantParts.push(`Tela: ${item.tela_nombre}`)
 
       const variantText = variantParts.length > 0

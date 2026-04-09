@@ -23,6 +23,8 @@ function normalizeItems(items = []) {
     producto_id: Number(item.producto_id),
     producto_nombre: item.producto_nombre ?? null,
     size_id: item.size_id != null ? Number(item.size_id) : null,
+    color: item.color ?? null,
+    relleno: item.relleno == null ? null : Boolean(item.relleno),
     size_valor: item.size_valor ?? null,
     tela_nombre: item.tela_nombre ?? null,
     imagen_url: item.imagen_url ?? null,

@@ -34,7 +34,9 @@ async function getVentaByIdWithClient(client, ventaId) {
                         'producto_id', p.producto_id,
                         'producto_nombre', p.nombre,
                         'size_valor', s.valor,
-                        'tela_nombre', t.nombre
+                        'tela_nombre', t.nombre,
+                        'color', vp.color,
+                        'relleno', vp.relleno
                     )
                     ORDER BY dv.detalle_id ASC
                 ) FILTER (WHERE dv.detalle_id IS NOT NULL),
@@ -245,7 +247,9 @@ async createVentaDirecta(ventaData, items) {
                         'producto_id', p.producto_id,
                         'producto_nombre', p.nombre,
                         'size_valor', s.valor,
-                        'tela_nombre', t.nombre
+                        'tela_nombre', t.nombre,
+                        'color', vp.color,
+                        'relleno', vp.relleno
                     )
                     ORDER BY dv.detalle_id ASC
                 ) FILTER (WHERE dv.detalle_id IS NOT NULL),
@@ -286,7 +290,9 @@ async createVentaDirecta(ventaData, items) {
                         'producto_id', p.producto_id,
                         'producto_nombre', p.nombre,
                         'size_valor', s.valor,
-                        'tela_nombre', t.nombre
+                        'tela_nombre', t.nombre,
+                        'color', vp.color,
+                        'relleno', vp.relleno
                     )
                     ORDER BY dv.detalle_id ASC
                 ) FILTER (WHERE dv.detalle_id IS NOT NULL),

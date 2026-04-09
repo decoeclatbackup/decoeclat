@@ -85,12 +85,21 @@ export function ProductDetailPage() {
         setLoading(true)
         setError('')
 
-        const [productData, categoriesData, variantsData, imagesData] = await Promise.all([
+        const [productResult, categoriesResult, variantsResult, imagesResult] = await Promise.allSettled([
           productServices.getById(productId),
           productServices.listCategories(),
           productServices.listVariantsByProduct(productId),
           productServices.listImagesByProduct(productId),
         ])
+
+        if (productResult.status !== 'fulfilled') {
+          throw productResult.reason || new Error('No se pudo cargar el producto')
+        }
+
+        const productData = productResult.value
+        const categoriesData = categoriesResult.status === 'fulfilled' ? categoriesResult.value : []
+        const variantsData = variantsResult.status === 'fulfilled' ? variantsResult.value : []
+        const imagesData = imagesResult.status === 'fulfilled' ? imagesResult.value : []
 
         if (cancelled) return
 

@@ -410,7 +410,12 @@ export function VentasAdminPage() {
                                         <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
                                       </p>
                                       <p>
-                                        {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
+                                        {[
+                                          item.size_valor ? `Medida: ${item.size_valor}` : null,
+                                          item.color ? `Color: ${item.color}` : null,
+                                          item.relleno == null ? null : (item.relleno ? 'Con relleno' : 'Sin relleno'),
+                                          item.tela_nombre ? `Tela: ${item.tela_nombre}` : null,
+                                        ].filter(Boolean).join(' · ') || 'Sin atributos'}
                                       </p>
                                       <p>
                                         Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
@@ -505,7 +510,12 @@ export function VentasAdminPage() {
                                 <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
                               </p>
                               <p>
-                                {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
+                                {[
+                                  item.size_valor ? `Medida: ${item.size_valor}` : null,
+                                  item.color ? `Color: ${item.color}` : null,
+                                  item.relleno == null ? null : (item.relleno ? 'Con relleno' : 'Sin relleno'),
+                                  item.tela_nombre ? `Tela: ${item.tela_nombre}` : null,
+                                ].filter(Boolean).join(' · ') || 'Sin atributos'}
                               </p>
                               <p>
                                 Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}

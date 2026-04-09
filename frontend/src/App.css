@@ -4547,6 +4547,18 @@ table select {
     width: 100%;
   }
 
+  .ventas-admin-page .ventas-periodo-field {
+    min-width: 0;
+  }
+
+  .ventas-admin-page .ventas-periodo-field input {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    font-size: 0.9rem;
+    padding: 0.56rem 0.62rem;
+  }
+
   .ventas-admin-page .ventas-desktop-table {
     display: none;
   }

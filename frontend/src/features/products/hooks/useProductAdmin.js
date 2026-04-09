@@ -103,7 +103,7 @@ export function useProductAdmin() {
             }
 
             try {
-                const images = await productServices.listImagesByProduct(form.productId)
+                const images = await productServices.listImagesByProduct(form.productId, { strict: true })
                 if (!cancelled) {
                     setExistingImages(sortImages(Array.isArray(images) ? images : []))
                 }
@@ -159,7 +159,7 @@ export function useProductAdmin() {
     async function startEdit(product) {
         setStatusMessage('')
         try {
-            const variants = await productServices.listVariantsByProduct(product.producto_id)
+            const variants = await productServices.listVariantsByProduct(product.producto_id, { strict: true })
             const safeVariants = Array.isArray(variants) ? variants : []
             const selectedColors = [...new Set(
                 safeVariants

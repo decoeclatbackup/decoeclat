@@ -108,6 +108,8 @@ export const carritoRepository = {
         vp.producto_id,
         p.nombre AS producto_nombre,
         vp.size_id,
+        vp.color,
+        vp.relleno,
         s.valor AS size_valor,
         t.nombre AS tela_nombre,
         COALESCE(img_var.url, img_prod.url) AS imagen_url,
