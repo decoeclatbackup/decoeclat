@@ -67,7 +67,7 @@
   margin-top: auto;
   border-top: 1px solid rgba(194, 163, 133, 0.6);
   background: #c2a385;
-  color: #f5f5dc;
+  color: #2f241a;
 }
 
 .site-footer-inner {
@@ -107,9 +107,9 @@
 
 .site-footer-nav a,
 .site-footer-contact a {
-  color: #f5f5dc;
+  color: #2f241a;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .site-footer-nav a:hover,
@@ -140,10 +140,10 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.32rem 0.55rem;
-  border: 1px solid rgba(245, 245, 220, 0.72);
+  border: 1px solid rgba(47, 36, 26, 0.4);
   border-radius: 999px;
-  background: rgba(74, 74, 74, 0.12);
-  color: #f5f5dc;
+  background: rgba(245, 245, 220, 0.86);
+  color: #2f241a;
 }
 
 .site-footer-social-link svg {
@@ -157,7 +157,7 @@
   width: min(1100px, 100% - 2rem);
   margin: 0 auto;
   padding: 0.7rem 0 1rem;
-  color: #f5f5dc;
+  color: #2f241a;
 }
 
 .site-footer-copy small {
@@ -3004,6 +3004,10 @@ table select {
   min-height: clamp(200px, 50vw, 280px);
 }
 
+.home-public-banner.empty img {
+  opacity: 0.82;
+}
+
 .home-public-banner-dots {
   display: flex;
   justify-content: center;
@@ -3012,21 +3016,54 @@ table select {
 }
 
 .home-public-banner-dot {
-  width: clamp(8px, 1.2vw, 12px);
-  height: clamp(8px, 1.2vw, 12px);
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   border: none;
-  background: rgba(74, 74, 74, 0.3);
+  background: transparent;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
+.home-public-banner-dot::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(74, 74, 74, 0.3);
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
 .home-public-banner-dot:hover {
+  background: rgba(74, 74, 74, 0.08);
+}
+
+.home-public-banner-dot:hover::before {
   background: rgba(74, 74, 74, 0.5);
 }
 
 .home-public-banner-dot.active {
+  background: rgba(35, 69, 75, 0.12);
+}
+
+.home-public-banner-dot.active::before {
   background: var(--color-azul-aero);
+  transform: scale(1.15);
+}
+
+.home-public-featured-card-link {
+  width: 100%;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.home-public-featured-card-link:focus-visible {
+  outline: 2px solid rgba(35, 69, 75, 0.55);
+  outline-offset: 4px;
 }
 
 .home-public-featured {
@@ -3184,6 +3221,51 @@ table select {
   background: rgba(194, 163, 133, 0.18);
   box-shadow: 0 3px 10px rgba(74, 74, 74, 0.08);
   animation: fadeIn 0.4s ease-out;
+}
+
+.home-public-featured-card-skeleton {
+  pointer-events: none;
+}
+
+.home-public-featured-media-skeleton,
+.home-public-featured-body-skeleton .skeleton-line,
+.home-public-featured-body-skeleton .skeleton-chip {
+  background: linear-gradient(90deg, rgba(194, 163, 133, 0.2) 25%, rgba(194, 163, 133, 0.35) 50%, rgba(194, 163, 133, 0.2) 75%);
+  background-size: 200% 100%;
+  animation: home-skeleton-shimmer 1.3s linear infinite;
+}
+
+.home-public-featured-body-skeleton {
+  gap: 0.75rem;
+}
+
+.skeleton-line {
+  border-radius: 8px;
+}
+
+.skeleton-line-title {
+  width: 100%;
+  height: 2.8rem;
+}
+
+.skeleton-line-price {
+  width: 5.4rem;
+  height: 1.05rem;
+}
+
+.skeleton-chip {
+  width: 5.8rem;
+  height: 2rem;
+  border-radius: 999px;
+}
+
+@keyframes home-skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes fadeIn {
@@ -3377,9 +3459,9 @@ table select {
   width: auto;
   min-width: 64px;
   padding: 0.4rem 0.78rem;
-  background: #2f241a;
-  color: var(--color-hueso);
-  border: 1px solid rgba(245, 245, 220, 0.45);
+  background: #1f1711;
+  color: #ffffff;
+  border: 1px solid rgba(31, 23, 17, 0.8);
   border-radius: 6px;
   font-weight: 700;
   font-size: 0.8rem;
@@ -3393,7 +3475,7 @@ table select {
 }
 
 .home-public-featured-buy-btn:hover:not(:disabled) {
-  background: #241a12;
+  background: #130e0b;
   transform: translateY(-2px);
   box-shadow: 0 3px 8px rgba(47, 36, 26, 0.22);
 }
@@ -3660,7 +3742,7 @@ table select {
   position: static;
   transform: none;
   text-decoration: none;
-  color: #f5f5dc;
+  color: #2f241a;
   font-weight: 800;
   letter-spacing: 0.04em;
   font-size: clamp(1.2rem, 1.05rem + 0.5vw, 1.7rem);
@@ -3681,7 +3763,7 @@ table select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #f5f5dc;
+  color: #2f241a;
   border: 1px solid transparent;
   text-decoration: none;
   position: relative;
@@ -3805,8 +3887,8 @@ table select {
 .home-top-nav-link {
   display: inline-block;
   text-decoration: none;
-  color: #f5f5dc;
-  font-weight: 500;
+  color: #2f241a;
+  font-weight: 600;
 }
 
 .home-top-products-link-btn {

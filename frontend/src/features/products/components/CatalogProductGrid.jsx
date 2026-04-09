@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '../../../shared/utils/utils'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
+import { optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
 
 function resolveImage(product) {
   return (
@@ -90,15 +91,19 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
                 {productImage ? (
                   <div className="home-public-featured-media-stack">
                     <img
-                      src={productImage}
+                      src={optimizeCloudinaryImageUrl(productImage, { width: 360 })}
                       alt={product.nombre}
                       className="home-public-featured-media-image primary catalog-product-image"
+                      loading="lazy"
+                      decoding="async"
                     />
                     {secondaryImage ? (
                       <img
-                        src={secondaryImage}
+                        src={optimizeCloudinaryImageUrl(secondaryImage, { width: 360 })}
                         alt={`${product.nombre} vista alternativa`}
                         className="home-public-featured-media-image secondary catalog-product-image"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : null}
                   </div>

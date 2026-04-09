@@ -6,6 +6,10 @@ import { SEO } from '../../../shared/components/SEO'
 import { useHomePublic } from '../hooks/useHomePublic'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import { formatCurrency } from '../../../shared/utils/utils'
+import { optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
+
+const FALLBACK_BANNER_IMAGE = '/deco1.PNG'
+const FEATURED_SKELETON_ITEMS = [1, 2, 3, 4]
 
 function buildBannerTarget(banner) {
   if (banner?.producto_id) return `/producto/${banner.producto_id}`
@@ -27,22 +31,9 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
       ? 'is-medium'
       : 'is-low'
 
-  const handleCardKeyDown = (event) => {
-    if (!onNavigate) return
-
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      onNavigate(item.producto_id)
-    }
-  }
-
-  return (
+  const cardContent = (
     <article
       className={`home-public-featured-card ${hasOffer ? 'has-offer' : ''} ${className}`.trim()}
-      role={onNavigate ? 'link' : undefined}
-      tabIndex={onNavigate ? 0 : undefined}
-      onClick={() => onNavigate?.(item.producto_id)}
-      onKeyDown={handleCardKeyDown}
     >
       <div className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''}`}>
         {hasOffer ? (
@@ -55,14 +46,18 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
           <div className="home-public-featured-media-stack">
             <img
               className="home-public-featured-media-image primary"
-              src={item.imagen_principal}
+              src={optimizeCloudinaryImageUrl(item.imagen_principal, { width: 420 })}
               alt={item.nombre}
+              loading="lazy"
+              decoding="async"
             />
             {item.imagen_secundaria ? (
               <img
                 className="home-public-featured-media-image secondary"
-                src={item.imagen_secundaria}
+                src={optimizeCloudinaryImageUrl(item.imagen_secundaria, { width: 420 })}
                 alt={`${item.nombre} vista alternativa`}
+                loading="lazy"
+                decoding="async"
               />
             ) : null}
           </div>
@@ -102,6 +97,20 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
       </div>
     </article>
   )
+
+  if (!onNavigate) {
+    return cardContent
+  }
+
+  return (
+    <Link
+      to={`/producto/${item.producto_id}`}
+      className="home-public-featured-card-link"
+      onClick={() => onNavigate(item.producto_id)}
+    >
+      {cardContent}
+    </Link>
+  )
 }
 
 export function HomePublicPage() {
@@ -126,6 +135,10 @@ export function HomePublicPage() {
 
   const activeBanner = banners[safeActiveBannerIndex] || null
   const activeBannerTarget = buildBannerTarget(activeBanner)
+  const activeBannerImageUrl = optimizeCloudinaryImageUrl(
+    activeBanner?.imageUrl || FALLBACK_BANNER_IMAGE,
+    { width: 1280 }
+  )
 
   const handleBannerTouchStart = (event) => {
     const touch = event.touches?.[0]
@@ -308,25 +321,45 @@ export function HomePublicPage() {
           onTouchStart={handleBannerTouchStart}
           onTouchEnd={handleBannerTouchEnd}
         >
-          {!loading && activeBanner ? (
+          {activeBanner ? (
             activeBannerTarget ? (
               <Link className="home-public-banner" to={activeBannerTarget} onClickCapture={handleBannerClickCapture}>
                 <img
-                  src={activeBanner.imageUrl}
+                  src={activeBannerImageUrl}
                   alt={activeBanner.producto_nombre || activeBanner.categoria_nombre || 'Banner principal'}
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
+                  width="1920"
+                  height="600"
                 />
               </Link>
             ) : (
               <div className="home-public-banner" onClickCapture={handleBannerClickCapture}>
                 <img
-                  src={activeBanner.imageUrl}
+                  src={activeBannerImageUrl}
                   alt={activeBanner.producto_nombre || activeBanner.categoria_nombre || 'Banner principal'}
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
+                  width="1920"
+                  height="600"
                 />
               </div>
             )
-          ) : null}
-
-          {!loading && !activeBanner ? <div className="home-public-banner empty" aria-hidden="true" /> : null}
+          ) : (
+            <div className="home-public-banner empty" aria-hidden="true">
+              <img
+                src={activeBannerImageUrl}
+                alt="Banner principal"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                width="1920"
+                height="600"
+              />
+            </div>
+          )}
 
           {banners.length > 1 ? (
             <div className="home-public-banner-dots" role="tablist" aria-label="Seleccionar banner">
@@ -336,6 +369,9 @@ export function HomePublicPage() {
                   type="button"
                   className={`home-public-banner-dot ${index === safeActiveBannerIndex ? 'active' : ''}`}
                   onClick={() => setActiveBannerIndex(index)}
+                  role="tab"
+                  aria-selected={index === safeActiveBannerIndex}
+                  tabIndex={index === safeActiveBannerIndex ? 0 : -1}
                   aria-label={`Banner ${index + 1}`}
                 />
               ))}
@@ -350,7 +386,24 @@ export function HomePublicPage() {
           <Link to="/catalogo" className="home-public-see-all">Ver todos</Link>
         </div>
 
-        {featuredProducts.length === 0 ? (
+        {loading ? (
+          <div className="home-public-featured-grid" aria-hidden="true">
+            {FEATURED_SKELETON_ITEMS.map((item) => (
+              <article key={`featured-skeleton-${item}`} className="home-public-featured-card home-public-featured-card-skeleton">
+                <div className="home-public-featured-media home-public-featured-media-skeleton" />
+                <div className="home-public-featured-body home-public-featured-body-skeleton">
+                  <div className="skeleton-line skeleton-line-title" />
+                  <div className="home-public-featured-footer">
+                    <div className="home-public-featured-price">
+                      <div className="skeleton-line skeleton-line-price" />
+                    </div>
+                    <div className="skeleton-chip" />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : featuredProducts.length === 0 ? (
           <p className="home-public-featured-empty">No hay productos destacados activos por ahora.</p>
         ) : isFeaturedCarousel ? (
           <div className="home-public-featured-carousel" aria-label="Carrusel de productos destacados">
@@ -451,6 +504,7 @@ export function HomePublicPage() {
           </div>
         )}
         </section>
+                
 
         <section className="home-public-values" aria-label="Valores de la marca">
         <div className="home-public-values-grid">

@@ -48,11 +48,19 @@ export function useHomePublic() {
       setLoading(true)
       setError('')
 
+      const categoriesPromise = homePublicService
+        .listCategories()
+        .then((categoriesData) => {
+          if (!isMounted) return
+          setCategories(Array.isArray(categoriesData) ? categoriesData : [])
+        })
+        .catch(() => {
+          if (!isMounted) return
+          setCategories([])
+        })
+
       try {
-        const [homeData, categoriesData] = await Promise.all([
-          homePublicService.getHomeData(),
-          homePublicService.listCategories(),
-        ])
+        const homeData = await homePublicService.getHomeData()
 
         if (!isMounted) return
 
@@ -60,7 +68,6 @@ export function useHomePublic() {
         setProductosDestacados(
           Array.isArray(homeData?.productosDestacados) ? homeData.productosDestacados : []
         )
-        setCategories(Array.isArray(categoriesData) ? categoriesData : [])
       } catch (err) {
         if (!isMounted) return
         setError(err?.message || 'No se pudo cargar el home')
@@ -69,6 +76,8 @@ export function useHomePublic() {
           setLoading(false)
         }
       }
+
+      await categoriesPromise
     }
 
     loadData()

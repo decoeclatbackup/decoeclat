@@ -6,6 +6,7 @@ import { sortVariantsForDisplay } from '../services/productServices'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { formatCurrency } from '../../../shared/utils/utils'
+import { optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
 
 function normalizeText(value) {
   return String(value || '')
@@ -292,7 +293,7 @@ export function ProductDetailPage() {
   const seoDescription = productDescription
     ? productDescription.slice(0, 160)
     : `Compra ${String(product?.nombre || 'este producto')} en DECOECLAT. Encontra medidas, disenos y precios actualizados.`
-  const seoImage = selectedImageUrl || resolveImage(product) || null
+  const seoImage = optimizeCloudinaryImageUrl(selectedImageUrl || resolveImage(product) || null, { width: 800 })
 
   async function onAddToCartClick() {
     if (!selectedVariantId || !hasStock) return
@@ -390,7 +391,14 @@ export function ProductDetailPage() {
                     onClick={openLightbox}
                     aria-label="Ver imagen ampliada"
                   >
-                    <img src={selectedImageUrl} alt={product.nombre} className="product-detail-main-image" />
+                    <img
+                      src={optimizeCloudinaryImageUrl(selectedImageUrl, { width: 800 })}
+                      alt={product.nombre}
+                      className="product-detail-main-image"
+                      loading="eager"
+                      fetchPriority="high"
+                      decoding="async"
+                    />
                   </button>
                 ) : (
                   <div className="product-detail-main-placeholder">Sin imagen</div>
@@ -407,7 +415,13 @@ export function ProductDetailPage() {
                         onClick={() => setSelectedImageUrl(image.url)}
                         aria-label="Ver imagen"
                       >
-                        <img src={image.url} alt={product.nombre} className="product-thumb-img" />
+                        <img
+                          src={optimizeCloudinaryImageUrl(image.url, { width: 120 })}
+                          alt={product.nombre}
+                          className="product-thumb-img"
+                          loading="lazy"
+                          decoding="async"
+                        />
                       </button>
                     ))}
                   </div>
@@ -550,9 +564,11 @@ export function ProductDetailPage() {
                         <div className="product-detail-related-image-wrap">
                           {imageUrl ? (
                             <img
-                              src={imageUrl}
+                              src={optimizeCloudinaryImageUrl(imageUrl, { width: 360 })}
                               alt={relatedProduct.nombre}
                               className="product-detail-related-image"
+                              loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <div className="product-detail-related-placeholder">Sin imagen</div>
@@ -618,9 +634,11 @@ export function ProductDetailPage() {
 
               <div className="product-detail-lightbox-body" onClick={(event) => event.stopPropagation()}>
                 <img
-                  src={selectedImageUrl}
+                  src={optimizeCloudinaryImageUrl(selectedImageUrl, { width: 800 })}
                   alt={product.nombre}
                   className="product-detail-lightbox-image"
+                  loading="eager"
+                  decoding="async"
                 />
                 {visibleImages.length > 1 && selectedImageIndex >= 0 ? (
                   <p className="product-detail-lightbox-counter">
