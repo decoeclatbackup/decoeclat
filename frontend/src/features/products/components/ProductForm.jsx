@@ -35,6 +35,35 @@ const PRODUCT_COLOR_HEX = {
   Chocolate: '#5a3a29',
 }
 
+function buildColorStockDrafts(variants = [], selectedColors = [], fallbackStock = '') {
+  const stockByColor = new Map()
+
+  variants.forEach((variant) => {
+    const colorName = String(variant?.color || '').trim()
+    if (!colorName) return
+
+    const normalizedColor = normalizeColorKey(colorName)
+    if (!stockByColor.has(normalizedColor)) {
+      stockByColor.set(normalizedColor, String(normalizeStockValue(variant?.stock, 0)))
+    }
+  })
+
+  return selectedColors.reduce((acc, colorName) => {
+    const normalizedColor = normalizeColorKey(colorName)
+    acc[colorName] = stockByColor.get(normalizedColor) ?? String(fallbackStock ?? '')
+    return acc
+  }, {})
+}
+
+function shallowEqualColorStocks(left = {}, right = {}) {
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+
+  if (leftKeys.length !== rightKeys.length) return false
+
+  return leftKeys.every((key) => String(left[key] ?? '') === String(right[key] ?? ''))
+}
+
 const initialFieldErrors = {
   name: '',
   categoryId: '',
@@ -118,6 +147,7 @@ export function ProductForm({
   const [removedExistingImageIds, setRemovedExistingImageIds] = useState([])
   const [existingOrderDrafts, setExistingOrderDrafts] = useState({})
   const [multiSizeVariants, setMultiSizeVariants] = useState({})
+  const [colorStocks, setColorStocks] = useState({})
   const [draggingExistingImageId, setDraggingExistingImageId] = useState(null)
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -153,6 +183,7 @@ export function ProductForm({
     setExistingOrderDrafts({})
     setExistingImagesDraft([])
     setRemovedExistingImageIds([])
+    setColorStocks({})
     setSelectedImages((prev) => {
       prev.forEach((image) => {
         if (image.previewUrl) {
@@ -229,9 +260,30 @@ export function ProductForm({
   const isPillowSizeType = String(selectedSizeType?.type_nombre || '').toLowerCase().includes('almohad')
   const selectedCategory = categories.find((category) => String(category.categoria_id) === String(form.categoryId))
   const isComboCategory = normalizeText(selectedCategory?.nombre).includes('combo')
-  const selectedColors = Array.isArray(form.selectedColors)
-    ? form.selectedColors.filter(Boolean)
-    : []
+  const selectedColors = useMemo(
+    () => (Array.isArray(form.selectedColors) ? form.selectedColors.filter(Boolean) : []),
+    [form.selectedColors]
+  )
+
+  useEffect(() => {
+    if (isPillowSizeType || isComboCategory) {
+      setColorStocks((prev) => (Object.keys(prev).length === 0 ? prev : {}))
+      return
+    }
+
+    const nextDrafts = buildColorStockDrafts(
+      Array.isArray(form.variantStocks) ? form.variantStocks : [],
+      selectedColors,
+      form.stock
+    )
+
+    const nextColorStocks = selectedColors.reduce((acc, colorName) => {
+      acc[colorName] = nextDrafts[colorName] ?? String(form.stock ?? '')
+      return acc
+    }, {})
+
+    setColorStocks((prev) => (shallowEqualColorStocks(prev, nextColorStocks) ? prev : nextColorStocks))
+  }, [form.productId, form.stock, form.variantStocks, isComboCategory, isPillowSizeType, selectedColors])
 
   const comboDefaultSize = useMemo(() => {
     if (!Array.isArray(sizes) || sizes.length === 0) return null
@@ -401,6 +453,23 @@ export function ProductForm({
       : [...selectedColors, colorName]
 
     onChange({ target: { name: 'selectedColors', value: nextColors } })
+
+    if (!exists) {
+      setColorStocks((prev) => {
+        if (Object.prototype.hasOwnProperty.call(prev, colorName)) return prev
+        return {
+          ...prev,
+          [colorName]: String(form.stock ?? ''),
+        }
+      })
+    }
+  }
+
+  function handleColorStockChange(colorName, value) {
+    setColorStocks((prev) => ({
+      ...prev,
+      [colorName]: value,
+    }))
   }
 
   function toggleMobileColors() {
@@ -725,6 +794,7 @@ export function ProductForm({
               {
                 variantStocks,
                 selectedColors,
+                colorStocks,
               }
             )
 
@@ -1024,18 +1094,47 @@ export function ProductForm({
         ) : null}
 
         {!isPillowSizeType && (!isComboCategory || comboPriceMode === 'single') ? (
-          <label className="field">
-            <span>Stock</span>
-            <input
-              type="number"
-              min="0"
-              name="stock"
-              value={form.stock}
-              onChange={onChange}
-              placeholder="Ej: 20"
-            />
-            {errors.stock ? <small className="error">{errors.stock}</small> : null}
-          </label>
+          selectedColors.length > 0 ? (
+            <div className="field full-width product-form-color-stock-field">
+              <span>Stock por color</span>
+              <div className="product-form-color-stock-grid">
+                {selectedColors.map((colorName) => (
+                  <label key={colorName} className="product-form-color-stock-card">
+                    <span className="product-form-color-stock-label">
+                      <span
+                        className="product-color-swatch"
+                        style={{ backgroundColor: PRODUCT_COLOR_HEX[colorName] || '#cccccc' }}
+                        aria-hidden="true"
+                      />
+                      <span>{colorName}</span>
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={colorStocks[colorName] ?? ''}
+                      onChange={(event) => handleColorStockChange(colorName, event.target.value)}
+                      placeholder="Ej: 20"
+                      disabled={isSubmitting}
+                    />
+                  </label>
+                ))}
+              </div>
+              <small>Cada color se guarda como una variante independiente con su propio stock.</small>
+            </div>
+          ) : (
+            <label className="field">
+              <span>Stock</span>
+              <input
+                type="number"
+                min="0"
+                name="stock"
+                value={form.stock}
+                onChange={onChange}
+                placeholder="Ej: 20"
+              />
+              {errors.stock ? <small className="error">{errors.stock}</small> : null}
+            </label>
+          )
         ) : null}
 
         {isComboCategory && comboPriceMode === 'fill-options' ? (

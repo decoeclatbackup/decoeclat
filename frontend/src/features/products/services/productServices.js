@@ -135,6 +135,18 @@ function normalizeVariantStocks(variantStocks = []) {
 		.filter((variant) => Number.isInteger(variant.sizeId) && variant.sizeId > 0)
 }
 
+function normalizeColorStocks(colorStocks = {}) {
+	if (!colorStocks || typeof colorStocks !== 'object' || Array.isArray(colorStocks)) return {}
+
+	return Object.entries(colorStocks).reduce((acc, [colorName, stockValue]) => {
+		const normalizedColor = normalizeColor(colorName)
+		if (!normalizedColor) return acc
+
+		acc[normalizedColor] = normalizeStockValue(stockValue, 0)
+		return acc
+	}, {})
+}
+
 export function sortVariantsForDisplay(variants = []) {
 	if (!Array.isArray(variants)) return []
 
@@ -182,8 +194,22 @@ async function attachFirstVariant(product) {
 
 function buildVariantPayloads(payload, normalizedVariantStocks) {
 	const selectedColors = normalizeSelectedColors(payload.selectedColors)
+	const colorStocks = normalizeColorStocks(payload.colorStocks)
+	const hasSizeBasedVariants = normalizedVariantStocks.length > 0
 
-	const baseVariantPayloads = normalizedVariantStocks.length > 0
+	if (!hasSizeBasedVariants && selectedColors.length > 0) {
+		return selectedColors.map((color) => ({
+			sizeId: Number(payload.sizeId),
+			color,
+			relleno: false,
+			stock: normalizeStockValue(colorStocks[color] ?? payload.stock, 0),
+			precio: Number(payload.precio),
+			precioOferta: Number(payload.precioOferta) || null,
+			enOferta: Boolean(payload.enOferta) || false,
+		}))
+	}
+
+	const baseVariantPayloads = hasSizeBasedVariants
 		? normalizedVariantStocks.map((variantStock) => {
 			const variantPrice = Number(variantStock.precio || payload.precio)
 			const variantOfferEnabled = variantStock.enOferta || Boolean(payload.enOferta)

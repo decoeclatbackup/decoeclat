@@ -135,12 +135,15 @@ export function useProductAdmin() {
             const selectedColors = Array.isArray(variantConfig?.selectedColors)
                 ? variantConfig.selectedColors
                 : (Array.isArray(form.selectedColors) ? form.selectedColors : [])
+            const colorStocks = variantConfig?.colorStocks && typeof variantConfig.colorStocks === 'object'
+                ? variantConfig.colorStocks
+                : {}
 
             if (isEditing) {
-                await productServices.update({ ...form, images, existingImageChanges, variantStocks, selectedColors })
+                await productServices.update({ ...form, images, existingImageChanges, variantStocks, selectedColors, colorStocks })
                 setStatusMessage('Producto actualizado correctamente')
             } else {
-                await productServices.create({ ...form, images, variantStocks, selectedColors })
+                await productServices.create({ ...form, images, variantStocks, selectedColors, colorStocks })
                 setStatusMessage('Producto registrado correctamente')
             }
             setForm(emptyForm)

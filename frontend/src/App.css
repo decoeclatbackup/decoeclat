@@ -551,6 +551,38 @@
   margin: 0;
 }
 
+.product-form-color-stock-field {
+  gap: 0.6rem;
+}
+
+.product-form-color-stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.65rem;
+}
+
+.product-form-color-stock-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(194, 163, 133, 0.55);
+  border-radius: 12px;
+  background: rgba(233, 235, 234, 0.72);
+}
+
+.product-form-color-stock-card input {
+  width: 100%;
+}
+
+.product-form-color-stock-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #20363b;
+}
+
 .product-color-swatch {
   width: 0.9rem;
   height: 0.9rem;
@@ -1981,6 +2013,10 @@ table select {
 
   .product-form-color-option {
     width: 100%;
+  }
+
+  .product-form-color-stock-grid {
+    grid-template-columns: 1fr;
   }
 
   .catalog-filter-buttons-color {
