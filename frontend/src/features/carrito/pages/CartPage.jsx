@@ -35,17 +35,33 @@ function isMobileDevice() {
   return /android|iphone|ipad|ipod/i.test(window.navigator.userAgent || '')
 }
 
+function closePopup(popupWindow) {
+  if (popupWindow && !popupWindow.closed) {
+    popupWindow.close()
+  }
+}
+
+function navigatePopup(popupWindow, url) {
+  if (!popupWindow || popupWindow.closed) return false
+
+  try {
+    popupWindow.location.assign(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function openWhatsAppCheckout({ number, message, popupWindow }) {
   const encodedMessage = encodeURIComponent(message)
   const webUrl = `https://wa.me/${number}?text=${encodedMessage}`
   const appUrl = `whatsapp://send?phone=${number}&text=${encodedMessage}`
 
   if (isMobileDevice()) {
-    if (popupWindow && !popupWindow.closed) {
-      popupWindow.location.replace(appUrl)
+    if (navigatePopup(popupWindow, appUrl)) {
       window.setTimeout(() => {
-        if (!popupWindow.closed) {
-          popupWindow.location.replace(webUrl)
+        if (!navigatePopup(popupWindow, webUrl)) {
+          window.location.assign(webUrl)
         }
       }, 1200)
       return
@@ -58,8 +74,7 @@ function openWhatsAppCheckout({ number, message, popupWindow }) {
     return
   }
 
-  if (popupWindow && !popupWindow.closed) {
-    popupWindow.location.replace(webUrl)
+  if (navigatePopup(popupWindow, webUrl)) {
     return
   }
 
@@ -171,13 +186,11 @@ export function CartPage() {
     setCheckoutNotice({ type: '', text: '' })
 
     const whatsappPopup = typeof window !== 'undefined'
-      ? window.open('', '_blank', 'noopener,noreferrer')
+      ? window.open('about:blank', '_blank')
       : null
 
     if (!WHATSAPP_NUMBER) {
-      if (whatsappPopup && !whatsappPopup.closed) {
-        whatsappPopup.close()
-      }
+      closePopup(whatsappPopup)
       setCheckoutNotice({
         type: 'error',
         text: 'Falta configurar VITE_WHATSAPP_NUMBER en el frontend.',
@@ -194,6 +207,7 @@ export function CartPage() {
     console.log('Iniciando checkout con datos:', payload)
 
     if (!payload.nombre || !payload.email) {
+      closePopup(whatsappPopup)
       setCheckoutNotice({
         type: 'error',
         text: 'Nombre y email son obligatorios para continuar.',
@@ -203,6 +217,7 @@ export function CartPage() {
 
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)
     if (!isEmailValid) {
+      closePopup(whatsappPopup)
       setCheckoutNotice({
         type: 'error',
         text: 'Ingresa un email valido.',
