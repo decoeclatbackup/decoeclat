@@ -32,3 +32,14 @@ export function optimizeCloudinaryImageUrl(url, options = {}) {
   const optimizedUrl = `${prefix}${transformation}/${suffix}`
   return queryString ? `${optimizedUrl}?${queryString}` : optimizedUrl
 }
+
+export function buildCloudinarySrcSet(url, widths = [], baseOptions = {}) {
+  if (!isCloudinaryUrl(url)) return ''
+
+  const uniqueWidths = [...new Set(widths.map((width) => Number(width)).filter((width) => Number.isFinite(width) && width > 0))]
+  if (uniqueWidths.length === 0) return ''
+
+  return uniqueWidths
+    .map((width) => `${optimizeCloudinaryImageUrl(url, { ...baseOptions, width })} ${Math.round(width)}w`)
+    .join(', ')
+}

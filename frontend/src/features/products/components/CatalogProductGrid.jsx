@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '../../../shared/utils/utils'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
-import { optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
+import { buildCloudinarySrcSet, optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
 
 function resolveImage(product) {
   return (
@@ -70,6 +70,8 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
           : discountPercentage > 15
             ? 'is-medium'
             : 'is-low'
+        const productSrcSet = productImage ? buildCloudinarySrcSet(productImage, [240, 320, 360], { quality: 'auto', format: 'auto' }) : ''
+        const secondarySrcSet = secondaryImage ? buildCloudinarySrcSet(secondaryImage, [240, 320, 360], { quality: 'auto', format: 'auto' }) : ''
         return (
           <Link
             key={product.producto_id}
@@ -92,6 +94,8 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
                   <div className="home-public-featured-media-stack">
                     <img
                       src={optimizeCloudinaryImageUrl(productImage, { width: 360 })}
+                      srcSet={productSrcSet || undefined}
+                      sizes="(max-width: 575px) 46vw, 260px"
                       alt={product.nombre}
                       className="home-public-featured-media-image primary catalog-product-image"
                       loading="lazy"
@@ -100,6 +104,8 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
                     {secondaryImage ? (
                       <img
                         src={optimizeCloudinaryImageUrl(secondaryImage, { width: 360 })}
+                        srcSet={secondarySrcSet || undefined}
+                        sizes="(max-width: 575px) 46vw, 260px"
                         alt={`${product.nombre} vista alternativa`}
                         className="home-public-featured-media-image secondary catalog-product-image"
                         loading="lazy"

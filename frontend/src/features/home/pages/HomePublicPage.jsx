@@ -6,7 +6,7 @@ import { SEO } from '../../../shared/components/SEO'
 import { useHomePublic } from '../hooks/useHomePublic'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import { formatCurrency } from '../../../shared/utils/utils'
-import { optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
+import { buildCloudinarySrcSet, optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
 
 const FALLBACK_BANNER_IMAGE = '/deco1.PNG'
 const FEATURED_SKELETON_ITEMS = [1, 2, 3, 4]
@@ -31,9 +31,25 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
       ? 'is-medium'
       : 'is-low'
 
-  const cardContent = (
+  const handleCardNavigate = () => {
+    if (!onNavigate) return
+    onNavigate(item.producto_id)
+  }
+
+  const handleCardKeyDown = (event) => {
+    if (!onNavigate) return
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onNavigate(item.producto_id)
+  }
+
+  return (
     <article
-      className={`home-public-featured-card ${hasOffer ? 'has-offer' : ''} ${className}`.trim()}
+      className={`home-public-featured-card ${hasOffer ? 'has-offer' : ''} ${onNavigate ? 'is-clickable' : ''} ${className}`.trim()}
+      role={onNavigate ? 'link' : undefined}
+      tabIndex={onNavigate ? 0 : undefined}
+      onClick={onNavigate ? handleCardNavigate : undefined}
+      onKeyDown={onNavigate ? handleCardKeyDown : undefined}
     >
       <div className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''}`}>
         {hasOffer ? (
@@ -47,6 +63,8 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
             <img
               className="home-public-featured-media-image primary"
               src={optimizeCloudinaryImageUrl(item.imagen_principal, { width: 420 })}
+              srcSet={buildCloudinarySrcSet(item.imagen_principal, [240, 320, 420], { quality: 'auto', format: 'auto' }) || undefined}
+              sizes="(max-width: 575px) 46vw, 260px"
               alt={item.nombre}
               loading="lazy"
               decoding="async"
@@ -55,6 +73,8 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
               <img
                 className="home-public-featured-media-image secondary"
                 src={optimizeCloudinaryImageUrl(item.imagen_secundaria, { width: 420 })}
+                srcSet={buildCloudinarySrcSet(item.imagen_secundaria, [240, 320, 420], { quality: 'auto', format: 'auto' }) || undefined}
+                sizes="(max-width: 575px) 46vw, 260px"
                 alt={`${item.nombre} vista alternativa`}
                 loading="lazy"
                 decoding="async"
@@ -97,20 +117,6 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
       </div>
     </article>
   )
-
-  if (!onNavigate) {
-    return cardContent
-  }
-
-  return (
-    <Link
-      to={`/producto/${item.producto_id}`}
-      className="home-public-featured-card-link"
-      onClick={() => onNavigate(item.producto_id)}
-    >
-      {cardContent}
-    </Link>
-  )
 }
 
 export function HomePublicPage() {
@@ -135,10 +141,17 @@ export function HomePublicPage() {
 
   const activeBanner = banners[safeActiveBannerIndex] || null
   const activeBannerTarget = buildBannerTarget(activeBanner)
+  const bannerSourceWidth = isMobileFeatured ? 720 : 1280
   const activeBannerImageUrl = optimizeCloudinaryImageUrl(
     activeBanner?.imageUrl || FALLBACK_BANNER_IMAGE,
-    { width: 1280 }
+    { width: bannerSourceWidth }
   )
+  const activeBannerSrcSet = activeBanner?.imageUrl
+    ? buildCloudinarySrcSet(activeBanner.imageUrl, isMobileFeatured ? [360, 540, 720] : [768, 1024, 1280], {
+      quality: 'auto',
+      format: 'auto',
+    })
+    : ''
 
   const handleBannerTouchStart = (event) => {
     const touch = event.touches?.[0]
@@ -326,24 +339,28 @@ export function HomePublicPage() {
               <Link className="home-public-banner" to={activeBannerTarget} onClickCapture={handleBannerClickCapture}>
                 <img
                   src={activeBannerImageUrl}
+                  srcSet={activeBannerSrcSet || undefined}
+                  sizes="100vw"
                   alt={activeBanner.producto_nombre || activeBanner.categoria_nombre || 'Banner principal'}
                   loading="eager"
                   fetchPriority="high"
                   decoding="async"
-                  width="1920"
-                  height="600"
+                  width={isMobileFeatured ? '720' : '1280'}
+                  height={isMobileFeatured ? '225' : '400'}
                 />
               </Link>
             ) : (
               <div className="home-public-banner" onClickCapture={handleBannerClickCapture}>
                 <img
                   src={activeBannerImageUrl}
+                  srcSet={activeBannerSrcSet || undefined}
+                  sizes="100vw"
                   alt={activeBanner.producto_nombre || activeBanner.categoria_nombre || 'Banner principal'}
                   loading="eager"
                   fetchPriority="high"
                   decoding="async"
-                  width="1920"
-                  height="600"
+                  width={isMobileFeatured ? '720' : '1280'}
+                  height={isMobileFeatured ? '225' : '400'}
                 />
               </div>
             )
@@ -351,12 +368,14 @@ export function HomePublicPage() {
             <div className="home-public-banner empty" aria-hidden="true">
               <img
                 src={activeBannerImageUrl}
+                srcSet={activeBannerSrcSet || undefined}
+                sizes="100vw"
                 alt="Banner principal"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
-                width="1920"
-                height="600"
+                width={isMobileFeatured ? '720' : '1280'}
+                height={isMobileFeatured ? '225' : '400'}
               />
             </div>
           )}

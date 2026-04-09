@@ -6,7 +6,7 @@ import { sortVariantsForDisplay } from '../services/productServices'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { formatCurrency } from '../../../shared/utils/utils'
-import { optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
+import { buildCloudinarySrcSet, optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
 
 function normalizeText(value) {
   return String(value || '')
@@ -294,6 +294,7 @@ export function ProductDetailPage() {
     ? productDescription.slice(0, 160)
     : `Compra ${String(product?.nombre || 'este producto')} en DECOECLAT. Encontra medidas, disenos y precios actualizados.`
   const seoImage = optimizeCloudinaryImageUrl(selectedImageUrl || resolveImage(product) || null, { width: 800 })
+  const mainImageSrcSet = selectedImageUrl ? buildCloudinarySrcSet(selectedImageUrl, [360, 540, 720, 800], { quality: 'auto', format: 'auto' }) : ''
 
   async function onAddToCartClick() {
     if (!selectedVariantId || !hasStock) return
@@ -393,6 +394,8 @@ export function ProductDetailPage() {
                   >
                     <img
                       src={optimizeCloudinaryImageUrl(selectedImageUrl, { width: 800 })}
+                      srcSet={mainImageSrcSet || undefined}
+                      sizes="(max-width: 575px) 100vw, 800px"
                       alt={product.nombre}
                       className="product-detail-main-image"
                       loading="eager"
@@ -417,6 +420,8 @@ export function ProductDetailPage() {
                       >
                         <img
                           src={optimizeCloudinaryImageUrl(image.url, { width: 120 })}
+                          srcSet={buildCloudinarySrcSet(image.url, [120, 160, 200], { quality: 'auto', format: 'auto' }) || undefined}
+                          sizes="120px"
                           alt={product.nombre}
                           className="product-thumb-img"
                           loading="lazy"
@@ -565,6 +570,8 @@ export function ProductDetailPage() {
                           {imageUrl ? (
                             <img
                               src={optimizeCloudinaryImageUrl(imageUrl, { width: 360 })}
+                              srcSet={buildCloudinarySrcSet(imageUrl, [240, 320, 360], { quality: 'auto', format: 'auto' }) || undefined}
+                              sizes="(max-width: 575px) 45vw, 360px"
                               alt={relatedProduct.nombre}
                               className="product-detail-related-image"
                               loading="lazy"
@@ -635,6 +642,8 @@ export function ProductDetailPage() {
               <div className="product-detail-lightbox-body" onClick={(event) => event.stopPropagation()}>
                 <img
                   src={optimizeCloudinaryImageUrl(selectedImageUrl, { width: 800 })}
+                  srcSet={mainImageSrcSet || undefined}
+                  sizes="(max-width: 575px) 100vw, 800px"
                   alt={product.nombre}
                   className="product-detail-lightbox-image"
                   loading="eager"
