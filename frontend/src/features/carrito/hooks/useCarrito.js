@@ -54,6 +54,11 @@ export const useCarrito = () => {
 
 	const getClienteTemporalId = () => localStorage.getItem('clienteId')
 
+	const clearClienteTemporalId = () => {
+		if (typeof window === 'undefined') return
+		localStorage.removeItem('clienteId')
+	}
+
 	const getOrCreateClienteTemporalId = async () => {
 		let clienteId = getClienteTemporalId()
 		setError(null)
@@ -248,6 +253,7 @@ export const useCarrito = () => {
 		total,
 		loading,
 		getClienteTemporalId,
+		clearClienteTemporalId,
 		getOrCreateClienteTemporalId,
 		completarDatosClienteTemporal,
 		handleGetCarrito,

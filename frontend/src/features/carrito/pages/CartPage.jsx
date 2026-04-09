@@ -132,6 +132,7 @@ export function CartPage() {
     loading,
     error,
     getClienteTemporalId,
+    clearClienteTemporalId,
     getOrCreateClienteTemporalId,
     completarDatosClienteTemporal,
     handleGetCarrito,
@@ -288,6 +289,8 @@ export function CartPage() {
       message,
       popupWindow: whatsappPopup,
     })
+
+    clearClienteTemporalId()
   }
 
   const handleNavbarSearch = () => {
