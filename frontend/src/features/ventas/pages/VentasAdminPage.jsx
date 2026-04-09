@@ -317,116 +317,209 @@ export function VentasAdminPage() {
           {!loading && ventas.length === 0 ? <p>No hay ventas registradas.</p> : null}
 
           {!loading && ventas.length > 0 ? (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Venta</th>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Total</th>
-                    <th>Detalle</th>
-                    <th>Estado actual</th>
-                    <th>Nuevo estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ventas.map((venta) => {
-                    const detalleItems = Array.isArray(venta.detalle_items) ? venta.detalle_items : []
-                    const isExpanded = Number(expandedVentaId) === Number(venta.venta_id)
+            <>
+              <div className="table-wrap ventas-desktop-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Venta</th>
+                      <th>Fecha</th>
+                      <th>Cliente</th>
+                      <th>Total</th>
+                      <th>Detalle</th>
+                      <th>Estado actual</th>
+                      <th>Nuevo estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ventas.map((venta) => {
+                      const detalleItems = Array.isArray(venta.detalle_items) ? venta.detalle_items : []
+                      const isExpanded = Number(expandedVentaId) === Number(venta.venta_id)
 
-                    return (
-                      <Fragment key={venta.venta_id}>
-                        <tr>
-                          <td>#{venta.venta_id}</td>
-                          <td>{new Date(venta.created_at).toLocaleString('es-AR')}</td>
-                          <td>
-                            <div className="ventas-cliente-cell">
-                              <strong>{venta.cliente_nombre || `Cliente ${venta.cliente_id}`}</strong>
-                              <small>{venta.cliente_email || '-'}</small>
-                              <small>{venta.cliente_telefono || '-'}</small>
-                            </div>
-                          </td>
-                          <td>{formatCurrency(venta.total)}</td>
-                          <td>
-                            <button
-                              type="button"
-                              className="btn ghost tiny"
-                              onClick={() => handleToggleDetalle(venta.venta_id)}
-                            >
-                              {isExpanded ? 'Ocultar' : `Ver (${detalleItems.length})`}
-                            </button>
-                          </td>
-                          <td>
-                            <span className="ventas-status-pill">{venta.estado_nombre || `Estado ${venta.estado_id}`}</span>
-                          </td>
-                          <td>
-                            <select
-                              value={estadoSeleccionado[Number(venta.venta_id)] || Number(venta.estado_id)}
-                              onChange={(event) =>
-                                cambiarEstadoSeleccionado(venta.venta_id, Number(event.target.value))
-                              }
-                              disabled={saving}
-                            >
-                              {estados.map((estado) => (
-                                <option key={estado.estado_id} value={estado.estado_id}>
-                                  {estado.descripcion}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td>
-                            <div className="actions compact">
+                      return (
+                        <Fragment key={venta.venta_id}>
+                          <tr>
+                            <td>#{venta.venta_id}</td>
+                            <td>{new Date(venta.created_at).toLocaleString('es-AR')}</td>
+                            <td>
+                              <div className="ventas-cliente-cell">
+                                <strong>{venta.cliente_nombre || `Cliente ${venta.cliente_id}`}</strong>
+                                <small>{venta.cliente_email || '-'}</small>
+                                <small>{venta.cliente_telefono || '-'}</small>
+                              </div>
+                            </td>
+                            <td>{formatCurrency(venta.total)}</td>
+                            <td>
                               <button
                                 type="button"
-                                className="btn tiny"
-                                onClick={() => guardarEstadoVenta(venta.venta_id)}
+                                className="btn ghost tiny"
+                                onClick={() => handleToggleDetalle(venta.venta_id)}
+                              >
+                                {isExpanded ? 'Ocultar' : `Ver (${detalleItems.length})`}
+                              </button>
+                            </td>
+                            <td>
+                              <span className="ventas-status-pill">{venta.estado_nombre || `Estado ${venta.estado_id}`}</span>
+                            </td>
+                            <td>
+                              <select
+                                value={estadoSeleccionado[Number(venta.venta_id)] || Number(venta.estado_id)}
+                                onChange={(event) =>
+                                  cambiarEstadoSeleccionado(venta.venta_id, Number(event.target.value))
+                                }
                                 disabled={saving}
                               >
-                                Guardar
-                              </button>
-                              <button
-                                type="button"
-                                className="btn danger tiny"
-                                onClick={() => eliminarVenta(venta.venta_id)}
-                                disabled={saving}
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-
-                        {isExpanded ? (
-                          <tr key={`detalle-${venta.venta_id}`}>
-                            <td colSpan={8}>
-                              <div className="ventas-detalle-box">
-                                {detalleItems.length === 0 ? <p>La venta no tiene detalle de items.</p> : null}
-                                {detalleItems.map((item) => (
-                                  <article key={item.detalle_id} className="ventas-detalle-item">
-                                    <p>
-                                      <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
-                                    </p>
-                                    <p>
-                                      {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
-                                    </p>
-                                    <p>
-                                      Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
-                                      {formatCurrency(item.subtotal)}
-                                    </p>
-                                  </article>
+                                {estados.map((estado) => (
+                                  <option key={estado.estado_id} value={estado.estado_id}>
+                                    {estado.descripcion}
+                                  </option>
                                 ))}
+                              </select>
+                            </td>
+                            <td>
+                              <div className="actions compact">
+                                <button
+                                  type="button"
+                                  className="btn tiny"
+                                  onClick={() => guardarEstadoVenta(venta.venta_id)}
+                                  disabled={saving}
+                                >
+                                  Guardar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn danger tiny"
+                                  onClick={() => eliminarVenta(venta.venta_id)}
+                                  disabled={saving}
+                                >
+                                  Eliminar
+                                </button>
                               </div>
                             </td>
                           </tr>
-                        ) : null}
-                      </Fragment>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+
+                          {isExpanded ? (
+                            <tr key={`detalle-${venta.venta_id}`}>
+                              <td colSpan={8}>
+                                <div className="ventas-detalle-box">
+                                  {detalleItems.length === 0 ? <p>La venta no tiene detalle de items.</p> : null}
+                                  {detalleItems.map((item) => (
+                                    <article key={item.detalle_id} className="ventas-detalle-item">
+                                      <p>
+                                        <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
+                                      </p>
+                                      <p>
+                                        {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
+                                      </p>
+                                      <p>
+                                        Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
+                                        {formatCurrency(item.subtotal)}
+                                      </p>
+                                    </article>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="ventas-mobile-list">
+                {ventas.map((venta) => {
+                  const detalleItems = Array.isArray(venta.detalle_items) ? venta.detalle_items : []
+                  const isExpanded = Number(expandedVentaId) === Number(venta.venta_id)
+
+                  return (
+                    <article key={`mobile-${venta.venta_id}`} className="ventas-mobile-card">
+                      <header className="ventas-mobile-head">
+                        <strong>Venta #{venta.venta_id}</strong>
+                        <small>{new Date(venta.created_at).toLocaleString('es-AR')}</small>
+                      </header>
+
+                      <div className="ventas-cliente-cell">
+                        <strong>{venta.cliente_nombre || `Cliente ${venta.cliente_id}`}</strong>
+                        <small>{venta.cliente_email || '-'}</small>
+                        <small>{venta.cliente_telefono || '-'}</small>
+                      </div>
+
+                      <p className="ventas-mobile-total">Total: {formatCurrency(venta.total)}</p>
+
+                      <div className="ventas-mobile-state-row">
+                        <span className="ventas-status-pill">{venta.estado_nombre || `Estado ${venta.estado_id}`}</span>
+                        <button
+                          type="button"
+                          className="btn ghost tiny"
+                          onClick={() => handleToggleDetalle(venta.venta_id)}
+                        >
+                          {isExpanded ? 'Ocultar detalle' : `Ver detalle (${detalleItems.length})`}
+                        </button>
+                      </div>
+
+                      <label className="field ventas-mobile-field">
+                        <span>Nuevo estado</span>
+                        <select
+                          value={estadoSeleccionado[Number(venta.venta_id)] || Number(venta.estado_id)}
+                          onChange={(event) =>
+                            cambiarEstadoSeleccionado(venta.venta_id, Number(event.target.value))
+                          }
+                          disabled={saving}
+                        >
+                          {estados.map((estado) => (
+                            <option key={estado.estado_id} value={estado.estado_id}>
+                              {estado.descripcion}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <div className="actions ventas-mobile-actions">
+                        <button
+                          type="button"
+                          className="btn tiny"
+                          onClick={() => guardarEstadoVenta(venta.venta_id)}
+                          disabled={saving}
+                        >
+                          Guardar estado
+                        </button>
+                        <button
+                          type="button"
+                          className="btn danger tiny"
+                          onClick={() => eliminarVenta(venta.venta_id)}
+                          disabled={saving}
+                        >
+                          Eliminar venta
+                        </button>
+                      </div>
+
+                      {isExpanded ? (
+                        <div className="ventas-detalle-box">
+                          {detalleItems.length === 0 ? <p>La venta no tiene detalle de items.</p> : null}
+                          {detalleItems.map((item) => (
+                            <article key={item.detalle_id} className="ventas-detalle-item">
+                              <p>
+                                <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
+                              </p>
+                              <p>
+                                {item.size_valor || 'Sin medida'} · {item.tela_nombre || 'Sin tela'}
+                              </p>
+                              <p>
+                                Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
+                                {formatCurrency(item.subtotal)}
+                              </p>
+                            </article>
+                          ))}
+                        </div>
+                      ) : null}
+                    </article>
+                  )
+                })}
+              </div>
+            </>
           ) : null}
             </>
           )}

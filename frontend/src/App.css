@@ -1525,6 +1525,75 @@ table select {
   gap: 1rem;
 }
 
+.ventas-desktop-table {
+  display: block;
+}
+
+.ventas-mobile-list {
+  display: none;
+  gap: 0.8rem;
+}
+
+.ventas-mobile-card {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(194, 163, 133, 0.58);
+  border-radius: 14px;
+  background: #e9ebea;
+  box-shadow: 0 8px 18px rgba(5, 39, 48, 0.08);
+}
+
+.ventas-mobile-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.ventas-mobile-head strong {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.ventas-mobile-head small {
+  color: rgba(35, 69, 75, 0.78);
+  text-align: right;
+  font-size: 0.82rem;
+}
+
+.ventas-mobile-total {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+.ventas-mobile-state-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.ventas-mobile-field {
+  min-width: 0;
+}
+
+.ventas-mobile-field select {
+  width: 100%;
+}
+
+.ventas-mobile-actions {
+  gap: 0.5rem;
+}
+
+.ventas-mobile-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .home-admin-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2041,6 +2110,20 @@ table select {
   .btn.tiny {
     padding: 0.4rem 0.6rem;
     font-size: 0.8rem;
+  }
+
+  .ventas-mobile-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ventas-mobile-head small {
+    text-align: left;
+  }
+
+  .ventas-mobile-actions .btn {
+    width: 100%;
+    flex: 1 1 100%;
   }
 }
 
@@ -4453,6 +4536,23 @@ table select {
 
   .product-admin-page .section-toolbar .actions .btn {
     width: 100%;
+  }
+
+  .ventas-admin-page .section-toolbar .actions {
+    width: 100%;
+  }
+
+  .ventas-admin-page .section-toolbar .actions .btn,
+  .ventas-admin-page .section-toolbar .actions .field {
+    width: 100%;
+  }
+
+  .ventas-admin-page .ventas-desktop-table {
+    display: none;
+  }
+
+  .ventas-admin-page .ventas-mobile-list {
+    display: grid;
   }
 
   .catalog-layout {
