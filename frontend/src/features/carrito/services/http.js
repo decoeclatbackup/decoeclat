@@ -30,7 +30,12 @@ function delay(ms) {
 }
 
 export async function request(path, options = {}, query) {
-  const { suppressAuthRedirect = false, headers: customHeaders = {}, ...fetchOptions } = options
+  const {
+    suppressAuthRedirect = false,
+    requireAuth = false,
+    headers: customHeaders = {},
+    ...fetchOptions
+  } = options
   const isFormData = fetchOptions.body instanceof FormData
   const method = String(fetchOptions.method || 'GET').toUpperCase()
   const retryableMethod = method === 'GET' || method === 'HEAD'
@@ -42,7 +47,7 @@ export async function request(path, options = {}, query) {
     customHeaders && (customHeaders.Authorization || customHeaders.authorization)
   )
   const shouldAttachAuthorization = Boolean(
-    hasAuthorizationHeader || (token && method !== 'GET' && method !== 'HEAD')
+    hasAuthorizationHeader || (token && (requireAuth || (method !== 'GET' && method !== 'HEAD')))
   )
 
   const finalHeaders = {

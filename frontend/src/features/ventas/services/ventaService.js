@@ -93,7 +93,7 @@ export const ventaService = {
   },
 
   async listarVentas({ mes, anio } = {}) {
-    const response = await request('/api/ventas', {}, { mes, anio })
+    const response = await request('/api/ventas', { requireAuth: true }, { mes, anio })
     return Array.isArray(response?.data) ? response.data : []
   },
 
@@ -114,22 +114,22 @@ export const ventaService = {
   },
 
   async listarEstados() {
-    const response = await request('/api/ventas/estados')
+    const response = await request('/api/ventas/estados', { requireAuth: true })
     return Array.isArray(response?.data) ? response.data : []
   },
 
   async listarMetodos() {
-    const response = await request('/api/ventas/metodos')
+    const response = await request('/api/ventas/metodos', { requireAuth: true })
     return Array.isArray(response?.data) ? response.data : []
   },
 
   async listarClientes() {
-    const response = await request('/api/clientes')
+    const response = await request('/api/clientes', { requireAuth: true })
     return Array.isArray(response) ? response : []
   },
 
   async listarVariantes() {
-    const response = await request('/api/variantes')
+    const response = await request('/api/variantes', { requireAuth: true })
     return Array.isArray(response) ? response : []
   },
 
