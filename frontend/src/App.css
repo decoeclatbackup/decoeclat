@@ -1026,6 +1026,69 @@ select:disabled {
   overflow-x: auto;
 }
 
+.products-mobile-list {
+  display: none;
+}
+
+.products-mobile-card {
+  border: 1px solid rgba(194, 163, 133, 0.45);
+  border-radius: 12px;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.65rem;
+  background: rgba(233, 235, 234, 0.9);
+}
+
+.products-mobile-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.products-mobile-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.products-mobile-price {
+  margin: 0;
+  font-weight: 700;
+  color: var(--color-texto);
+  white-space: nowrap;
+}
+
+.products-mobile-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.products-mobile-row {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.products-mobile-row span {
+  font-size: 0.76rem;
+  color: rgba(35, 69, 75, 0.84);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.products-mobile-row strong {
+  font-size: 0.9rem;
+  color: var(--color-texto);
+  overflow-wrap: anywhere;
+}
+
+.products-mobile-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
 .image-preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 170px));
@@ -4178,6 +4241,32 @@ table select {
     grid-template-columns: 1fr;
   }
 
+  .product-admin-page .products-desktop-table {
+    display: none;
+  }
+
+  .product-admin-page .products-mobile-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .product-admin-page .products-mobile-actions .btn {
+    flex: 1 1 calc(50% - 0.225rem);
+    min-width: 0;
+  }
+
+  .product-admin-page .section-toolbar {
+    justify-content: stretch;
+  }
+
+  .product-admin-page .section-toolbar .actions {
+    width: 100%;
+  }
+
+  .product-admin-page .section-toolbar .actions .btn {
+    width: 100%;
+  }
+
   .catalog-layout {
     grid-template-columns: 1fr;
   }
@@ -5361,6 +5450,18 @@ th {
 @media (max-width: 575px) {
   .app-page {
     font-size: 14px;
+  }
+
+  .product-admin-page .products-mobile-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .product-admin-page .products-mobile-actions .btn {
+    flex: 1 1 100%;
+  }
+
+  .product-admin-page .products-mobile-price {
+    font-size: 0.92rem;
   }
 
   .app-cart-toast {

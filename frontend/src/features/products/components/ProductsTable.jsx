@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { formatCurrency } from '../../../shared/utils/utils'
 
 export function ProductsTable({
@@ -8,6 +9,15 @@ export function ProductsTable({
   onToggleActive,
   isClient = false,
 }) {
+  const [expandedProducts, setExpandedProducts] = useState({})
+
+  function toggleProductDetails(productId) {
+    setExpandedProducts((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }))
+  }
+
   return (
     <section className="card">
       <h2>Listado de Productos</h2>
@@ -19,7 +29,8 @@ export function ProductsTable({
       ) : null}
 
       {!loading && products.length > 0 ? (
-        <div className="table-wrap">
+        <>
+          <div className="table-wrap products-desktop-table">
           <table>
             <thead>
               <tr>
@@ -83,7 +94,82 @@ export function ProductsTable({
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+
+          <div className="products-mobile-list">
+            {products.map((product) => (
+              <article className="products-mobile-card" key={`mobile-${product.producto_id}`}>
+                <header className="products-mobile-header">
+                  <h3>{product.nombre}</h3>
+                  <p className="products-mobile-price">{formatCurrency(product.precio)}</p>
+                </header>
+
+                {!isClient ? (
+                  <div className="products-mobile-actions">
+                    <button
+                      type="button"
+                      className={`btn tiny ${product.activo ? 'success' : 'danger'}`}
+                      onClick={() => onToggleActive?.(product)}
+                    >
+                      {product.activo ? 'Activo' : 'Inactivo'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn tiny"
+                      onClick={() => onEdit?.(product)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn danger tiny"
+                      onClick={() => onRemove?.(product)}
+                    >
+                      Eliminar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost tiny"
+                      onClick={() => toggleProductDetails(product.producto_id)}
+                      aria-expanded={Boolean(expandedProducts[product.producto_id])}
+                    >
+                      {expandedProducts[product.producto_id] ? 'Ocultar detalles' : 'Ver detalles'}
+                    </button>
+                  </div>
+                ) : null}
+
+                {expandedProducts[product.producto_id] ? (
+                  <div className="products-mobile-meta">
+                    <div className="products-mobile-row">
+                      <span>Categoria</span>
+                      <strong>{product.categoria || `${product.categoria_id}`}</strong>
+                    </div>
+                    <div className="products-mobile-row">
+                      <span>Medida</span>
+                      <strong>{product.Size || '-'}</strong>
+                    </div>
+                    <div className="products-mobile-row">
+                      <span>Tipo tela</span>
+                      <strong>{product.tela || `${product.tela_id || '-'}`}</strong>
+                    </div>
+                    <div className="products-mobile-row">
+                      <span>Stock</span>
+                      <strong>{Number(product.stock ?? 0)}</strong>
+                    </div>
+                    <div className="products-mobile-row">
+                      <span>En oferta</span>
+                      <strong>{product.enOferta ? 'Si' : 'No'}</strong>
+                    </div>
+                    <div className="products-mobile-row">
+                      <span>Precio oferta</span>
+                      <strong>{product.enOferta ? formatCurrency(product.precioOferta) : '-'}</strong>
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </>
       ) : null}
     </section>
   )
