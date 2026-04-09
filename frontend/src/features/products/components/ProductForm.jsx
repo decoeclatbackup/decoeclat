@@ -277,12 +277,19 @@ export function ProductForm({
       form.stock
     )
 
-    const nextColorStocks = selectedColors.reduce((acc, colorName) => {
-      acc[colorName] = nextDrafts[colorName] ?? String(form.stock ?? '')
-      return acc
-    }, {})
+    setColorStocks((prev) => {
+      const nextColorStocks = selectedColors.reduce((acc, colorName) => {
+        if (Object.prototype.hasOwnProperty.call(prev, colorName)) {
+          acc[colorName] = prev[colorName]
+          return acc
+        }
 
-    setColorStocks((prev) => (shallowEqualColorStocks(prev, nextColorStocks) ? prev : nextColorStocks))
+        acc[colorName] = nextDrafts[colorName] ?? String(form.stock ?? '')
+        return acc
+      }, {})
+
+      return shallowEqualColorStocks(prev, nextColorStocks) ? prev : nextColorStocks
+    })
   }, [form.productId, form.stock, form.variantStocks, isComboCategory, isPillowSizeType, selectedColors])
 
   const comboDefaultSize = useMemo(() => {

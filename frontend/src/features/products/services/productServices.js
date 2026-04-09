@@ -225,15 +225,17 @@ function buildVariantPayloads(payload, normalizedVariantStocks) {
 	const hasSizeBasedVariants = normalizedVariantStocks.length > 0
 
 	if (!hasSizeBasedVariants && selectedColors.length > 0) {
-		return selectedColors.map((color) => ({
-			sizeId: Number(payload.sizeId),
-			color,
-			relleno: false,
-			stock: normalizeStockValue(colorStocks[color] ?? payload.stock, 0),
-			precio: Number(payload.precio),
-			precioOferta: Number(payload.precioOferta) || null,
-			enOferta: Boolean(payload.enOferta) || false,
-		}))
+		return selectedColors
+			.map((color) => ({
+				sizeId: Number(payload.sizeId),
+				color,
+				relleno: false,
+				stock: normalizeStockValue(colorStocks[color] ?? payload.stock, 0),
+				precio: Number(payload.precio),
+				precioOferta: Number(payload.precioOferta) || null,
+				enOferta: Boolean(payload.enOferta) || false,
+			}))
+			.filter((variantPayload) => Number.isInteger(Number(variantPayload.sizeId)) && Number(variantPayload.sizeId) > 0)
 	}
 
 	const baseVariantPayloads = hasSizeBasedVariants
