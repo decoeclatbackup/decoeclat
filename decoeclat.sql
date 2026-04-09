@@ -56,7 +56,7 @@ INSERT INTO sizes (valor, type_id) VALUES
 ('45x45', 1), 
 ('50x50', 1), 
 ('40x60', 1), 
-('50x60', 1);
+('50x70', 1);
 
 -- Talle Único para el resto (type_id = 2)
 INSERT INTO sizes (valor, type_id) VALUES 

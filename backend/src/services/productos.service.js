@@ -3,7 +3,7 @@ import { productosRepository } from "../repositories/productos.repository.js";
 function normalizeProductName(value) {
   const rawName = String(value ?? '').trim();
   if (!rawName) return rawName;
-  return rawName.toLocaleUpperCase('es-AR');
+  return rawName;
 }
 
 /**

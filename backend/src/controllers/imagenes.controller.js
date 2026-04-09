@@ -3,7 +3,11 @@ import { imagenesService } from "../services/imagenes.service.js";
 export const imagenesController = {
     async uploadImage(req, res) {
         try {
-            if (!req.file) {
+            const uploadedFiles = Array.isArray(req.uploadedImages) && req.uploadedImages.length > 0
+                ? req.uploadedImages
+                : (req.file ? [req.file] : []);
+
+            if (uploadedFiles.length === 0) {
                 return res.status(400).json({ error: "Debe subir un archivo de imagen" });
             }
 
@@ -14,18 +18,35 @@ export const imagenesController = {
                 return res.status(400).json({ error: "variante_id es obligatorio y debe ser un número válido" });
             }
 
-            const cloudinaryUrl = req.file.path || req.file.secure_url;
-            const cloudinaryPublicId = req.file.filename || req.file.public_id || null;
+            const baseOrder = Number(orden ?? 0);
+            const isPrincipalRequested = principal === 'true' || principal === true;
+            const createdImages = [];
 
-            const newImage = await imagenesService.uploadImage({
-                variante_id: varianteId,
-                url: cloudinaryUrl,
-                public_id: cloudinaryPublicId,
-                principal: principal === 'true' || principal === true,
-                orden: Number(orden ?? 0),
-            });
+            for (let index = 0; index < uploadedFiles.length; index += 1) {
+                const file = uploadedFiles[index];
+                const cloudinaryUrl = file.path || file.secure_url || file.url;
+                const cloudinaryPublicId = file.filename || file.public_id || null;
 
-            return res.status(201).json(newImage);
+                if (!cloudinaryUrl) {
+                    throw new Error('No se pudo obtener la URL de Cloudinary');
+                }
+
+                const newImage = await imagenesService.uploadImage({
+                    variante_id: varianteId,
+                    url: cloudinaryUrl,
+                    public_id: cloudinaryPublicId,
+                    principal: isPrincipalRequested && index === 0,
+                    orden: Number.isFinite(baseOrder) ? baseOrder + index : index,
+                });
+
+                createdImages.push(newImage);
+            }
+
+            if (createdImages.length === 1) {
+                return res.status(201).json(createdImages[0]);
+            }
+
+            return res.status(201).json(createdImages);
         } catch (error) {
             return res.status(400).json({ error: error.message });
         }

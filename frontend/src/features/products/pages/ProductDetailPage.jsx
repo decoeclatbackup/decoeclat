@@ -415,7 +415,7 @@ export function ProductDetailPage() {
               </section>
 
               <section className="product-detail-info">
-              <h1>{String(product.nombre || '').toUpperCase()}</h1>
+              <h1>{String(product.nombre || '')}</h1>
               <span className="product-detail-tag">{String(product.categoria || 'Producto').toUpperCase()}</span>
 
               <div className="product-detail-price-block">

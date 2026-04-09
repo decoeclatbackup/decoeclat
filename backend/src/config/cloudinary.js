@@ -12,6 +12,17 @@ export function getCloudinaryFolder() {
   return envs.CLOUDINARY_FOLDER || "decoeclat/productos";
 }
 
+export async function uploadBufferToCloudinary(fileBuffer, options = {}) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
+
+    uploadStream.end(fileBuffer);
+  });
+}
+
 export async function deleteFromCloudinary(publicId) {
   if (!publicId) return null;
   return cloudinary.uploader.destroy(publicId);
