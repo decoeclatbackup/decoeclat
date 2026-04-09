@@ -1,6 +1,14 @@
 import { request } from './http'
 
 export const clienteService = {
+    async obtenerClientePorId(clienteId) {
+        if (!clienteId) {
+            throw new Error('clienteId es obligatorio para obtener cliente')
+        }
+
+        return request(`/api/clientes/${clienteId}`)
+    },
+
     async crearclienteTemporal() {
         return request('/api/clientes/temporal', {
             method: 'POST',

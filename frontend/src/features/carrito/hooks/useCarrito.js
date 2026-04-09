@@ -54,6 +54,12 @@ export const useCarrito = () => {
 
 	const getClienteTemporalId = () => localStorage.getItem('clienteId')
 
+	const isTemporalClient = (cliente) => {
+		const nombre = String(cliente?.nombre || '').trim().toLowerCase()
+		const email = String(cliente?.email || '').trim().toLowerCase()
+		return nombre === 'invitado' || email.startsWith('temp_')
+	}
+
 	const clearClienteTemporalId = () => {
 		if (typeof window === 'undefined') return
 		localStorage.removeItem('clienteId')
@@ -62,6 +68,19 @@ export const useCarrito = () => {
 	const getOrCreateClienteTemporalId = async () => {
 		let clienteId = getClienteTemporalId()
 		setError(null)
+
+		if (clienteId) {
+			try {
+				const clienteExistente = await clienteService.obtenerClientePorId(clienteId)
+				if (clienteExistente && !isTemporalClient(clienteExistente)) {
+					clearClienteTemporalId()
+					clienteId = null
+				}
+			} catch {
+				clearClienteTemporalId()
+				clienteId = null
+			}
+		}
 
 		if (!clienteId) {
 			const cliente = await clienteService.crearclienteTemporal()

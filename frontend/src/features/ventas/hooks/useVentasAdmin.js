@@ -47,6 +47,10 @@ export function useVentasAdmin() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  function resetManualForm() {
+    setManualForm(EMPTY_MANUAL_FORM)
+  }
+
   const periodo = useMemo(() => {
     const [anioRaw, mesRaw] = String(periodoSeleccionado || '').split('-')
     const anio = Number(anioRaw)
@@ -208,11 +212,13 @@ export function useVentasAdmin() {
         items,
       })
 
-      setManualForm(EMPTY_MANUAL_FORM)
+      resetManualForm()
       setMessage('Venta manual registrada correctamente')
       await recargarTodo()
+      return true
     } catch (err) {
       setError(err?.message || 'No se pudo registrar la venta manual')
+      return false
     } finally {
       setSaving(false)
     }
@@ -293,5 +299,6 @@ export function useVentasAdmin() {
     descargarReporteMensual,
     descargarReporteResumen,
     recargarTodo,
+    resetManualForm,
   }
 }

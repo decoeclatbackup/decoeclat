@@ -217,6 +217,19 @@ export function VentasAdminPage() {
     agregarItemManual()
   }
 
+  async function handleGuardarVentaManual() {
+    const saved = await guardarVentaManual()
+    if (!saved) return
+
+    setClienteQuery('')
+    setShowClienteSuggestions(false)
+    setItemProductoQueries({})
+    setItemVarianteQueries({})
+    setItemProductoIds({})
+    setFocusedProductoIndex(null)
+    setFocusedVarianteIndex(null)
+  }
+
   function handleQuitarItemManual(index) {
     quitarItemManual(index)
 
@@ -780,7 +793,7 @@ export function VentasAdminPage() {
           </div>
 
           <div className="actions">
-            <button type="button" className="btn success" onClick={guardarVentaManual} disabled={saving}>
+            <button type="button" className="btn success" onClick={handleGuardarVentaManual} disabled={saving}>
               Registrar venta manual
             </button>
           </div>
