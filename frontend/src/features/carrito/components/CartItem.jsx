@@ -1,16 +1,10 @@
 import { formatCurrency } from '../../../shared/utils/utils'
+import { resolveAssetUrl } from '../../../shared/utils/apiBaseUrl'
 
 function resolveImageUrl(rawUrl) {
     if (!rawUrl) return null;
-    if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
-
-    const cleanBase = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
-
-    if (rawUrl.startsWith("/")) {
-        return cleanBase ? `${cleanBase}${rawUrl}` : rawUrl;
-    }
-
-    return cleanBase ? `${cleanBase}/${rawUrl}` : `/${rawUrl}`;
+    const normalizedPath = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`
+    return resolveAssetUrl(normalizedPath)
 }
 
 // Muestra un item del carrito y botones para modificar cantidad o eliminarlo.

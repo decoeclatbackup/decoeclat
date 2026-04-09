@@ -1,4 +1,10 @@
-const rawApiBaseUrl = String(import.meta.env.VITE_API_URL || '').trim()
+const rawApiBaseUrl = String(
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.REACT_APP_API_URL ||
+  ''
+).trim()
+
+const renderHostPattern = /^https?:\/\/[^/]*onrender\.com/i
 
 function stripTrailingSlash(value) {
   return value.replace(/\/+$/, '')
@@ -12,12 +18,27 @@ function shouldForceSameOrigin() {
   if (isLocalHost) return false
 
   // In production, avoid direct browser calls to onrender.com and use same-origin rewrites.
-  return /^https?:\/\/[^/]*onrender\.com/i.test(rawApiBaseUrl)
+  return renderHostPattern.test(rawApiBaseUrl)
 }
 
 export const API_BASE_URL = shouldForceSameOrigin()
   ? ''
   : stripTrailingSlash(rawApiBaseUrl)
+
+export function buildApiUrl(path, query = {}) {
+  const safePath = String(path || '').trim()
+  if (!safePath) return API_BASE_URL || ''
+
+  const params = new URLSearchParams()
+  Object.entries(query || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, String(value))
+    }
+  })
+
+  const qs = params.toString()
+  return `${API_BASE_URL}${safePath}${qs ? `?${qs}` : ''}`
+}
 
 export function resolveAssetUrl(url) {
   if (!url) return null
