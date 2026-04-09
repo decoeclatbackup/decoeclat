@@ -55,9 +55,16 @@ function buildUrl(path, query = {}) {
 	return `${API_BASE_URL}${path}${qs ? `?${qs}` : ''}`
 }
 
+function delay(ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 async function request(path, options = {}, query) {
 	const isFormData = options.body instanceof FormData
 	const method = String(options.method || 'GET').toUpperCase()
+	const retryableMethod = method === 'GET' || method === 'HEAD'
+	const transientStatuses = new Set([502, 503, 504])
+	const maxAttempts = retryableMethod ? 3 : 1
 	const hasBody = options.body != null
 	const token = typeof window !== 'undefined'
 		? localStorage.getItem('authToken') || localStorage.getItem('token')
@@ -78,24 +85,34 @@ async function request(path, options = {}, query) {
 	const requestUrl = buildUrl(path, query)
 	let response
 
-	try {
-		response = await fetch(requestUrl, requestInit)
-	} catch {
-		if (method !== 'GET' && method !== 'HEAD') {
-			throw new Error('Error de conexion con el servidor')
-		}
+	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+		const isRetry = attempt > 1
+		const currentUrl = isRetry
+			? buildUrl(path, { ...(query || {}), _cb: `${Date.now()}-${attempt}` })
+			: requestUrl
 
-		const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
 		try {
-			response = await fetch(retryUrl, requestInit)
+			response = await fetch(currentUrl, requestInit)
 		} catch {
-			throw new Error('Error de conexion con el servidor')
-		}
-	}
+			if (attempt === maxAttempts) {
+				throw new Error('Error de conexion con el servidor')
+			}
 
-	if (response.status === 304 && (method === 'GET' || method === 'HEAD')) {
-		const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
-		response = await fetch(retryUrl, requestInit)
+			await delay(250 * attempt)
+			continue
+		}
+
+		if (retryableMethod && transientStatuses.has(response.status) && attempt < maxAttempts) {
+			await delay(250 * attempt)
+			continue
+		}
+
+		if (retryableMethod && response.status === 304 && attempt < maxAttempts) {
+			await delay(150)
+			continue
+		}
+
+		break
 	}
 
 	if (!response.ok) {

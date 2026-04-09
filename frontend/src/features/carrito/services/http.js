@@ -25,10 +25,17 @@ function buildUrl(path, query = {}) {
   return fullUrl
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export async function request(path, options = {}, query) {
   const { suppressAuthRedirect = false, headers: customHeaders = {}, ...fetchOptions } = options
   const isFormData = fetchOptions.body instanceof FormData
   const method = String(fetchOptions.method || 'GET').toUpperCase()
+  const retryableMethod = method === 'GET' || method === 'HEAD'
+  const transientStatuses = new Set([502, 503, 504])
+  const maxAttempts = retryableMethod ? 3 : 1
   const hasBody = fetchOptions.body != null
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null
   const hasAuthorizationHeader = Boolean(
@@ -50,25 +57,34 @@ export async function request(path, options = {}, query) {
   const fullUrl = buildUrl(path, query)
   let response
 
-  try {
-    response = await fetch(fullUrl, requestInit)
-  } catch (networkError) {
-    const retryableMethod = method === 'GET' || method === 'HEAD'
-    if (!retryableMethod) {
-      throw new Error('Error de conexion con el servidor')
-    }
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const isRetry = attempt > 1
+    const currentUrl = isRetry
+      ? buildUrl(path, { ...(query || {}), _cb: `${Date.now()}-${attempt}` })
+      : fullUrl
 
     try {
-      const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
-      response = await fetch(retryUrl, requestInit)
+      response = await fetch(currentUrl, requestInit)
     } catch {
-      throw new Error('Error de conexion con el servidor')
-    }
-  }
+      if (attempt === maxAttempts) {
+        throw new Error('Error de conexion con el servidor')
+      }
 
-  if (response.status === 304 && (method === 'GET' || method === 'HEAD')) {
-    const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
-    response = await fetch(retryUrl, requestInit)
+      await delay(250 * attempt)
+      continue
+    }
+
+    if (retryableMethod && transientStatuses.has(response.status) && attempt < maxAttempts) {
+      await delay(250 * attempt)
+      continue
+    }
+
+    if (retryableMethod && response.status === 304 && attempt < maxAttempts) {
+      await delay(150)
+      continue
+    }
+
+    break
   }
 
   if (!response.ok) {
