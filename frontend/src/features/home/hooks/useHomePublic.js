@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { homePublicService } from '../services/homePublicService'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+import { resolveAssetUrl } from '../../../shared/utils/apiBaseUrl'
 
 function resolveImageUrl(url) {
-  if (!url) return null
-  if (/^https?:\/\//i.test(url)) return url
-  if (API_BASE_URL) return `${API_BASE_URL}${url}`
-  if (url.startsWith('/uploads')) return `http://localhost:4000${url}`
-  return url
+  return resolveAssetUrl(url)
 }
 
 export function useHomePublic() {

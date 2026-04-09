@@ -1,6 +1,5 @@
 import { request } from '../../carrito/services/http'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+import { API_BASE_URL } from '../../../shared/utils/apiBaseUrl'
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token') || localStorage.getItem('authToken')

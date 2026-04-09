@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+import { API_BASE_URL } from '../../../shared/utils/apiBaseUrl'
 
 // Log the API URL being used (useful for debugging production issues)
 if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {

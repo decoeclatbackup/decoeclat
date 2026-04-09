@@ -1,7 +1,7 @@
 import { request } from '../../carrito/services/http'
+import { API_BASE_URL } from '../../../shared/utils/apiBaseUrl'
 
 const WEB_METODO_ID = Number(import.meta.env.VITE_WEB_METODO_ID || 2)
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 function parseFileName(contentDisposition, fallbackName) {
   const match = /filename=([^;]+)/i.exec(contentDisposition || '')

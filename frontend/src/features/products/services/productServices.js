@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+import { API_BASE_URL } from '../../../shared/utils/apiBaseUrl'
 const ALLOWED_PRODUCT_COLORS = new Map([
 	['beige', 'Beige'],
 	['arena', 'Arena'],

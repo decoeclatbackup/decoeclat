@@ -4,9 +4,9 @@ import { homePublicService } from '../../features/home/services/homePublicServic
 import { carritoServices } from '../../features/carrito/services/carritoService'
 import { authService } from '../../features/auth/services/authService'
 import { formatCurrency } from '../utils/utils'
+import { resolveAssetUrl } from '../utils/apiBaseUrl'
 
 const CART_UPDATED_EVENT = 'decoeclat:cart-updated'
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 const CATEGORY_DISPLAY_ORDER = [
   'textiles',
   'kids',
@@ -25,11 +25,7 @@ function normalizeCategoryName(value) {
 }
 
 function resolveImageUrl(url) {
-  if (!url) return null
-  if (/^https?:\/\//i.test(url)) return url
-  if (API_BASE_URL) return `${API_BASE_URL}${url}`
-  if (url.startsWith('/uploads')) return `http://localhost:4000${url}`
-  return url
+  return resolveAssetUrl(url)
 }
 
 function getItemsCount(carrito) {
