@@ -1317,7 +1317,7 @@ export function ProductForm({
             onChange={handleImagesChange}
             disabled={isSubmitting}
           />
-          <small>Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: 5MB.</small>
+          <small>Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: 5MB</small>
           {imageError ? <small className="error">{imageError}</small> : null}
         </div>
 
