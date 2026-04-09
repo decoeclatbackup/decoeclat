@@ -41,10 +41,13 @@ export async function request(path, options = {}, query) {
   const hasAuthorizationHeader = Boolean(
     customHeaders && (customHeaders.Authorization || customHeaders.authorization)
   )
+  const shouldAttachAuthorization = Boolean(
+    hasAuthorizationHeader || (token && method !== 'GET' && method !== 'HEAD')
+  )
 
   const finalHeaders = {
     ...(!isFormData && hasBody ? { 'Content-Type': 'application/json' } : {}),
-    ...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(!hasAuthorizationHeader && shouldAttachAuthorization ? { Authorization: `Bearer ${token}` } : {}),
     ...(customHeaders || {}),
   }
 

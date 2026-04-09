@@ -72,11 +72,14 @@ async function request(path, options = {}, query) {
 	const hasAuthorizationHeader = Boolean(
 		options.headers && (options.headers.Authorization || options.headers.authorization)
 	)
+	const shouldAttachAuthorization = Boolean(
+		hasAuthorizationHeader || (token && method !== 'GET' && method !== 'HEAD')
+	)
 	const requestInit = {
 		...options,
 		headers: {
 			...(!isFormData && hasBody ? { 'Content-Type': 'application/json' } : {}),
-			...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
+			...(!hasAuthorizationHeader && shouldAttachAuthorization ? { Authorization: `Bearer ${token}` } : {}),
 			...(options.headers || {}),
 		},
 		cache: method === 'GET' ? 'no-store' : options.cache,
