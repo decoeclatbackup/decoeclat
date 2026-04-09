@@ -6,7 +6,6 @@ import { Cart } from '../components/Cart'
 import { CheckoutCustomerStep } from '../components/CheckoutCustomerStep'
 import { useCarrito } from '../hooks/useCarrito'
 import { useVentas } from '../../ventas/hooks/useVentas'
-import { clienteService } from '../services/clienteService'
 import { formatCurrency } from '../../../shared/utils/utils'
 
 const INITIAL_CLIENT_FORM = {
@@ -30,6 +29,42 @@ function normalizeWhatsAppNumber(value) {
 }
 
 const WHATSAPP_NUMBER = normalizeWhatsAppNumber(RAW_WHATSAPP_NUMBER)
+
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false
+  return /android|iphone|ipad|ipod/i.test(window.navigator.userAgent || '')
+}
+
+function openWhatsAppCheckout({ number, message, popupWindow }) {
+  const encodedMessage = encodeURIComponent(message)
+  const webUrl = `https://wa.me/${number}?text=${encodedMessage}`
+  const appUrl = `whatsapp://send?phone=${number}&text=${encodedMessage}`
+
+  if (isMobileDevice()) {
+    if (popupWindow && !popupWindow.closed) {
+      popupWindow.location.replace(appUrl)
+      window.setTimeout(() => {
+        if (!popupWindow.closed) {
+          popupWindow.location.replace(webUrl)
+        }
+      }, 1200)
+      return
+    }
+
+    window.location.assign(appUrl)
+    window.setTimeout(() => {
+      window.location.assign(webUrl)
+    }, 1200)
+    return
+  }
+
+  if (popupWindow && !popupWindow.closed) {
+    popupWindow.location.replace(webUrl)
+    return
+  }
+
+  window.open(webUrl, '_blank', 'noopener,noreferrer')
+}
 
 function buildWhatsAppMessage({ cliente, carrito, ventaId }) {
   const items = Array.isArray(carrito?.items) ? carrito.items : []
@@ -135,7 +170,14 @@ export function CartPage() {
     event.preventDefault()
     setCheckoutNotice({ type: '', text: '' })
 
+    const whatsappPopup = typeof window !== 'undefined'
+      ? window.open('', '_blank', 'noopener,noreferrer')
+      : null
+
     if (!WHATSAPP_NUMBER) {
+      if (whatsappPopup && !whatsappPopup.closed) {
+        whatsappPopup.close()
+      }
       setCheckoutNotice({
         type: 'error',
         text: 'Falta configurar VITE_WHATSAPP_NUMBER en el frontend.',
@@ -168,17 +210,6 @@ export function CartPage() {
       return
     }
 
-    // Verificar si el email ya existe
-    console.log('Verificando si el email ya existe...')
-    const emailExists = await clienteService.verificarEmailExistente(payload.email)
-    if (emailExists) {
-      setCheckoutNotice({
-        type: 'error',
-        text: 'Este email ya está registrado. Por favor, ingresa un email diferente o inicia sesión en tu cuenta.',
-      })
-      return
-    }
-
     const carritoSnapshot = {
       ...carrito,
       items: Array.isArray(carrito?.items) ? [...carrito.items] : [],
@@ -194,7 +225,11 @@ export function CartPage() {
       const clienteActualizado = await completarDatosClienteTemporal(payload)
       setClienteGuardado(clienteActualizado)
       clienteParaMensaje = clienteActualizado
+    } catch (err) {
+      console.error('No se pudo completar cliente temporal:', err?.message || err)
+    }
 
+    try {
       console.log('Registrando venta web...')
       const ventaRegistrada = await registrarVentaWeb({
         clienteId: getClienteTemporalId(),
@@ -231,9 +266,11 @@ export function CartPage() {
       ventaId,
     })
 
-    const encodedMessage = encodeURIComponent(message)
-    const webUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`
-    window.open(webUrl, '_blank', 'noopener,noreferrer')
+    openWhatsAppCheckout({
+      number: WHATSAPP_NUMBER,
+      message,
+      popupWindow: whatsappPopup,
+    })
   }
 
   const handleNavbarSearch = () => {
