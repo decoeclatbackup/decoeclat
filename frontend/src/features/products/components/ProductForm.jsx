@@ -2,6 +2,38 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+const PRODUCT_COLOR_OPTIONS = [
+  'Beige',
+  'Arena',
+  'Avellana',
+  'Khaki',
+  'Blanco',
+  'Negro',
+  'Gris Perla',
+  'Gris Aero',
+  'Gris Acero',
+  'Verde',
+  'Rosa',
+  'Canela',
+  'Amarillo',
+  'Chocolate',
+]
+const PRODUCT_COLOR_HEX = {
+  Beige: '#d8c3a5',
+  Arena: '#c2b280',
+  Avellana: '#8b6f47',
+  Khaki: '#bdb76b',
+  Blanco: '#f7f7f2',
+  Negro: '#1f1f1f',
+  'Gris Perla': '#d9d9d9',
+  'Gris Aero': '#9aa8b0',
+  'Gris Acero': '#6e7b82',
+  Verde: '#6b8f71',
+  Rosa: '#d89ca4',
+  Canela: '#8b5a3c',
+  Amarillo: '#e7c84b',
+  Chocolate: '#5a3a29',
+}
 
 const initialFieldErrors = {
   name: '',
@@ -46,6 +78,14 @@ function normalizeText(value) {
     .toLowerCase()
 }
 
+function normalizeColorKey(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
 function formatSizeLabel(value) {
   const rawLabel = String(value || '').trim()
   if (normalizeText(rawLabel) === 'talle unico') return 'Medida única'
@@ -82,6 +122,7 @@ export function ProductForm({
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [expandedSizes, setExpandedSizes] = useState({})
+  const [isMobileColorsExpanded, setIsMobileColorsExpanded] = useState(false)
   const [comboPriceMode, setComboPriceMode] = useState('single')
   const [comboVariants, setComboVariants] = useState({
     sinRellenoStock: '',
@@ -120,6 +161,10 @@ export function ProductForm({
       })
       return []
     })
+  }, [form.productId])
+
+  useEffect(() => {
+    setIsMobileColorsExpanded(false)
   }, [form.productId])
 
   // Sincronizar el select padre cuando se carga una edicion o cambian las categorias
@@ -184,6 +229,9 @@ export function ProductForm({
   const isPillowSizeType = String(selectedSizeType?.type_nombre || '').toLowerCase().includes('almohad')
   const selectedCategory = categories.find((category) => String(category.categoria_id) === String(form.categoryId))
   const isComboCategory = normalizeText(selectedCategory?.nombre).includes('combo')
+  const selectedColors = Array.isArray(form.selectedColors)
+    ? form.selectedColors.filter(Boolean)
+    : []
 
   const comboDefaultSize = useMemo(() => {
     if (!Array.isArray(sizes) || sizes.length === 0) return null
@@ -343,6 +391,20 @@ export function ProductForm({
       ...prev,
       [sizeId]: !prev[sizeId],
     }))
+  }
+
+  function handleColorToggle(colorName) {
+    const colorKey = normalizeColorKey(colorName)
+    const exists = selectedColors.some((currentColor) => normalizeColorKey(currentColor) === colorKey)
+    const nextColors = exists
+      ? selectedColors.filter((currentColor) => normalizeColorKey(currentColor) !== colorKey)
+      : [...selectedColors, colorName]
+
+    onChange({ target: { name: 'selectedColors', value: nextColors } })
+  }
+
+  function toggleMobileColors() {
+    setIsMobileColorsExpanded((prev) => !prev)
   }
 
   function buildVariantStocksPayload() {
@@ -662,6 +724,7 @@ export function ProductForm({
               },
               {
                 variantStocks,
+                selectedColors,
               }
             )
 
@@ -866,6 +929,54 @@ export function ProductForm({
           </select>
           {errors.telaId ? <small className="error">{errors.telaId}</small> : null}
         </label>
+
+        <div className="field full-width product-form-color-field">
+          <div className="product-form-color-header">
+            <span>Colores</span>
+            <button
+              type="button"
+              className="product-form-color-toggle"
+              onClick={toggleMobileColors}
+              aria-expanded={isMobileColorsExpanded}
+              aria-label={`${isMobileColorsExpanded ? 'Ocultar' : 'Mostrar'} colores`}
+            >
+              <span className={`product-form-color-toggle-arrow ${isMobileColorsExpanded ? 'expanded' : ''}`} aria-hidden="true">
+                ▾
+              </span>
+            </button>
+          </div>
+
+          <div
+            className={`product-form-color-collapsible ${isMobileColorsExpanded ? 'expanded' : 'collapsed'}`}
+          >
+            <div className="product-form-color-options" role="group" aria-label="Seleccion de colores disponibles">
+            {PRODUCT_COLOR_OPTIONS.map((colorName) => {
+              const checked = selectedColors.some((selectedColor) => normalizeColorKey(selectedColor) === normalizeColorKey(colorName))
+
+              return (
+                <label
+                  key={colorName}
+                  className={`product-form-color-option ${checked ? 'active' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => handleColorToggle(colorName)}
+                    disabled={isSubmitting}
+                  />
+                  <span
+                    className="product-color-swatch"
+                    style={{ backgroundColor: PRODUCT_COLOR_HEX[colorName] || '#cccccc' }}
+                    aria-hidden="true"
+                  />
+                  <span>{colorName}</span>
+                </label>
+              )
+            })}
+            </div>
+          </div>
+          <small>Si no elegis colores, el producto se guarda sin variante de color.</small>
+        </div>
 
         {isComboCategory ? (
           <div className="field full-width product-form-combo-mode">

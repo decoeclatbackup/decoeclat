@@ -32,6 +32,7 @@ export const productosController = {
         sizeId: req.query.sizeId || req.query.size_id,
         sizeTypeId: req.query.sizeTypeId || req.query.size_type_id || req.query.type_id,
         telaId: req.query.telaId || req.query.tela_id,
+        color: req.query.color,
       };
       const products = await productosService.getProducts(filters);
       res.json(products);

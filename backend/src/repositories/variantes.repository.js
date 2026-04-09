@@ -1,13 +1,13 @@
 import { pool } from "../config/db.js";
     
 export const variantesRepository = {
-    async create({ productoId, telaId, sizeId, relleno, stock, precio, precio_oferta, en_oferta }) {
+    async create({ productoId, telaId, sizeId, color, relleno, stock, precio, precio_oferta, en_oferta }) {
         const text = `
-            INSERT INTO variantes_producto (producto_id, tela_id, size_id, relleno, stock, precio, precio_oferta, en_oferta)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO variantes_producto (producto_id, tela_id, size_id, color, relleno, stock, precio, precio_oferta, en_oferta)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
         `;
-        const values = [productoId, telaId, sizeId, Boolean(relleno), stock||0 , precio, precio_oferta||null, en_oferta||false];
+        const values = [productoId, telaId, sizeId, color || null, Boolean(relleno), stock||0 , precio, precio_oferta||null, en_oferta||false];
         const { rows } = await pool.query(text, values);
         return rows[0];
     },
@@ -26,7 +26,7 @@ export const variantesRepository = {
             query += ` AND v.producto_id = $1`;
             values.push(productoId);
         }
-        query += ` ORDER BY s.valor ASC, v.relleno ASC, v.variante_id ASC`;
+        query += ` ORDER BY s.valor ASC, v.relleno ASC, COALESCE(v.color, '') ASC, v.variante_id ASC`;
         const { rows } = await pool.query(query, values);
         return rows;
     },
@@ -55,6 +55,7 @@ export const variantesRepository = {
             sizeId: "size_id",
             size_id: "size_id",
             relleno: "relleno",
+            color: "color",
             stock: "stock",
             precio: "precio",
             precioOferta: "precio_oferta",

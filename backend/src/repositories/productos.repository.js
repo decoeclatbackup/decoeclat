@@ -39,7 +39,7 @@ export const productosRepository = {
 
   async find(filters = {}) {
     let query = `
-      SELECT p.*, c.nombre AS categoria, img.imagen_principal, img.imagen_secundaria
+      SELECT p.*, c.nombre AS categoria, img.imagen_principal, img.imagen_secundaria, colors.colors
       FROM productos p
       LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
       LEFT JOIN LATERAL (
@@ -51,6 +51,16 @@ export const productosRepository = {
         WHERE vp.producto_id = p.producto_id
           AND vp.activo = true
       ) img ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(color_value ORDER BY color_value) AS colors
+        FROM (
+          SELECT DISTINCT NULLIF(BTRIM(v.color), '') AS color_value
+          FROM variantes_producto v
+          WHERE v.producto_id = p.producto_id
+            AND v.activo = true
+        ) color_values
+        WHERE color_value IS NOT NULL
+      ) colors ON true
       WHERE 1 = 1
     `;
     const values = [];
@@ -110,6 +120,12 @@ export const productosRepository = {
       idx++;
     }
 
+    if (filters.color) {
+      variantConditions.push(`LOWER(TRIM(COALESCE(v.color, ''))) = LOWER(TRIM($${idx}))`);
+      values.push(String(filters.color));
+      idx++;
+    }
+
     if (variantConditions.length > 2) {
       query += `
         AND EXISTS (
@@ -127,7 +143,7 @@ export const productosRepository = {
 
   async findById(id) {
     const query = `
-      SELECT p.*, c.nombre AS categoria, img.imagen_principal, img.imagen_secundaria
+      SELECT p.*, c.nombre AS categoria, img.imagen_principal, img.imagen_secundaria, colors.colors
       FROM productos p
       LEFT JOIN categorias c ON c.categoria_id = p.categoria_id
       LEFT JOIN LATERAL (
@@ -139,6 +155,16 @@ export const productosRepository = {
         WHERE vp.producto_id = p.producto_id
           AND vp.activo = true
       ) img ON true
+      LEFT JOIN LATERAL (
+        SELECT ARRAY_AGG(color_value ORDER BY color_value) AS colors
+        FROM (
+          SELECT DISTINCT NULLIF(BTRIM(v.color), '') AS color_value
+          FROM variantes_producto v
+          WHERE v.producto_id = p.producto_id
+            AND v.activo = true
+        ) color_values
+        WHERE color_value IS NOT NULL
+      ) colors ON true
       WHERE p.producto_id = $1
     `;
     const { rows } = await pool.query(query, [id]);

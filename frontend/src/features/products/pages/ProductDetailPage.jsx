@@ -21,6 +21,27 @@ function getVariantSizeLabel(variant) {
   return normalizeText(label) === 'talle unico' ? 'Medida única' : label
 }
 
+function getVariantColorLabel(variant) {
+  return String(variant?.color || '').trim()
+}
+
+const PRODUCT_COLOR_HEX = {
+  Beige: '#d8c3a5',
+  Arena: '#c2b280',
+  Avellana: '#8b6f47',
+  Khaki: '#bdb76b',
+  Blanco: '#f7f7f2',
+  Negro: '#1f1f1f',
+  'Gris Perla': '#d9d9d9',
+  'Gris Aero': '#9aa8b0',
+  'Gris Acero': '#6e7b82',
+  Verde: '#6b8f71',
+  Rosa: '#d89ca4',
+  Canela: '#8b5a3c',
+  Amarillo: '#e7c84b',
+  Chocolate: '#5a3a29',
+}
+
 function resolveImage(product) {
   return (
     product?.imagen_principal ||
@@ -51,6 +72,7 @@ export function ProductDetailPage() {
   const [selectedVariantId, setSelectedVariantId] = useState(null)
   const [selectedSizeId, setSelectedSizeId] = useState(null)
   const [selectedRelleno, setSelectedRelleno] = useState(false)
+  const [selectedColor, setSelectedColor] = useState('')
   const [selectedImageUrl, setSelectedImageUrl] = useState(null)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
@@ -92,6 +114,7 @@ export function ProductDetailPage() {
         setSelectedVariantId(defaultVariantId)
         setSelectedSizeId(defaultVariant?.size_id || null)
         setSelectedRelleno(Boolean(defaultVariant?.relleno))
+        setSelectedColor(getVariantColorLabel(defaultVariant))
 
         const variantImages = defaultVariantId
           ? safeImages.filter((image) => Number(image.variante_id) === Number(defaultVariantId))
@@ -146,29 +169,56 @@ export function ProductDetailPage() {
     return Array.from(options.values())
   }, [selectedSizeId, variants])
 
+  const colorOptions = useMemo(() => {
+    if (!selectedSizeId) return []
+
+    const optionsByKey = new Map()
+    variants
+      .filter((variant) => Number(variant?.size_id) === Number(selectedSizeId))
+      .filter((variant) => Boolean(variant?.relleno) === Boolean(selectedRelleno))
+      .forEach((variant) => {
+        const colorLabel = getVariantColorLabel(variant)
+        const colorKey = normalizeText(colorLabel)
+        if (!colorKey || optionsByKey.has(colorKey)) return
+        optionsByKey.set(colorKey, colorLabel)
+      })
+
+    return Array.from(optionsByKey.values())
+  }, [selectedRelleno, selectedSizeId, variants])
+
   useEffect(() => {
     if (!selectedVariant) return
     setSelectedSizeId(selectedVariant.size_id || null)
     setSelectedRelleno(Boolean(selectedVariant.relleno))
+    setSelectedColor(getVariantColorLabel(selectedVariant))
   }, [selectedVariant])
 
-  function selectVariantByAttributes(nextSizeId, nextRelleno) {
-    const exactVariant = variants.find(
+  function selectVariantByAttributes(nextSizeId, nextRelleno, nextColor = selectedColor) {
+    const candidateVariants = variants.filter(
       (variant) => Number(variant?.size_id) === Number(nextSizeId) && Boolean(variant?.relleno) === Boolean(nextRelleno)
     )
+
+    if (candidateVariants.length === 0) {
+      const sameSizeVariant = variants.find((variant) => Number(variant?.size_id) === Number(nextSizeId))
+      if (sameSizeVariant) {
+        setSelectedVariantId(sameSizeVariant.variante_id)
+        setSelectedSizeId(nextSizeId)
+        setSelectedRelleno(Boolean(sameSizeVariant.relleno))
+        setSelectedColor(getVariantColorLabel(sameSizeVariant))
+      }
+      return
+    }
+
+    const normalizedNextColor = normalizeText(nextColor)
+    const exactVariant = candidateVariants.find(
+      (variant) => normalizeText(getVariantColorLabel(variant)) === normalizedNextColor
+    ) || candidateVariants[0]
 
     if (exactVariant) {
       setSelectedVariantId(exactVariant.variante_id)
       setSelectedSizeId(nextSizeId)
       setSelectedRelleno(Boolean(nextRelleno))
-      return
-    }
-
-    const sameSizeVariant = variants.find((variant) => Number(variant?.size_id) === Number(nextSizeId))
-    if (sameSizeVariant) {
-      setSelectedVariantId(sameSizeVariant.variante_id)
-      setSelectedSizeId(nextSizeId)
-      setSelectedRelleno(Boolean(sameSizeVariant.relleno))
+      setSelectedColor(getVariantColorLabel(exactVariant))
     }
   }
 
@@ -456,7 +506,7 @@ export function ProductDetailPage() {
                       key={sizeOption.sizeId}
                       type="button"
                       className={`product-size-btn ${Number(selectedSizeId) === Number(sizeOption.sizeId) ? 'active' : ''}`}
-                      onClick={() => selectVariantByAttributes(sizeOption.sizeId, selectedRelleno)}
+                      onClick={() => selectVariantByAttributes(sizeOption.sizeId, selectedRelleno, selectedColor)}
                     >
                       {sizeOption.label}
                     </button>
@@ -471,7 +521,7 @@ export function ProductDetailPage() {
                         <button
                           type="button"
                           className={`product-size-btn ${selectedRelleno === false ? 'active' : ''}`}
-                          onClick={() => selectVariantByAttributes(selectedSizeId, false)}
+                          onClick={() => selectVariantByAttributes(selectedSizeId, false, selectedColor)}
                         >
                           Sin relleno
                         </button>
@@ -481,11 +531,34 @@ export function ProductDetailPage() {
                         <button
                           type="button"
                           className={`product-size-btn ${selectedRelleno === true ? 'active' : ''}`}
-                          onClick={() => selectVariantByAttributes(selectedSizeId, true)}
+                          onClick={() => selectVariantByAttributes(selectedSizeId, true, selectedColor)}
                         >
                           Con relleno
                         </button>
                       ) : null}
+                    </div>
+                  </>
+                ) : null}
+
+                {colorOptions.length > 0 ? (
+                  <>
+                    <p className="product-detail-box-title">Color:</p>
+                    <div className="product-detail-sizes">
+                      {colorOptions.map((colorName) => (
+                        <button
+                          key={colorName}
+                          type="button"
+                          className={`product-size-btn product-size-btn-color ${normalizeText(selectedColor) === normalizeText(colorName) ? 'active' : ''}`}
+                          onClick={() => selectVariantByAttributes(selectedSizeId, selectedRelleno, colorName)}
+                        >
+                          <span
+                            className="product-color-swatch"
+                            style={{ backgroundColor: PRODUCT_COLOR_HEX[colorName] || '#cccccc' }}
+                            aria-hidden="true"
+                          />
+                          <span>{colorName}</span>
+                        </button>
+                      ))}
                     </div>
                   </>
                 ) : null}

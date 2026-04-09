@@ -1,5 +1,22 @@
 import { variantesRepository } from "../repositories/variantes.repository.js";
 
+const ALLOWED_COLORS = new Map([
+    ['beige', 'Beige'],
+    ['arena', 'Arena'],
+    ['avellana', 'Avellana'],
+    ['khaki', 'Khaki'],
+    ['blanco', 'Blanco'],
+    ['negro', 'Negro'],
+    ['gris perla', 'Gris Perla'],
+    ['gris aero', 'Gris Aero'],
+    ['gris acero', 'Gris Acero'],
+    ['verde', 'Verde'],
+    ['rosa', 'Rosa'],
+    ['canela', 'Canela'],
+    ['amarillo', 'Amarillo'],
+    ['chocolate', 'Chocolate'],
+]);
+
 function normalizeBoolean(value, fallback = false) {
     if (typeof value === 'boolean') return value;
     if (typeof value === 'string') {
@@ -29,6 +46,7 @@ export const variantesService ={
             productoId: data.productoId,
             telaId: data.telaId,
             sizeId: data.sizeId,
+            color: normalizeColor(data.color),
             relleno: normalizeBoolean(data.relleno, false),
             stock: data.stock || 0,
             precio: data.precio,
@@ -56,6 +74,9 @@ export const variantesService ={
         if (Object.prototype.hasOwnProperty.call(updates, 'relleno')) {
             updates.relleno = normalizeBoolean(updates.relleno, false);
         }
+        if (Object.prototype.hasOwnProperty.call(updates, 'color')) {
+            updates.color = normalizeColor(updates.color);
+        }
         const results = await variantesRepository.update(id, updates);
         if (!results) {
             throw new Error("No se encontraron campos válidos para actualizar o variante no encontrada");
@@ -67,4 +88,20 @@ export const variantesService ={
         return await variantesRepository.delete(id);
     }
 
+}
+
+function normalizeColor(value) {
+    const rawValue = String(value ?? '').trim();
+    if (!rawValue) return null;
+    const normalizedKey = rawValue
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    const allowedColor = ALLOWED_COLORS.get(normalizedKey);
+    if (!allowedColor) {
+        throw new Error("Color invalido para la variante");
+    }
+
+    return allowedColor;
 }

@@ -67,6 +67,7 @@ CREATE TABLE "variantes_producto" (
   "producto_id" integer NOT NULL,
   "tela_id" integer NOT NULL,
   "size_id" integer NOT NULL,
+  "color" varchar(30),
   "relleno" boolean DEFAULT false,
   "stock" integer NOT NULL DEFAULT 0,
   -- Los precios ahora viven aquí:
@@ -75,6 +76,9 @@ CREATE TABLE "variantes_producto" (
   "en_oferta" boolean DEFAULT false,
   "activo" boolean DEFAULT true -- Agregué esto por si querés dar de baja una variante sin borrarla
 );
+
+ALTER TABLE "variantes_producto"
+ADD COLUMN IF NOT EXISTS "color" varchar(30);
 
 -- 1. Creamos la tabla con la estructura que pasaste
 CREATE TABLE "imagenes_variantes" (

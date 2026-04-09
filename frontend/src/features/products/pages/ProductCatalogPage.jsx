@@ -6,6 +6,23 @@ import { useProductCatalog } from '../hooks/useProductCatalog'
 import HomePublicNavbar from '../../../shared/components/HomePublicNavbar'
 import { SEO } from '../../../shared/components/SEO'
 
+const PRODUCT_COLOR_HEX = {
+  Beige: '#d8c3a5',
+  Arena: '#c2b280',
+  Avellana: '#8b6f47',
+  Khaki: '#bdb76b',
+  Blanco: '#f7f7f2',
+  Negro: '#1f1f1f',
+  'Gris Perla': '#d9d9d9',
+  'Gris Aero': '#9aa8b0',
+  'Gris Acero': '#6e7b82',
+  Verde: '#6b8f71',
+  Rosa: '#d89ca4',
+  Canela: '#8b5a3c',
+  Amarillo: '#e7c84b',
+  Chocolate: '#5a3a29',
+}
+
 const PRODUCTS_BATCH_SIZE = 12
 const CATALOG_VIEW_STATE_KEY = 'decoeclat:catalog-view-state'
 const CATALOG_VIEW_STATE_MAX_AGE_MS = 30 * 60 * 1000
@@ -31,6 +48,7 @@ function buildMobileDraftFilters(sourceFilters) {
     ...sourceFilters,
     sizeId: toList(sourceFilters?.sizeId),
     telaId: toList(sourceFilters?.telaId),
+    color: toList(sourceFilters?.color),
   }
 }
 
@@ -49,6 +67,7 @@ export function ProductCatalogPage() {
     categories,
     sizes,
     telas,
+    productColors,
     isFundasCategory,
     currentCategory,
     filters,
@@ -78,6 +97,13 @@ export function ProductCatalogPage() {
     const selectedTelaIds = Array.isArray(filters.telaId)
       ? filters.telaId
       : String(filters.telaId || '')
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+
+    const selectedColors = Array.isArray(filters.color)
+      ? filters.color
+      : String(filters.color || '')
           .split(',')
           .map((value) => value.trim())
           .filter(Boolean)
@@ -127,8 +153,25 @@ export function ProductCatalogPage() {
       })
     }
 
+    if (selectedColors.length > 0) {
+      selectedColors.forEach((colorName) => {
+        chips.push({
+          key: `color-${colorName}`,
+          label: `Color: ${colorName}`,
+          removable: true,
+          clear: () => {
+            const nextValues = selectedColors.filter((currentValue) => String(currentValue) !== String(colorName))
+            setFilters((prev) => ({
+              ...prev,
+              color: nextValues,
+            }))
+          },
+        })
+      })
+    }
+
     return chips
-  }, [currentCategory?.nombre, filters.name, filters.sizeId, filters.telaId, isFundasCategory, sizes, telas, setFilters])
+  }, [currentCategory?.nombre, filters.name, filters.sizeId, filters.telaId, filters.color, isFundasCategory, sizes, telas, setFilters])
 
   const hasActiveFilters = activeFilters.length > 0
 
@@ -316,6 +359,7 @@ export function ProductCatalogPage() {
 
   const mobileSelectedSizeIds = toList(mobileDraftFilters.sizeId)
   const mobileSelectedTelaIds = toList(mobileDraftFilters.telaId)
+  const mobileSelectedColors = toList(mobileDraftFilters.color)
 
   return (
     <>
@@ -375,6 +419,7 @@ export function ProductCatalogPage() {
                   filters={filters}
                   sizes={sizes}
                   telas={telas}
+                  colors={productColors}
                   isFundasCategory={isFundasCategory}
                   isMobileFiltersOpen={isMobileFiltersOpen}
                   onToggleMobileFilters={() => setIsMobileFiltersOpen((current) => !current)}
@@ -499,6 +544,37 @@ export function ProductCatalogPage() {
                             onClick={() => toggleMobileDraftListValue('telaId', String(tela.tela_id))}
                           >
                             {tela.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
+
+                    <details className="catalog-mobile-filters-tab" open>
+                      <summary className="catalog-mobile-filters-tab-trigger">
+                        <span>Color</span>
+                        <span aria-hidden="true">▾</span>
+                      </summary>
+                      <div className="catalog-mobile-filters-buttons catalog-filter-buttons-color">
+                        <button
+                          type="button"
+                          className={`catalog-filter-btn catalog-filter-btn-color-all ${mobileSelectedColors.length === 0 ? 'active' : ''}`}
+                          onClick={() => setMobileDraftFilters((prev) => ({ ...prev, color: [] }))}
+                        >
+                          Todos
+                        </button>
+                        {productColors.map((colorName) => (
+                          <button
+                            key={colorName}
+                            type="button"
+                            className={`catalog-filter-btn catalog-filter-btn-color ${mobileSelectedColors.includes(String(colorName)) ? 'active' : ''}`}
+                            onClick={() => toggleMobileDraftListValue('color', String(colorName))}
+                          >
+                            <span
+                              className="catalog-color-swatch"
+                              style={{ backgroundColor: PRODUCT_COLOR_HEX[colorName] || '#cccccc' }}
+                              aria-hidden="true"
+                            />
+                            <span>{colorName}</span>
                           </button>
                         ))}
                       </div>

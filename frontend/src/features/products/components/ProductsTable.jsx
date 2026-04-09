@@ -42,6 +42,7 @@ export function ProductsTable({
                 <th>Precio</th>
                 <th>En Oferta</th>
                 <th>Precio Oferta</th>
+                <th>Color</th>
                 <th>Stock</th>
                 {!isClient ? <th>Acciones</th> : null}
               </tr>
@@ -69,6 +70,7 @@ export function ProductsTable({
                   <td>{formatCurrency(product.precio)}</td>
                   <td>{product.enOferta ? 'Si' : 'No'}</td>
                   <td>{product.enOferta ? formatCurrency(product.precioOferta) : '-'}</td>
+                  <td>{product.color || '-'}</td>
                   <td>{Number(product.stock ?? 0)}</td>
                   {!isClient ? (
                     <td>
@@ -151,6 +153,10 @@ export function ProductsTable({
                     <div className="products-mobile-row">
                       <span>Tipo tela</span>
                       <strong>{product.tela || `${product.tela_id || '-'}`}</strong>
+                    </div>
+                    <div className="products-mobile-row">
+                      <span>Color</span>
+                      <strong>{product.color || '-'}</strong>
                     </div>
                     <div className="products-mobile-row">
                       <span>Stock</span>

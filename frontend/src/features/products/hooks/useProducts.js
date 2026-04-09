@@ -7,6 +7,7 @@ const emptyFilters = {
     sizeTypeId: '',
     sizeId: '',
     telaId: '',
+    color: '',
 }
 
 function sortProducts(products = [], onlyActive = false) {
@@ -70,7 +71,8 @@ export function useProducts(options = {}) {
             String(filters.categoryId || '') !== String(mergedFilters.categoryId || '') ||
             String(filters.sizeTypeId || '') !== String(mergedFilters.sizeTypeId || '') ||
             String(filters.sizeId || '') !== String(mergedFilters.sizeId || '') ||
-            String(filters.telaId || '') !== String(mergedFilters.telaId || '')
+            String(filters.telaId || '') !== String(mergedFilters.telaId || '') ||
+            String(filters.color || '') !== String(mergedFilters.color || '')
 
         if (hasChanged) {
             setFilters(mergedFilters)

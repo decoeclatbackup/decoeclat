@@ -9,6 +9,7 @@ const emptyForm = {
     variantId: null,
     name: '',
     categoryId: '',
+    selectedColors: [],
     sizeId: '',
     telaId: '',
     precio: '',
@@ -24,6 +25,7 @@ function normalizeVariantStocks(variants = []) {
         .map((variant) => ({
             varianteId: Number(variant?.variante_id),
             sizeId: Number(variant?.size_id),
+            color: String(variant?.color || '').trim(),
             relleno: Boolean(variant?.relleno),
             stock: Number(variant?.stock ?? 0),
             precio: Number(variant?.precio ?? 0),
@@ -130,12 +132,15 @@ export function useProductAdmin() {
             const variantStocks = Array.isArray(variantConfig?.variantStocks)
                 ? variantConfig.variantStocks
                 : []
+            const selectedColors = Array.isArray(variantConfig?.selectedColors)
+                ? variantConfig.selectedColors
+                : (Array.isArray(form.selectedColors) ? form.selectedColors : [])
 
             if (isEditing) {
-                await productServices.update({ ...form, images, existingImageChanges, variantStocks })
+                await productServices.update({ ...form, images, existingImageChanges, variantStocks, selectedColors })
                 setStatusMessage('Producto actualizado correctamente')
             } else {
-                await productServices.create({ ...form, images, variantStocks })
+                await productServices.create({ ...form, images, variantStocks, selectedColors })
                 setStatusMessage('Producto registrado correctamente')
             }
             setForm(emptyForm)
@@ -153,6 +158,11 @@ export function useProductAdmin() {
         try {
             const variants = await productServices.listVariantsByProduct(product.producto_id)
             const safeVariants = Array.isArray(variants) ? variants : []
+            const selectedColors = [...new Set(
+                safeVariants
+                    .map((variant) => String(variant?.color || '').trim())
+                    .filter(Boolean)
+            )]
             const activeVariant = safeVariants.find(
                 (variant) => Number(variant.variante_id) === Number(product.variante_id)
             ) || safeVariants[0] || null
@@ -162,6 +172,7 @@ export function useProductAdmin() {
                 variantId: activeVariant?.variante_id || product.variante_id || null,
                 name: product.nombre || '',
                 categoryId: product.categoria_id || '',
+                selectedColors,
                 sizeId: activeVariant?.size_id || product.size_id || '',
                 telaId: activeVariant?.tela_id || product.tela_id || '',
                 precio: activeVariant?.precio || product.precio || '',
@@ -178,6 +189,7 @@ export function useProductAdmin() {
                 variantId: product.variante_id,
                 name: product.nombre || '',
                 categoryId: product.categoria_id || '',
+                selectedColors: [],
                 sizeId: product.size_id || '',
                 telaId: product.tela_id || '',
                 precio: product.precio || '',

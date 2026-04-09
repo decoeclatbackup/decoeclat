@@ -1,9 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 
+const PRODUCT_COLOR_HEX = {
+  Beige: '#d8c3a5',
+  Arena: '#c2b280',
+  Avellana: '#8b6f47',
+  Khaki: '#bdb76b',
+  Blanco: '#f7f7f2',
+  Negro: '#1f1f1f',
+  'Gris Perla': '#d9d9d9',
+  'Gris Aero': '#9aa8b0',
+  'Gris Acero': '#6e7b82',
+  Verde: '#6b8f71',
+  Rosa: '#d89ca4',
+  Canela: '#8b5a3c',
+  Amarillo: '#e7c84b',
+  Chocolate: '#5a3a29',
+}
+
 export function CatalogSidebar({
   filters,
   sizes,
   telas,
+  colors = [],
   isFundasCategory,
   isMobileFiltersOpen,
   onToggleMobileFilters,
@@ -21,7 +39,7 @@ export function CatalogSidebar({
   }
 
   function applyFilter(name, value) {
-    if (name === 'sizeId' || name === 'telaId') {
+    if (name === 'sizeId' || name === 'telaId' || name === 'color') {
       const currentValues = getSelectedValues(name)
       const nextValues = value === ''
         ? []
@@ -69,8 +87,10 @@ export function CatalogSidebar({
 
   const selectedSizeIds = getSelectedValues('sizeId')
   const selectedTelaIds = getSelectedValues('telaId')
+  const selectedColors = getSelectedValues('color')
   const hasSizeFilter = selectedSizeIds.length > 0
   const hasTelaFilter = selectedTelaIds.length > 0
+  const hasColorFilter = selectedColors.length > 0
 
   return (
     <div className={`catalog-sidebar ${isMobileFiltersOpen ? 'mobile-filters-open' : 'mobile-filters-closed'}`} ref={sidebarRef}>
@@ -152,6 +172,45 @@ export function CatalogSidebar({
                     onClick={() => applyFilter('telaId', String(tela.tela_id))}
                   >
                     {tela.nombre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </details>
+
+          <details className="catalog-filter-tab" open={openTab === 'color'}>
+            <summary
+              className={`catalog-filter-tab-trigger ${hasColorFilter ? 'active' : ''}`}
+              onClick={(event) => {
+                event.preventDefault()
+                toggleTab('color')
+              }}
+            >
+              <span>Color</span>
+              <span className="catalog-filter-tab-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div className="catalog-filter-panel catalog-filter-panel-color">
+              <div className="catalog-filter-buttons catalog-filter-buttons-color">
+                <button
+                  type="button"
+                  className={`catalog-filter-btn catalog-filter-btn-color-all ${selectedColors.length === 0 ? 'active' : ''}`}
+                  onClick={() => applyFilter('color', '')}
+                >
+                  Todos
+                </button>
+                {colors.map((colorName) => (
+                  <button
+                    key={colorName}
+                    type="button"
+                    className={`catalog-filter-btn catalog-filter-btn-color ${selectedColors.includes(String(colorName)) ? 'active' : ''}`}
+                    onClick={() => applyFilter('color', String(colorName))}
+                  >
+                    <span
+                      className="catalog-color-swatch"
+                      style={{ backgroundColor: PRODUCT_COLOR_HEX[colorName] || '#cccccc' }}
+                      aria-hidden="true"
+                    />
+                    <span>{colorName}</span>
                   </button>
                 ))}
               </div>

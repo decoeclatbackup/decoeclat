@@ -10,6 +10,7 @@ export const variantesController = {
                 productoId: body.productoId || body.producto_id,
                 telaId: body.telaId || body.tela_id,
                 sizeId: body.sizeId || body.size_id,
+                color: body.color,
                 relleno: body.relleno,
                 stock: body.stock,
                 precio: body.precio,

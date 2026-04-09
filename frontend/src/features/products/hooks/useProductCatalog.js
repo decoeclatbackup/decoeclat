@@ -9,7 +9,25 @@ const emptyFilters = {
     sizeTypeId: '',
     sizeId: '',
     telaId: '',
+    color: '',
 }
+
+const PRODUCT_COLOR_OPTIONS = [
+    'Beige',
+    'Arena',
+    'Avellana',
+    'Khaki',
+    'Blanco',
+    'Negro',
+    'Gris Perla',
+    'Gris Aero',
+    'Gris Acero',
+    'Verde',
+    'Rosa',
+    'Canela',
+    'Amarillo',
+    'Chocolate',
+]
 
 export function useProductCatalog() {
     const { categoryId: routeCategoryId } = useParams()
@@ -83,6 +101,7 @@ export function useProductCatalog() {
                 sizeTypeId: prev?.sizeTypeId || '',
                 sizeId: prev?.sizeId || '',
                 telaId: prev?.telaId || '',
+                color: prev?.color || '',
             }
 
             if (
@@ -90,7 +109,8 @@ export function useProductCatalog() {
                 String(prev?.categoryId?.toString() || '') === String(next.categoryId?.toString() || '') &&
                 String(prev?.sizeTypeId || '') === String(next.sizeTypeId || '') &&
                 String(prev?.sizeId || '') === String(next.sizeId || '') &&
-                String(prev?.telaId || '') === String(next.telaId || '')
+                String(prev?.telaId || '') === String(next.telaId || '') &&
+                String(prev?.color || '') === String(next.color || '')
             ) {
                 return prev
             }
@@ -188,6 +208,7 @@ export function useProductCatalog() {
 
     return {
         products: sortedProducts,
+        productColors: PRODUCT_COLOR_OPTIONS,
         categories,
         sizes: visibleSizes,
         telas,
