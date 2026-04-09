@@ -15,22 +15,50 @@ import carritoRoutes from "./routes/carrito.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
 import path from "path";
 import { pool } from "./config/db.js";
+import { envs } from "./config/env.js";
 
 export const app = express();
 
-app.use(cors({
-  origin: [
-    "https://decoeclat.vercel.app",
-    "https://decoeclat.com.ar",
-    "https://www.decoeclat.com.ar",
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://localhost:4000",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+const defaultAllowedOrigins = [
+  "https://decoeclat.vercel.app",
+  "https://decoeclat.com.ar",
+  "https://www.decoeclat.com.ar",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:4000",
+];
+
+const allowedOrigins = new Set([
+  ...defaultAllowedOrigins,
+  ...envs.CORS_ORIGINS,
+]);
+
+const allowedOriginPatterns = [
+  /^https:\/\/([a-z0-9-]+\.)?decoeclat\.com\.ar$/i,
+  /^http:\/\/localhost(?::\d+)?$/i,
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Requests sin origen (curl, health checks, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const isAllowed =
+      allowedOrigins.has(origin) ||
+      allowedOriginPatterns.some((pattern) => pattern.test(origin));
+
+    return callback(null, isAllowed);
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   credentials: true,
-}));
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.use(express.json());
 
