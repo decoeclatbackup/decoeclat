@@ -33,6 +33,7 @@ export async function request(path, options = {}, query) {
   const {
     suppressAuthRedirect = false,
     requireAuth = false,
+    responseType = 'json',
     headers: customHeaders = {},
     ...fetchOptions
   } = options
@@ -124,5 +125,9 @@ export async function request(path, options = {}, query) {
 
   if (response.status === 204) return null
   if (response.status === 304) return null
+
+  if (responseType === 'raw') return response
+  if (responseType === 'blob') return response.blob()
+  if (responseType === 'text') return response.text()
   return response.json()
 }

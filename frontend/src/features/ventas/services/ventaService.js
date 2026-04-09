@@ -1,5 +1,4 @@
 import { request } from '../../carrito/services/http'
-import { API_BASE_URL } from '../../../shared/utils/apiBaseUrl'
 
 const WEB_METODO_ID = Number(import.meta.env.VITE_WEB_METODO_ID || 2)
 
@@ -10,29 +9,13 @@ function parseFileName(contentDisposition, fallbackName) {
 }
 
 async function descargarArchivo(path, { mes, anio, defaultName }) {
-  const query = new URLSearchParams({
+  const response = await request(path, {
+    responseType: 'raw',
+    requireAuth: true,
+  }, {
     mes: String(Number(mes)),
     anio: String(Number(anio)),
   })
-  const token = typeof window !== 'undefined'
-    ? localStorage.getItem('authToken') || localStorage.getItem('token')
-    : null
-
-  const response = await fetch(`${API_BASE_URL}${path}?${query.toString()}`, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  })
-  if (!response.ok) {
-    let message = 'No se pudo descargar el reporte'
-    try {
-      const body = await response.json()
-      message = body?.error || message
-    } catch {
-      message = response.statusText || message
-    }
-    throw new Error(message)
-  }
 
   const blob = await response.blob()
   const fileName = parseFileName(response.headers.get('content-disposition'), defaultName)

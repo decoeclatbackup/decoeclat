@@ -1,33 +1,10 @@
 import { request } from '../../carrito/services/http'
-import { API_BASE_URL } from '../../../shared/utils/apiBaseUrl'
-
-function getAuthHeaders() {
-  const token = localStorage.getItem('token') || localStorage.getItem('authToken')
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
 
 async function sendFormData(path, formData, method = 'POST') {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  return request(path, {
     method,
-    headers: {
-      ...getAuthHeaders(),
-    },
     body: formData,
   })
-
-  if (!response.ok) {
-    let message = 'Error de red'
-    try {
-      const body = await response.json()
-      message = body.error || message
-    } catch {
-      message = response.statusText || message
-    }
-    throw new Error(message)
-  }
-
-  if (response.status === 204) return null
-  return response.json()
 }
 
 export const homeAdminService = {
