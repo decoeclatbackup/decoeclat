@@ -82,18 +82,31 @@ export const ventasService = {
                 throw new Error("Debes ingresar el email del cliente nuevo");
             }
 
-            const existeEmail = await clienteRepository.findByEmailExact(email);
-            if (existeEmail) {
-                throw new Error("El correo electronico ya está registrado por otro cliente");
+            const clienteExistentePorEmail = await clienteRepository.findByEmailExact(email);
+            if (clienteExistentePorEmail) {
+                const updates = {};
+                if (nombre && nombre !== clienteExistentePorEmail.nombre) {
+                    updates.nombre = nombre;
+                }
+                if (telefono && telefono !== clienteExistentePorEmail.telefono) {
+                    updates.telefono = telefono;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    const actualizado = await clienteRepository.update(clienteExistentePorEmail.cliente_id, updates);
+                    clienteIdFinal = Number(actualizado.cliente_id);
+                } else {
+                    clienteIdFinal = Number(clienteExistentePorEmail.cliente_id);
+                }
+            } else {
+                const clienteCreado = await clienteRepository.create({
+                    nombre,
+                    email,
+                    telefono: telefono || null,
+                });
+
+                clienteIdFinal = Number(clienteCreado.cliente_id);
             }
-
-            const clienteCreado = await clienteRepository.create({
-                nombre,
-                email,
-                telefono: telefono || null,
-            });
-
-            clienteIdFinal = Number(clienteCreado.cliente_id);
         }
 
         const itemsNormalizados = normalizarItems(items);

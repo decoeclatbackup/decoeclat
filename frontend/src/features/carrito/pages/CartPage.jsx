@@ -237,20 +237,28 @@ export function CartPage() {
 
     let clienteParaMensaje = payload
     let ventaId = null
+    let clienteIdParaVenta = getClienteTemporalId()
 
     try {
       console.log('Completando datos del cliente temporal...')
       const clienteActualizado = await completarDatosClienteTemporal(payload)
       setClienteGuardado(clienteActualizado)
       clienteParaMensaje = clienteActualizado
+      clienteIdParaVenta = String(clienteActualizado?.cliente_id || clienteIdParaVenta || '')
     } catch (err) {
       console.error('No se pudo completar cliente temporal:', err?.message || err)
+      closePopup(whatsappPopup)
+      setCheckoutNotice({
+        type: 'error',
+        text: err?.message || 'No se pudieron guardar tus datos. Verifica email/telefono e intenta nuevamente.',
+      })
+      return
     }
 
     try {
       console.log('Registrando venta web...')
       const ventaRegistrada = await registrarVentaWeb({
-        clienteId: getClienteTemporalId(),
+        clienteId: clienteIdParaVenta,
         items: carrito?.items || [],
       })
 

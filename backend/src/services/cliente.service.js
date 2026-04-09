@@ -65,7 +65,21 @@ async completarClienteTemporal(id, data) {
         if (updates.email) {
             const clienteConEmail = await clienteRepository.findByEmailExact(updates.email);
             if (clienteConEmail && Number(clienteConEmail.cliente_id) !== Number(id)) {
-                throw new Error("El correo electronico ya está registrado por otro usuario");
+                const mergeUpdates = {};
+
+                if (updates.nombre && updates.nombre !== clienteConEmail.nombre) {
+                    mergeUpdates.nombre = updates.nombre;
+                }
+
+                if (updates.telefono && updates.telefono !== clienteConEmail.telefono) {
+                    mergeUpdates.telefono = updates.telefono;
+                }
+
+                if (Object.keys(mergeUpdates).length > 0) {
+                    return await clienteRepository.update(clienteConEmail.cliente_id, mergeUpdates);
+                }
+
+                return clienteConEmail;
             }
         }
 
@@ -94,16 +108,14 @@ async modifyCliente(id, updates) {
         throw new Error("Cliente no encontrado");
     }
 
-    // 2. Si quieren cambiar el email, validamos que no esté repetido
+    // Si quieren cambiar el email, validamos que no esté repetido
     if (updates.email && updates.email !== clienteExistente.email) {
-        const existeEmail = await clienteRepository.find({ email: updates.email });
-        if (existeEmail.length > 0) {
+        const clienteConEmail = await clienteRepository.findByEmailExact(updates.email);
+        if (clienteConEmail && Number(clienteConEmail.cliente_id) !== Number(id)) {
             throw new Error("El correo electronico ya está registrado por otro usuario");
         }
     }
 
-    // 3. El UPDATE va AFUERA del bloque IF del email. 
-    // Así funciona tanto si cambiás el email como si cambiás solo el teléfono.
     const clienteActualizado = await clienteRepository.update(id, updates);
     return clienteActualizado;
 },
