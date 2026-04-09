@@ -278,15 +278,15 @@ export function ProductForm({
     )
 
     setColorStocks((prev) => {
-      const nextColorStocks = selectedColors.reduce((acc, colorName) => {
+      const nextColorStocks = {}
+      
+      selectedColors.forEach((colorName) => {
         if (Object.prototype.hasOwnProperty.call(prev, colorName)) {
-          acc[colorName] = prev[colorName]
-          return acc
+          nextColorStocks[colorName] = prev[colorName]
+        } else {
+          nextColorStocks[colorName] = nextDrafts[colorName] ?? String(form.stock ?? '')
         }
-
-        acc[colorName] = nextDrafts[colorName] ?? String(form.stock ?? '')
-        return acc
-      }, {})
+      })
 
       return shallowEqualColorStocks(prev, nextColorStocks) ? prev : nextColorStocks
     })

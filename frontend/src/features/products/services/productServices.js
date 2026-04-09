@@ -282,6 +282,7 @@ function buildVariantPayloads(payload, normalizedVariantStocks) {
 			expandedByColor.push({
 				...variantPayload,
 				color,
+				stock: normalizeStockValue(colorStocks[color] ?? variantPayload.stock, 0),
 			})
 		})
 	})
