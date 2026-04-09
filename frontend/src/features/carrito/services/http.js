@@ -28,23 +28,48 @@ function buildUrl(path, query = {}) {
 export async function request(path, options = {}, query) {
   const { suppressAuthRedirect = false, headers: customHeaders = {}, ...fetchOptions } = options
   const isFormData = fetchOptions.body instanceof FormData
+  const method = String(fetchOptions.method || 'GET').toUpperCase()
+  const hasBody = fetchOptions.body != null
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null
   const hasAuthorizationHeader = Boolean(
     customHeaders && (customHeaders.Authorization || customHeaders.authorization)
   )
 
   const finalHeaders = {
-    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(!isFormData && hasBody ? { 'Content-Type': 'application/json' } : {}),
     ...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
     ...(customHeaders || {}),
   }
 
-  const fullUrl = buildUrl(path, query)
-  
-  const response = await fetch(fullUrl, {
+  const requestInit = {
     ...fetchOptions,
     headers: finalHeaders,
-  })
+    cache: method === 'GET' ? 'no-store' : fetchOptions.cache,
+  }
+
+  const fullUrl = buildUrl(path, query)
+  let response
+
+  try {
+    response = await fetch(fullUrl, requestInit)
+  } catch (networkError) {
+    const retryableMethod = method === 'GET' || method === 'HEAD'
+    if (!retryableMethod) {
+      throw new Error('Error de conexion con el servidor')
+    }
+
+    try {
+      const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
+      response = await fetch(retryUrl, requestInit)
+    } catch {
+      throw new Error('Error de conexion con el servidor')
+    }
+  }
+
+  if (response.status === 304 && (method === 'GET' || method === 'HEAD')) {
+    const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
+    response = await fetch(retryUrl, requestInit)
+  }
 
   if (!response.ok) {
     if (!suppressAuthRedirect && (response.status === 401 || response.status === 403) && typeof window !== 'undefined') {
@@ -74,5 +99,6 @@ export async function request(path, options = {}, query) {
   }
 
   if (response.status === 204) return null
+  if (response.status === 304) return null
   return response.json()
 }

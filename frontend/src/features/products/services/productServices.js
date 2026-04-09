@@ -57,20 +57,46 @@ function buildUrl(path, query = {}) {
 
 async function request(path, options = {}, query) {
 	const isFormData = options.body instanceof FormData
+	const method = String(options.method || 'GET').toUpperCase()
+	const hasBody = options.body != null
 	const token = typeof window !== 'undefined'
 		? localStorage.getItem('authToken') || localStorage.getItem('token')
 		: null
 	const hasAuthorizationHeader = Boolean(
 		options.headers && (options.headers.Authorization || options.headers.authorization)
 	)
-	const response = await fetch(buildUrl(path, query), {
+	const requestInit = {
+		...options,
 		headers: {
-			...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+			...(!isFormData && hasBody ? { 'Content-Type': 'application/json' } : {}),
 			...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
 			...(options.headers || {}),
 		},
-		...options,
-	})
+		cache: method === 'GET' ? 'no-store' : options.cache,
+	}
+
+	const requestUrl = buildUrl(path, query)
+	let response
+
+	try {
+		response = await fetch(requestUrl, requestInit)
+	} catch {
+		if (method !== 'GET' && method !== 'HEAD') {
+			throw new Error('Error de conexion con el servidor')
+		}
+
+		const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
+		try {
+			response = await fetch(retryUrl, requestInit)
+		} catch {
+			throw new Error('Error de conexion con el servidor')
+		}
+	}
+
+	if (response.status === 304 && (method === 'GET' || method === 'HEAD')) {
+		const retryUrl = buildUrl(path, { ...(query || {}), _cb: Date.now() })
+		response = await fetch(retryUrl, requestInit)
+	}
 
 	if (!response.ok) {
 		let message = 'Error de red'
@@ -84,6 +110,7 @@ async function request(path, options = {}, query) {
 	}
 
 	if (response.status === 204) return null
+	if (response.status === 304) return null
 	return response.json()
 }
 
