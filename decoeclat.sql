@@ -151,7 +151,10 @@ CREATE TABLE "detalle_ventas" (
   "cantidad" integer NOT NULL,
   "precio_unitario" numeric(12,2) NOT NULL,
   "venta_id" integer NOT NULL,
-  "variante_id" integer NOT NULL
+  "variante_id" integer,
+  "es_personalizado" boolean NOT NULL DEFAULT false,
+  "producto_nombre_manual" varchar(255),
+  "variante_manual" varchar(255)
 );
 
 CREATE TABLE "productos_home" (

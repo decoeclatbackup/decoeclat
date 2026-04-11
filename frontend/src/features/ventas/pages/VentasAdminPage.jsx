@@ -213,6 +213,23 @@ export function VentasAdminPage() {
     setFocusedVarianteIndex(null)
   }
 
+  function handleTipoItemChange(index, tipo) {
+    const esPersonalizado = tipo === 'personalizado'
+    cambiarManualItem(index, 'es_personalizado', esPersonalizado)
+
+    if (esPersonalizado) {
+      cambiarManualItem(index, 'variante_id', '')
+      setItemProductoQueries((prev) => ({ ...prev, [index]: '' }))
+      setItemVarianteQueries((prev) => ({ ...prev, [index]: '' }))
+      setItemProductoIds((prev) => ({ ...prev, [index]: '' }))
+      return
+    }
+
+    cambiarManualItem(index, 'producto_nombre_manual', '')
+    cambiarManualItem(index, 'variante_manual', '')
+    cambiarManualItem(index, 'precio_unitario', '')
+  }
+
   function handleAgregarItemManual() {
     agregarItemManual()
   }
@@ -423,12 +440,14 @@ export function VentasAdminPage() {
                                         <strong>{item.producto_nombre || `Variante ${item.variante_id}`}</strong>
                                       </p>
                                       <p>
-                                        {[
-                                          item.size_valor ? `Medida: ${item.size_valor}` : null,
-                                          item.color ? `Color: ${item.color}` : null,
-                                          item.relleno == null ? null : (item.relleno ? 'Con relleno' : 'Sin relleno'),
-                                          item.tela_nombre ? `Tela: ${item.tela_nombre}` : null,
-                                        ].filter(Boolean).join(' · ') || 'Sin atributos'}
+                                        {item.es_personalizado
+                                          ? (item.variante_manual || 'Variante personalizada')
+                                          : ([
+                                              item.size_valor ? `Medida: ${item.size_valor}` : null,
+                                              item.color ? `Color: ${item.color}` : null,
+                                              item.relleno == null ? null : (item.relleno ? 'Con relleno' : 'Sin relleno'),
+                                              item.tela_nombre ? `Tela: ${item.tela_nombre}` : null,
+                                            ].filter(Boolean).join(' · ') || 'Sin atributos')}
                                       </p>
                                       <p>
                                         Cantidad: {item.cantidad} · Unitario: {formatCurrency(item.precio_unitario)} · Subtotal:{' '}
@@ -685,79 +704,130 @@ export function VentasAdminPage() {
             {manualForm.items.map((item, index) => (
               <div key={`manual-item-${index}`} className="grid three ventas-manual-item-row">
                 <label className="field">
-                  <span>Producto y variante</span>
-                  <div className="home-admin-search-select ventas-search-select">
-                    <input
-                      type="search"
-                      value={itemProductoQueries[index] ?? getSelectedProductoLabel(index, item.variante_id)}
-                      onFocus={() => setFocusedProductoIndex(index)}
-                      onBlur={() => setTimeout(() => setFocusedProductoIndex(null), 120)}
-                      onChange={(event) => handleProductoQueryChange(index, event.target.value)}
-                      placeholder="Buscar producto por nombre"
-                      autoComplete="off"
-                    />
+                  <span>Tipo</span>
+                  <select
+                    value={item.es_personalizado ? 'personalizado' : 'catalogo'}
+                    onChange={(event) => handleTipoItemChange(index, event.target.value)}
+                  >
+                    <option value="catalogo">Catalogo</option>
+                    <option value="personalizado">Personalizado</option>
+                  </select>
+                </label>
 
-                    {focusedProductoIndex === index ? (
-                      <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Productos sugeridos">
-                        {(productosFiltradosPorItem[index] || productosDisponibles.slice(0, 8)).map((producto) => (
-                          <button
-                            key={producto.producto_id}
-                            type="button"
-                            className="home-admin-search-suggestion ventas-search-suggestion"
-                            onMouseDown={(event) => {
-                              event.preventDefault()
-                              handleProductoSelect(index, producto)
-                            }}
-                          >
-                            <span className="home-admin-search-suggestion-name">{producto.producto_nombre}</span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
+                <label className="field">
+                  <span>{item.es_personalizado ? 'Producto y variante manual' : 'Producto y variante'}</span>
 
-                  {(() => {
-                    const selectedProductoId = getSelectedProductoId(index, item.variante_id)
-                    const variantesProducto = selectedProductoId > 0 ? getVariantesPorProducto(selectedProductoId) : []
-
-                    if (selectedProductoId <= 0) return null
-
-                    if (variantesProducto.length <= 1) {
-                      return item.variante_id ? <small>Variante unica seleccionada automaticamente</small> : null
-                    }
-
-                    return (
-                      <div className="home-admin-search-select ventas-search-select ventas-variant-picker">
+                  {item.es_personalizado ? (
+                    <>
+                      <input
+                        type="text"
+                        value={item.producto_nombre_manual || ''}
+                        onChange={(event) => cambiarManualItem(index, 'producto_nombre_manual', event.target.value)}
+                        placeholder="Nombre del producto personalizado"
+                      />
+                      <input
+                        type="text"
+                        value={item.variante_manual || ''}
+                        onChange={(event) => cambiarManualItem(index, 'variante_manual', event.target.value)}
+                        placeholder="Variante manual (ej: 45x45 · Tusor · Sin relleno)"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="home-admin-search-select ventas-search-select">
                         <input
                           type="search"
-                          value={itemVarianteQueries[index] ?? ''}
-                          onFocus={() => setFocusedVarianteIndex(index)}
-                          onBlur={() => setTimeout(() => setFocusedVarianteIndex(null), 120)}
-                          onChange={(event) => handleVarianteQueryChange(index, event.target.value)}
-                          placeholder="Seleccionar variante"
+                          value={itemProductoQueries[index] ?? getSelectedProductoLabel(index, item.variante_id)}
+                          onFocus={() => setFocusedProductoIndex(index)}
+                          onBlur={() => setTimeout(() => setFocusedProductoIndex(null), 120)}
+                          onChange={(event) => handleProductoQueryChange(index, event.target.value)}
+                          placeholder="Buscar producto por nombre"
                           autoComplete="off"
                         />
 
-                        {focusedVarianteIndex === index ? (
-                          <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Variantes sugeridas">
-                            {getVariantesFiltradas(selectedProductoId, itemVarianteQueries[index] ?? '').map((variante) => (
+                        {focusedProductoIndex === index ? (
+                          <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Productos sugeridos">
+                            {(productosFiltradosPorItem[index] || productosDisponibles.slice(0, 8)).map((producto) => (
                               <button
-                                key={variante.variante_id}
+                                key={producto.producto_id}
                                 type="button"
                                 className="home-admin-search-suggestion ventas-search-suggestion"
                                 onMouseDown={(event) => {
                                   event.preventDefault()
-                                  handleVarianteSelect(index, variante)
+                                  handleProductoSelect(index, producto)
                                 }}
                               >
-                                <span className="home-admin-search-suggestion-name">{getVarianteLabel(variante)}</span>
+                                <span className="home-admin-search-suggestion-name">{producto.producto_nombre}</span>
                               </button>
                             ))}
                           </div>
                         ) : null}
                       </div>
-                    )
-                  })()}
+
+                      {(() => {
+                        const selectedProductoId = getSelectedProductoId(index, item.variante_id)
+                        const variantesProducto = selectedProductoId > 0 ? getVariantesPorProducto(selectedProductoId) : []
+
+                        if (selectedProductoId <= 0) return null
+
+                        if (variantesProducto.length <= 1) {
+                          return item.variante_id ? <small>Variante unica seleccionada automaticamente</small> : null
+                        }
+
+                        return (
+                          <div className="home-admin-search-select ventas-search-select ventas-variant-picker">
+                            <input
+                              type="search"
+                              value={itemVarianteQueries[index] ?? ''}
+                              onFocus={() => setFocusedVarianteIndex(index)}
+                              onBlur={() => setTimeout(() => setFocusedVarianteIndex(null), 120)}
+                              onChange={(event) => handleVarianteQueryChange(index, event.target.value)}
+                              placeholder="Seleccionar variante"
+                              autoComplete="off"
+                            />
+
+                            {focusedVarianteIndex === index ? (
+                              <div className="home-admin-search-suggestions ventas-search-suggestions" role="listbox" aria-label="Variantes sugeridas">
+                                {getVariantesFiltradas(selectedProductoId, itemVarianteQueries[index] ?? '').map((variante) => (
+                                  <button
+                                    key={variante.variante_id}
+                                    type="button"
+                                    className="home-admin-search-suggestion ventas-search-suggestion"
+                                    onMouseDown={(event) => {
+                                      event.preventDefault()
+                                      handleVarianteSelect(index, variante)
+                                    }}
+                                  >
+                                    <span className="home-admin-search-suggestion-name">{getVarianteLabel(variante)}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        )
+                      })()}
+                    </>
+                  )}
+                </label>
+
+                <label className="field">
+                  <span>{item.es_personalizado ? 'Precio unitario' : 'Cantidad'}</span>
+                  {item.es_personalizado ? (
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.precio_unitario || ''}
+                      onChange={(event) => cambiarManualItem(index, 'precio_unitario', event.target.value)}
+                    />
+                  ) : (
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.cantidad}
+                      onChange={(event) => cambiarManualItem(index, 'cantidad', event.target.value)}
+                    />
+                  )}
                 </label>
 
                 <label className="field">

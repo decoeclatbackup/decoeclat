@@ -7,6 +7,28 @@ const ESTADOS = {
     ANULADA: "anulada",
 };
 
+let detalleVentasSchemaReady = false;
+
+async function ensureDetalleVentasSchema(client) {
+    if (detalleVentasSchemaReady) return;
+
+    await client.query(`ALTER TABLE detalle_ventas ADD COLUMN IF NOT EXISTS producto_nombre_manual varchar(255)`);
+    await client.query(`ALTER TABLE detalle_ventas ADD COLUMN IF NOT EXISTS variante_manual varchar(255)`);
+    await client.query(`ALTER TABLE detalle_ventas ADD COLUMN IF NOT EXISTS es_personalizado boolean NOT NULL DEFAULT false`);
+    await client.query(`ALTER TABLE detalle_ventas ALTER COLUMN variante_id DROP NOT NULL`);
+
+    detalleVentasSchemaReady = true;
+}
+
+async function ensureDetalleVentasSchemaWithPool() {
+    const client = await pool.connect();
+    try {
+        await ensureDetalleVentasSchema(client);
+    } finally {
+        client.release();
+    }
+}
+
 async function getEstadoByDescripcion(client, descripcion) {
     const { rows } = await client.query(
         `SELECT estado_id, descripcion FROM estados_venta WHERE LOWER(descripcion) = LOWER($1) LIMIT 1`,
@@ -28,11 +50,14 @@ async function getVentaByIdWithClient(client, ventaId) {
                     json_build_object(
                         'detalle_id', dv.detalle_id,
                         'variante_id', dv.variante_id,
+                        'es_personalizado', COALESCE(dv.es_personalizado, false),
+                        'producto_nombre_manual', dv.producto_nombre_manual,
+                        'variante_manual', dv.variante_manual,
                         'cantidad', dv.cantidad,
                         'precio_unitario', dv.precio_unitario,
                         'subtotal', dv.cantidad * dv.precio_unitario,
                         'producto_id', p.producto_id,
-                        'producto_nombre', p.nombre,
+                        'producto_nombre', COALESCE(p.nombre, dv.producto_nombre_manual),
                         'size_valor', s.valor,
                         'tela_nombre', t.nombre,
                         'color', vp.color,
@@ -59,12 +84,12 @@ async function getVentaByIdWithClient(client, ventaId) {
 
 async function descontarStockPorVenta(client, ventaId) {
     const detalles = await client.query(
-        `SELECT variante_id, cantidad FROM detalle_ventas WHERE venta_id = $1`,
+        `SELECT variante_id, cantidad FROM detalle_ventas WHERE venta_id = $1 AND variante_id IS NOT NULL`,
         [ventaId]
     );
 
     if (detalles.rowCount === 0) {
-        throw new Error("La venta no tiene items para actualizar stock");
+        return;
     }
 
     for (const item of detalles.rows) {
@@ -84,12 +109,12 @@ async function descontarStockPorVenta(client, ventaId) {
 
 async function reponerStockPorVenta(client, ventaId) {
     const detalles = await client.query(
-        `SELECT variante_id, cantidad FROM detalle_ventas WHERE venta_id = $1`,
+        `SELECT variante_id, cantidad FROM detalle_ventas WHERE venta_id = $1 AND variante_id IS NOT NULL`,
         [ventaId]
     );
 
     if (detalles.rowCount === 0) {
-        throw new Error("La venta no tiene items para reponer stock");
+        return;
     }
 
     for (const item of detalles.rows) {
@@ -167,6 +192,7 @@ async createVentaDirecta(ventaData, items) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+        await ensureDetalleVentasSchema(client);
 
         const estadoConfirmada = await getEstadoByDescripcion(client, ESTADOS.CONFIRMADA);
         if (!estadoConfirmada) {
@@ -184,18 +210,49 @@ async createVentaDirecta(ventaData, items) {
         let totalCalculado = 0;
 
         for (const item of items) {
+            if (item.es_personalizado) {
+                const precioUnitario = Number(item.precio_unitario);
+                if (!Number.isFinite(precioUnitario) || precioUnitario <= 0) {
+                    throw new Error("El precio unitario del item personalizado no es válido");
+                }
+
+                totalCalculado += precioUnitario * item.cantidad;
+
+                await client.query(
+                    `
+                        INSERT INTO detalle_ventas (cantidad, precio_unitario, venta_id, variante_id, es_personalizado, producto_nombre_manual, variante_manual)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    `,
+                    [
+                        item.cantidad,
+                        precioUnitario,
+                        idGenerado,
+                        null,
+                        true,
+                        item.producto_nombre_manual,
+                        item.variante_manual,
+                    ]
+                );
+
+                continue;
+            }
+
             // BUSCAR PRECIO (OFERTA SI APLICA)
             const precioQuery = `SELECT CASE WHEN en_oferta THEN precio_oferta ELSE precio END AS precio FROM variantes_producto WHERE variante_id = $1`;
             const { rows: precioRows } = await client.query(precioQuery, [item.variante_id]);
+            if (precioRows.length === 0) {
+                throw new Error(`La variante ${item.variante_id} no existe`);
+            }
+
             const precioUnitario = precioRows[0].precio;
-            
+
             totalCalculado += precioUnitario * item.cantidad;
 
             // INSERTAR DETALLE
             await client.query(`
-                INSERT INTO detalle_ventas (cantidad, precio_unitario, venta_id, variante_id)
-                VALUES ($1, $2, $3, $4)
-            `, [item.cantidad, precioUnitario, idGenerado, item.variante_id]);
+                INSERT INTO detalle_ventas (cantidad, precio_unitario, venta_id, variante_id, es_personalizado)
+                VALUES ($1, $2, $3, $4, $5)
+            `, [item.cantidad, precioUnitario, idGenerado, item.variante_id, false]);
 
         }
 
@@ -216,6 +273,8 @@ async createVentaDirecta(ventaData, items) {
 
 
     async findAll(filters = {}){
+        await ensureDetalleVentasSchemaWithPool();
+
         const values = [];
         const where = [];
 
@@ -241,11 +300,14 @@ async createVentaDirecta(ventaData, items) {
                     json_build_object(
                         'detalle_id', dv.detalle_id,
                         'variante_id', dv.variante_id,
+                        'es_personalizado', COALESCE(dv.es_personalizado, false),
+                        'producto_nombre_manual', dv.producto_nombre_manual,
+                        'variante_manual', dv.variante_manual,
                         'cantidad', dv.cantidad,
                         'precio_unitario', dv.precio_unitario,
                         'subtotal', dv.cantidad * dv.precio_unitario,
                         'producto_id', p.producto_id,
-                        'producto_nombre', p.nombre,
+                        'producto_nombre', COALESCE(p.nombre, dv.producto_nombre_manual),
                         'size_valor', s.valor,
                         'tela_nombre', t.nombre,
                         'color', vp.color,
@@ -272,6 +334,8 @@ async createVentaDirecta(ventaData, items) {
     },
 
     async findById(id) {
+        await ensureDetalleVentasSchemaWithPool();
+
         const query = `
         SELECT
             v.*,
@@ -284,11 +348,14 @@ async createVentaDirecta(ventaData, items) {
                     json_build_object(
                         'detalle_id', dv.detalle_id,
                         'variante_id', dv.variante_id,
+                        'es_personalizado', COALESCE(dv.es_personalizado, false),
+                        'producto_nombre_manual', dv.producto_nombre_manual,
+                        'variante_manual', dv.variante_manual,
                         'cantidad', dv.cantidad,
                         'precio_unitario', dv.precio_unitario,
                         'subtotal', dv.cantidad * dv.precio_unitario,
                         'producto_id', p.producto_id,
-                        'producto_nombre', p.nombre,
+                        'producto_nombre', COALESCE(p.nombre, dv.producto_nombre_manual),
                         'size_valor', s.valor,
                         'tela_nombre', t.nombre,
                         'color', vp.color,
@@ -339,6 +406,7 @@ async createVentaDirecta(ventaData, items) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
+            await ensureDetalleVentasSchema(client);
 
             const ventaActual = await client.query(
                 `
@@ -425,6 +493,7 @@ async createVentaDirecta(ventaData, items) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
+            await ensureDetalleVentasSchema(client);
 
             const ventaActual = await client.query(
                 `

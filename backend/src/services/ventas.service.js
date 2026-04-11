@@ -12,13 +12,27 @@ function normalizarItems(items = []) {
         .map((item) => ({
             variante_id: Number(item?.variante_id),
             cantidad: Number(item?.cantidad),
+            es_personalizado: Boolean(item?.es_personalizado),
+            producto_nombre_manual: normalizeText(item?.producto_nombre_manual),
+            variante_manual: normalizeText(item?.variante_manual),
+            precio_unitario: Number(item?.precio_unitario),
         }))
         .filter(
-            (item) =>
-                Number.isInteger(item.variante_id) &&
-                item.variante_id > 0 &&
-                Number.isInteger(item.cantidad) &&
-                item.cantidad > 0
+            (item) => {
+                const cantidadValida = Number.isInteger(item.cantidad) && item.cantidad > 0;
+                if (!cantidadValida) return false;
+
+                if (item.es_personalizado) {
+                    return (
+                        item.producto_nombre_manual.length > 0 &&
+                        item.variante_manual.length > 0 &&
+                        Number.isFinite(item.precio_unitario) &&
+                        item.precio_unitario > 0
+                    );
+                }
+
+                return Number.isInteger(item.variante_id) && item.variante_id > 0;
+            }
         );
 }
 

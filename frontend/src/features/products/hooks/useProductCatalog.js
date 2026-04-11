@@ -35,7 +35,7 @@ export function useProductCatalog() {
     const [categories, setCategories] = useState([])
     const [sizes, setSizes] = useState([])
     const [telas, setTelas] = useState([])
-    const [sortOrder, setSortOrder] = useState('none')
+    const [sortOrder, setSortOrder] = useState('price-asc')
 
     const {
         products,

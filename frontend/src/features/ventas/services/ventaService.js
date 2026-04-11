@@ -141,14 +141,26 @@ export const ventaService = {
       .map((item) => ({
         variante_id: Number(item?.variante_id),
         cantidad: Number(item?.cantidad),
+        es_personalizado: Boolean(item?.es_personalizado),
+        producto_nombre_manual: String(item?.producto_nombre_manual || '').trim(),
+        variante_manual: String(item?.variante_manual || '').trim(),
+        precio_unitario: Number(item?.precio_unitario),
       }))
-      .filter(
-        (item) =>
-          Number.isInteger(item.variante_id) &&
-          item.variante_id > 0 &&
-          Number.isInteger(item.cantidad) &&
-          item.cantidad > 0
-      )
+      .filter((item) => {
+        const cantidadValida = Number.isInteger(item.cantidad) && item.cantidad > 0
+        if (!cantidadValida) return false
+
+        if (item.es_personalizado) {
+          return (
+            item.producto_nombre_manual.length > 0 &&
+            item.variante_manual.length > 0 &&
+            Number.isFinite(item.precio_unitario) &&
+            item.precio_unitario > 0
+          )
+        }
+
+        return Number.isInteger(item.variante_id) && item.variante_id > 0
+      })
 
     const hasClienteId = Number.isInteger(Number(clienteId)) && Number(clienteId) > 0
     const hasClienteNuevo =
