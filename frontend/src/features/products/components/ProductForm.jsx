@@ -1315,7 +1315,7 @@ export function ProductForm({
           <span>Agregar nuevas imágenes</span>
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
             multiple
             onChange={handleImagesChange}
             disabled={isSubmitting}

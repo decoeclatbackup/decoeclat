@@ -9,7 +9,7 @@ const MIN_QUALITY = 36;
 
 // Filtro para imágenes
 const imageFilter = (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/x-png', 'image/webp'];
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
@@ -28,8 +28,8 @@ const uploadBannersMulter = multer({
 ]);
 
 function getOutputFormat(mimetype) {
-    if (mimetype === 'image/jpeg') return 'jpeg';
-    if (mimetype === 'image/png') return 'png';
+    if (mimetype === 'image/jpeg' || mimetype === 'image/jpg' || mimetype === 'image/pjpeg') return 'jpeg';
+    if (mimetype === 'image/png' || mimetype === 'image/x-png') return 'png';
     return 'webp';
 }
 

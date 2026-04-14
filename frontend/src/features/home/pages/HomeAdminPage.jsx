@@ -230,7 +230,7 @@ export function HomeAdminPage() {
             <input
               className="home-admin-file-input"
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={(event) => handleBannerFileChange('desktopFile', event.target.files?.[0] || null)}
             />
             <small>Recomendado 1920×600 px</small>
@@ -241,7 +241,7 @@ export function HomeAdminPage() {
             <input
               className="home-admin-file-input"
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={(event) => handleBannerFileChange('mobileFile', event.target.files?.[0] || null)}
             />
             <small>Recomendado 450x250 px</small>
