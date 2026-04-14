@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+import { MAX_IMAGE_UPLOAD_SIZE_LABEL, getImageUploadError } from '../../../shared/utils/utils'
 const PRODUCT_COLOR_OPTIONS = [
   'Beige',
   'Arena',
@@ -585,12 +583,10 @@ export function ProductForm({
     const files = Array.from(event.target.files || [])
     if (files.length === 0) return
 
-    const invalidFile = files.find(
-      (file) => !ALLOWED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE
-    )
+    const invalidFile = files.find((file) => getImageUploadError(file))
 
     if (invalidFile) {
-      setImageError('Solo se permiten imágenes JPG, PNG o WEBP de hasta 5MB')
+      setImageError(getImageUploadError(invalidFile))
       event.target.value = ''
       return
     }
@@ -1324,7 +1320,7 @@ export function ProductForm({
             onChange={handleImagesChange}
             disabled={isSubmitting}
           />
-          <small>Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: 5MB</small>
+          <small>Formatos permitidos: JPG, PNG, WEBP. Tamaño máximo: {MAX_IMAGE_UPLOAD_SIZE_LABEL}</small>
           {imageError ? <small className="error">{imageError}</small> : null}
         </div>
 

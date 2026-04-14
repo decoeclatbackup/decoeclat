@@ -4,6 +4,7 @@ import AdminNavbar from '../../../shared/components/AdminNavbar'
 import { useHomeAdmin } from '../hooks/useHomeAdmin'
 import { homeAdminService } from '../services/homeAdminService'
 import { resolveAssetUrl } from '../../../shared/utils/apiBaseUrl'
+import { getImageUploadError, MAX_IMAGE_UPLOAD_SIZE_LABEL } from '../../../shared/utils/utils'
 
 function resolveImageUrl(url) {
   return resolveAssetUrl(url)
@@ -16,6 +17,7 @@ export function HomeAdminPage() {
   const [isFeaturedProductOpen, setIsFeaturedProductOpen] = useState(false)
   const [bannerOrderDrafts, setBannerOrderDrafts] = useState({})
   const [featuredOrderDrafts, setFeaturedOrderDrafts] = useState({})
+  const [bannerFileError, setBannerFileError] = useState('')
   const [openSections, setOpenSections] = useState({
     carouselForm: false,
     carouselDesktop: false,
@@ -171,6 +173,19 @@ export function HomeAdminPage() {
     }))
   }
 
+  function handleBannerFileChange(fieldName, file) {
+    const imageError = getImageUploadError(file)
+
+    if (imageError) {
+      setBannerFileError(imageError)
+      updateBannerForm(fieldName, null)
+      return
+    }
+
+    setBannerFileError('')
+    updateBannerForm(fieldName, file)
+  }
+
   return (
     <MainLayout navbar={<AdminNavbar />}>
       <section className="home-admin-page">
@@ -216,7 +231,7 @@ export function HomeAdminPage() {
               className="home-admin-file-input"
               type="file"
               accept="image/png,image/jpeg,image/webp"
-              onChange={(event) => updateBannerForm('desktopFile', event.target.files?.[0] || null)}
+              onChange={(event) => handleBannerFileChange('desktopFile', event.target.files?.[0] || null)}
             />
             <small>Recomendado 1920×600 px</small>
           </label>
@@ -227,10 +242,13 @@ export function HomeAdminPage() {
               className="home-admin-file-input"
               type="file"
               accept="image/png,image/jpeg,image/webp"
-              onChange={(event) => updateBannerForm('mobileFile', event.target.files?.[0] || null)}
+              onChange={(event) => handleBannerFileChange('mobileFile', event.target.files?.[0] || null)}
             />
             <small>Recomendado 450x250 px</small>
           </label>
+
+          <small className="full-width">Tamaño máximo permitido: {MAX_IMAGE_UPLOAD_SIZE_LABEL}</small>
+          {bannerFileError ? <small className="error full-width">{bannerFileError}</small> : null}
 
           <label className="field">
             <span>Orden</span>

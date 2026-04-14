@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { homeAdminService } from '../services/homeAdminService'
+import { getImageUploadError } from '../../../shared/utils/utils'
 
 const EMPTY_BANNER_FORM = {
   desktopFile: null,
@@ -66,6 +67,14 @@ export function useHomeAdmin() {
     setMessage('')
 
     try {
+      const desktopFileError = getImageUploadError(bannerForm.desktopFile)
+      const mobileFileError = getImageUploadError(bannerForm.mobileFile)
+      const bannerImageError = desktopFileError || mobileFileError
+
+      if (bannerImageError) {
+        throw new Error(bannerImageError)
+      }
+
       await homeAdminService.addBanner(bannerForm)
       setBannerForm(EMPTY_BANNER_FORM)
       setMessage('Banner agregado correctamente')

@@ -4,7 +4,7 @@ import { uploadBufferToCloudinary } from '../config/cloudinary.js';
 
 const BANNERS_FOLDER = 'decoeclat/banners';
 const TARGET_SIZE_BYTES = 500 * 1024;
-const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 const MIN_QUALITY = 36;
 
 // Filtro para imágenes
@@ -106,7 +106,7 @@ export const uploadBanners = (req, res, next) => {
     uploadBannersMulter(req, res, async (err) => {
         if (err) {
             if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
-                return res.status(413).json({ error: 'La imagen supera el tamaño máximo de 15MB' });
+                return res.status(413).json({ error: 'La imagen supera el tamaño máximo de 20MB' });
             }
 
             return res.status(400).json({

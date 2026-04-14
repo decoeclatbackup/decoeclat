@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import { getCloudinaryFolder, uploadBufferToCloudinary } from '../config/cloudinary.js';
 
 const TARGET_SIZE_BYTES = 500 * 1024;
-const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 const MIN_QUALITY = 36;
 
 // Filtro para que solo suban imágenes
@@ -101,7 +101,7 @@ export const uploadProductImage = (req, res, next) => {
         if (error) {
             if (error instanceof multer.MulterError) {
                 if (error.code === 'LIMIT_FILE_SIZE') {
-                    return res.status(413).json({ error: 'La imagen supera el tamaño máximo de 15MB' });
+                    return res.status(413).json({ error: 'La imagen supera el tamaño máximo de 20MB' });
                 }
 
                 return res.status(400).json({ error: error.message || 'Error al subir la imagen' });
