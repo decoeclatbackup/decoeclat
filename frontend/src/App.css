@@ -3703,11 +3703,11 @@ table select {
 }
 
 @media (hover: none), (pointer: coarse) {
-  .home-public-featured-media.has-secondary .home-public-featured-media-image.primary {
+  .home-public-featured-media.has-secondary.is-touch-preview .home-public-featured-media-image.primary {
     opacity: 0;
   }
 
-  .home-public-featured-media.has-secondary .home-public-featured-media-image.secondary {
+  .home-public-featured-media.has-secondary.is-touch-preview .home-public-featured-media-image.secondary {
     opacity: 1;
   }
 }

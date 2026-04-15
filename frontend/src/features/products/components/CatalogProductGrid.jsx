@@ -69,6 +69,7 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
   const { handleAddToCart } = useCarrito()
   const [addingProductId, setAddingProductId] = useState(null)
   const [productImageFallbacks, setProductImageFallbacks] = useState({})
+  const [touchPreviewProductId, setTouchPreviewProductId] = useState(null)
 
   const productImageCandidates = useMemo(
     () =>
@@ -164,9 +165,11 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
   return (
     <section className="catalog-grid">
       {products.map((product) => {
+        const productId = Number(product?.producto_id)
         const fallbackImages = productImageFallbacks[Number(product?.producto_id)] || null
         const productImage = resolveImage(product) || fallbackImages?.imageUrl || null
         const secondaryImage = resolveSecondaryImage(product) || fallbackImages?.secondaryImageUrl || null
+        const isTouchPreviewActive = Boolean(secondaryImage) && touchPreviewProductId === productId
         const hasStock = Number(product?.stock ?? 0) > 0
         const basePrice = Number(product?.precio ?? 0)
         const offerPrice = Number(product?.precioOferta ?? 0)
@@ -191,7 +194,10 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
           >
             <article className={`home-public-featured-card catalog-product-card ${hasOffer ? 'has-offer' : ''}`.trim()}>
               <div
-                className={`home-public-featured-media ${secondaryImage ? 'has-secondary' : ''} ${productImage ? '' : 'catalog-product-media-placeholder'}`}
+                className={`home-public-featured-media ${secondaryImage ? 'has-secondary' : ''} ${isTouchPreviewActive ? 'is-touch-preview' : ''} ${productImage ? '' : 'catalog-product-media-placeholder'}`}
+                onTouchStart={secondaryImage ? () => setTouchPreviewProductId(productId) : undefined}
+                onTouchEnd={secondaryImage ? () => setTouchPreviewProductId(null) : undefined}
+                onTouchCancel={secondaryImage ? () => setTouchPreviewProductId(null) : undefined}
               >
                 {hasOffer ? (
                   <span className={`product-offer-badge ${offerBadgeLevelClass}`}>
