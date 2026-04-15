@@ -18,6 +18,7 @@ function buildBannerTarget(banner) {
 }
 
 function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }) {
+  const [isTouchPreviewActive, setIsTouchPreviewActive] = useState(false)
   const hasStock = Number(item?.stock ?? 0) > 0
   const basePrice = Number(item?.precio ?? 0)
   const offerPrice = Number(item?.precio_oferta ?? 0)
@@ -51,7 +52,12 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
       onClick={onNavigate ? handleCardNavigate : undefined}
       onKeyDown={onNavigate ? handleCardKeyDown : undefined}
     >
-      <div className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''}`}>
+      <div
+        className={`home-public-featured-media ${item.imagen_secundaria ? 'has-secondary' : ''} ${isTouchPreviewActive ? 'is-touch-preview' : ''}`.trim()}
+        onTouchStart={item.imagen_secundaria ? () => setIsTouchPreviewActive(true) : undefined}
+        onTouchEnd={item.imagen_secundaria ? () => setIsTouchPreviewActive(false) : undefined}
+        onTouchCancel={item.imagen_secundaria ? () => setIsTouchPreviewActive(false) : undefined}
+      >
         {hasOffer ? (
           <span className={`product-offer-badge ${offerBadgeLevelClass}`}>
             PROMO{discountPercentage > 0 ? ` -${discountPercentage}%` : ''}
