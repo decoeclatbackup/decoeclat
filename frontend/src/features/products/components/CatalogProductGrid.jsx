@@ -1,24 +1,66 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '../../../shared/utils/utils'
 import { useCarrito } from '../../carrito/hooks/useCarrito'
 import { buildCloudinarySrcSet, optimizeCloudinaryImageUrl } from '../../../shared/utils/cloudinary'
+import { productServices } from '../services/productServices'
+
+function pickImageUrl(value) {
+  if (!value) return null
+
+  if (typeof value === 'string') return value
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nestedUrl = pickImageUrl(item)
+      if (nestedUrl) return nestedUrl
+    }
+    return null
+  }
+
+  if (typeof value === 'object') {
+    return (
+      value.url ||
+      value.imageUrl ||
+      value.src ||
+      value.imagen_principal ||
+      value.imagenPrincipal ||
+      value.imagen_secundaria ||
+      value.imagenSecundaria ||
+      value.secondaryImageUrl ||
+      value.thumbnail ||
+      null
+    )
+  }
+
+  return null
+}
 
 function resolveImage(product) {
   return (
-    product.imagen_principal ||
-    product.imagenPrincipal ||
-    product.imageUrl ||
-    product.url ||
+    pickImageUrl(product?.imagen_principal) ||
+    pickImageUrl(product?.imagenPrincipal) ||
+    pickImageUrl(product?.imageUrl) ||
+    pickImageUrl(product?.url) ||
+    pickImageUrl(product?.imagen) ||
+    pickImageUrl(product?.images) ||
+    pickImageUrl(product?.imagenes) ||
+    pickImageUrl(product?.variantImages) ||
+    pickImageUrl(product?.imagenes_variantes) ||
     null
   )
 }
 
 function resolveSecondaryImage(product) {
   return (
-    product.imagen_secundaria ||
-    product.imagenSecundaria ||
-    product.secondaryImageUrl ||
+    pickImageUrl(product?.imagen_secundaria) ||
+    pickImageUrl(product?.imagenSecundaria) ||
+    pickImageUrl(product?.secondaryImageUrl) ||
+    pickImageUrl(product?.secondaryImage) ||
+    pickImageUrl(Array.isArray(product?.images) ? product.images[1] : null) ||
+    pickImageUrl(Array.isArray(product?.imagenes) ? product.imagenes[1] : null) ||
+    pickImageUrl(Array.isArray(product?.variantImages) ? product.variantImages[1] : null) ||
+    pickImageUrl(Array.isArray(product?.imagenes_variantes) ? product.imagenes_variantes[1] : null) ||
     null
   )
 }
@@ -26,6 +68,72 @@ function resolveSecondaryImage(product) {
 export function CatalogProductGrid({ products, loading, onProductNavigate }) {
   const { handleAddToCart } = useCarrito()
   const [addingProductId, setAddingProductId] = useState(null)
+  const [productImageFallbacks, setProductImageFallbacks] = useState({})
+
+  const productImageCandidates = useMemo(
+    () =>
+      products
+        .map((product) => ({
+          productId: Number(product?.producto_id),
+          hasPrimaryImage: Boolean(resolveImage(product)),
+        }))
+        .filter((item) => Number.isInteger(item.productId) && item.productId > 0 && !item.hasPrimaryImage),
+    [products]
+  )
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadFallbackImages() {
+      if (productImageCandidates.length === 0) {
+        setProductImageFallbacks({})
+        return
+      }
+
+      const results = await Promise.allSettled(
+        productImageCandidates.map(async ({ productId }) => {
+          const images = await productServices.listImagesByProduct(productId)
+          const safeImages = Array.isArray(images) ? images : []
+          const sortedImages = [...safeImages].sort((left, right) => {
+            const principalDiff = Number(Boolean(right.principal)) - Number(Boolean(left.principal))
+            if (principalDiff !== 0) return principalDiff
+            const orderDiff = Number(left.orden ?? 0) - Number(right.orden ?? 0)
+            if (orderDiff !== 0) return orderDiff
+            return Number(left.img_id ?? 0) - Number(right.img_id ?? 0)
+          })
+
+          return {
+            productId,
+            imageUrl: sortedImages[0]?.url || null,
+            secondaryImageUrl: sortedImages[1]?.url || null,
+          }
+        })
+      )
+
+      if (cancelled) return
+
+      const nextFallbacks = results.reduce((acc, result) => {
+        if (result.status !== 'fulfilled') return acc
+
+        const { productId, imageUrl, secondaryImageUrl } = result.value || {}
+        if (!Number.isInteger(Number(productId))) return acc
+
+        acc[productId] = {
+          imageUrl: imageUrl || null,
+          secondaryImageUrl: secondaryImageUrl || null,
+        }
+        return acc
+      }, {})
+
+      setProductImageFallbacks(nextFallbacks)
+    }
+
+    loadFallbackImages()
+
+    return () => {
+      cancelled = true
+    }
+  }, [productImageCandidates])
 
   if (loading) {
     return <p>Cargando productos...</p>
@@ -56,8 +164,9 @@ export function CatalogProductGrid({ products, loading, onProductNavigate }) {
   return (
     <section className="catalog-grid">
       {products.map((product) => {
-        const productImage = resolveImage(product)
-        const secondaryImage = resolveSecondaryImage(product)
+        const fallbackImages = productImageFallbacks[Number(product?.producto_id)] || null
+        const productImage = resolveImage(product) || fallbackImages?.imageUrl || null
+        const secondaryImage = resolveSecondaryImage(product) || fallbackImages?.secondaryImageUrl || null
         const hasStock = Number(product?.stock ?? 0) > 0
         const basePrice = Number(product?.precio ?? 0)
         const offerPrice = Number(product?.precioOferta ?? 0)
