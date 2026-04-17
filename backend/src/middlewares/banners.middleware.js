@@ -3,9 +3,9 @@ import sharp from 'sharp';
 import { uploadBufferToCloudinary } from '../config/cloudinary.js';
 
 const BANNERS_FOLDER = 'decoeclat/banners';
-const TARGET_SIZE_BYTES = 500 * 1024;
+const TARGET_SIZE_BYTES = 1500 * 1024;
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
-const MIN_QUALITY = 36;
+const MIN_QUALITY = 60;
 
 // Filtro para imágenes
 const imageFilter = (req, file, cb) => {
@@ -64,12 +64,12 @@ function buildQualitySteps(originalSize) {
     if (originalSize <= TARGET_SIZE_BYTES) return [];
 
     const ratio = TARGET_SIZE_BYTES / originalSize;
-    let baseQuality = 82;
+    let baseQuality = 90;
 
-    if (ratio < 0.35) baseQuality = 52;
-    else if (ratio < 0.5) baseQuality = 60;
-    else if (ratio < 0.7) baseQuality = 68;
-    else if (ratio < 0.9) baseQuality = 76;
+    if (ratio < 0.35) baseQuality = 72;
+    else if (ratio < 0.5) baseQuality = 78;
+    else if (ratio < 0.7) baseQuality = 84;
+    else if (ratio < 0.9) baseQuality = 88;
 
     const qualitySteps = [
         baseQuality,

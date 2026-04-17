@@ -101,7 +101,12 @@ function FeaturedCard({ item, className = '', onQuickBuy, isAdding, onNavigate }
                 <span className="offer-price">{formatCurrency(item.precio_oferta)}</span>
               </>
             ) : (
-              <span className="current-price">{formatCurrency(item.precio)}</span>
+              <>
+                <span className="original-price catalog-price-spacer" aria-hidden="true">
+                  {formatCurrency(item.precio)}
+                </span>
+                <span className="current-price">{formatCurrency(item.precio)}</span>
+              </>
             )}
           </div>
           {hasStock ? (
@@ -147,14 +152,14 @@ export function HomePublicPage() {
 
   const activeBanner = banners[safeActiveBannerIndex] || null
   const activeBannerTarget = buildBannerTarget(activeBanner)
-  const bannerSourceWidth = isMobileFeatured ? 720 : 1280
+  const bannerSourceWidth = isMobileFeatured ? 960 : 1920
   const activeBannerImageUrl = optimizeCloudinaryImageUrl(
     activeBanner?.imageUrl || FALLBACK_BANNER_IMAGE,
-    { width: bannerSourceWidth }
+    { width: bannerSourceWidth, quality: 'auto:best', format: 'auto' }
   )
   const activeBannerSrcSet = activeBanner?.imageUrl
-    ? buildCloudinarySrcSet(activeBanner.imageUrl, isMobileFeatured ? [360, 540, 720] : [768, 1024, 1280], {
-      quality: 'auto',
+    ? buildCloudinarySrcSet(activeBanner.imageUrl, isMobileFeatured ? [480, 720, 960] : [1024, 1440, 1920], {
+      quality: 'auto:best',
       format: 'auto',
     })
     : ''
