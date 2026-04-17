@@ -10,6 +10,9 @@ import { buildCloudinarySrcSet, optimizeCloudinaryImageUrl } from '../../../shar
 
 const FALLBACK_BANNER_IMAGE = '/deco1.PNG'
 const FEATURED_SKELETON_ITEMS = [1, 2, 3, 4]
+const MOBILE_BANNER_RATIO = 225 / 720
+const MOBILE_BANNER_WIDTHS = [640, 960, 1280]
+const DESKTOP_BANNER_WIDTHS = [1024, 1440, 1920]
 
 function buildBannerTarget(banner) {
   if (banner?.producto_id) return `/producto/${banner.producto_id}`
@@ -153,15 +156,36 @@ export function HomePublicPage() {
   const activeBanner = banners[safeActiveBannerIndex] || null
   const activeBannerTarget = buildBannerTarget(activeBanner)
   const bannerSourceWidth = isMobileFeatured ? 1280 : 1920
+  const bannerSourceHeight = isMobileFeatured ? Math.round(bannerSourceWidth * MOBILE_BANNER_RATIO) : undefined
   const activeBannerImageUrl = optimizeCloudinaryImageUrl(
     activeBanner?.imageUrl || FALLBACK_BANNER_IMAGE,
-    { width: bannerSourceWidth, quality: 'auto:best', format: 'auto' }
-  )
-  const activeBannerSrcSet = activeBanner?.imageUrl
-    ? buildCloudinarySrcSet(activeBanner.imageUrl, isMobileFeatured ? [640, 960, 1280] : [1024, 1440, 1920], {
+    {
+      width: bannerSourceWidth,
+      height: bannerSourceHeight,
+      crop: isMobileFeatured ? 'fill' : 'limit',
       quality: 'auto:best',
       format: 'auto',
-    })
+    }
+  )
+  const activeBannerSrcSet = activeBanner?.imageUrl
+    ? isMobileFeatured
+      ? MOBILE_BANNER_WIDTHS
+        .map((width) => {
+          const height = Math.round(width * MOBILE_BANNER_RATIO)
+          const transformedUrl = optimizeCloudinaryImageUrl(activeBanner.imageUrl, {
+            width,
+            height,
+            crop: 'fill',
+            quality: 'auto:best',
+            format: 'auto',
+          })
+          return `${transformedUrl} ${width}w`
+        })
+        .join(', ')
+      : buildCloudinarySrcSet(activeBanner.imageUrl, DESKTOP_BANNER_WIDTHS, {
+        quality: 'auto:best',
+        format: 'auto',
+      })
     : ''
 
   const handleBannerTouchStart = (event) => {

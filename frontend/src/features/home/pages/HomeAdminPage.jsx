@@ -244,7 +244,7 @@ export function HomeAdminPage() {
               accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={(event) => handleBannerFileChange('mobileFile', event.target.files?.[0] || null)}
             />
-            <small>Recomendado 450x250 px</small>
+            <small>Recomendado 1500x800 px</small>
           </label>
 
           <small className="full-width">Tamaño máximo permitido: {MAX_IMAGE_UPLOAD_SIZE_LABEL}</small>
