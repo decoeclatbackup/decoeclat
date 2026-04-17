@@ -48,7 +48,9 @@ function sortImages(images = []) {
     })
 }
 
-export function useProductAdmin() {
+export function useProductAdmin(options = {}) {
+    const showInactive = Boolean(options?.showInactive)
+
     const {
         products,
         loading,
@@ -58,7 +60,12 @@ export function useProductAdmin() {
         handleSearch,
         clearFilters,
         reload,
-    } = useProducts()
+    } = useProducts({ onlyActive: !showInactive })
+
+    const visibleProducts = useMemo(
+        () => (showInactive ? products.filter((product) => !Boolean(product?.activo)) : products),
+        [products, showInactive]
+    )
 
     const [categories, setCategories] = useState([])
     const [telas, setTelas] = useState([])
@@ -240,7 +247,7 @@ export function useProductAdmin() {
     }
 
     return {
-        products,
+        products: visibleProducts,
         categories,
         telas,
         sizes,

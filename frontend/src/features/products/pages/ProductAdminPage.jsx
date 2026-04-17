@@ -8,6 +8,7 @@ const PRODUCTS_PAGE_SIZE = 10
 
 export function ProductAdminPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showInactive, setShowInactive] = useState(false)
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_PAGE_SIZE)
 
   const {
@@ -30,7 +31,7 @@ export function ProductAdminPage() {
     cancelEdit,
     removeProduct,
     toggleProductActive,
-  } = useProductAdmin()
+  } = useProductAdmin({ showInactive })
 
   const visibleProducts = useMemo(
     () => products.slice(0, visibleCount),
@@ -86,6 +87,14 @@ export function ProductAdminPage() {
           <div className="actions">
             <button type="button" className="btn" onClick={handleAddProductClick}>
               {showCreateForm && !isEditing ? 'Ocultar formulario' : '+ Agregar producto'}
+            </button>
+            <button
+              type="button"
+              className={`btn ${showInactive ? 'success' : 'ghost'}`}
+              aria-pressed={showInactive}
+              onClick={() => setShowInactive((prev) => !prev)}
+            >
+              {showInactive ? 'Mostrando inactivos' : 'Ver inactivos'}
             </button>
           </div>
         </section>
