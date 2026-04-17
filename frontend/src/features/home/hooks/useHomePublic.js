@@ -14,13 +14,13 @@ export function useHomePublic() {
   const [error, setError] = useState('')
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === 'undefined') return false
-    return window.matchMedia('(max-width: 768px)').matches
+    return window.matchMedia('(max-width: 575px)').matches
   })
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
 
-    const mediaQuery = window.matchMedia('(max-width: 768px)')
+    const mediaQuery = window.matchMedia('(max-width: 575px)')
     const handleChange = (event) => {
       setIsMobileViewport(event.matches)
     }

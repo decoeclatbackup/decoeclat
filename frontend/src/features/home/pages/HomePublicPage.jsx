@@ -152,13 +152,13 @@ export function HomePublicPage() {
 
   const activeBanner = banners[safeActiveBannerIndex] || null
   const activeBannerTarget = buildBannerTarget(activeBanner)
-  const bannerSourceWidth = isMobileFeatured ? 960 : 1920
+  const bannerSourceWidth = isMobileFeatured ? 1280 : 1920
   const activeBannerImageUrl = optimizeCloudinaryImageUrl(
     activeBanner?.imageUrl || FALLBACK_BANNER_IMAGE,
     { width: bannerSourceWidth, quality: 'auto:best', format: 'auto' }
   )
   const activeBannerSrcSet = activeBanner?.imageUrl
-    ? buildCloudinarySrcSet(activeBanner.imageUrl, isMobileFeatured ? [480, 720, 960] : [1024, 1440, 1920], {
+    ? buildCloudinarySrcSet(activeBanner.imageUrl, isMobileFeatured ? [640, 960, 1280] : [1024, 1440, 1920], {
       quality: 'auto:best',
       format: 'auto',
     })
