@@ -22,6 +22,8 @@ const PRODUCT_COLOR_OPTIONS = [
     'Gris Perla',
     'Gris Aero',
     'Gris Acero',
+    'Azul Aero',
+    'Azul Acero',
     'Verde',
     'Rosa',
     'Canela',

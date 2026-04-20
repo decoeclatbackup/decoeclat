@@ -10,6 +10,8 @@ const PRODUCT_COLOR_HEX = {
   'Gris Perla': '#d9d9d9',
   'Gris Aero': '#9aa8b0',
   'Gris Acero': '#6e7b82',
+  'Azul Aero': '#7fa6c2',
+  'Azul Acero': '#4f6d82',
   Verde: '#6b8f71',
   Rosa: '#d89ca4',
   Canela: '#8b5a3c',

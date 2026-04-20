@@ -212,7 +212,7 @@ ALTER TABLE "variantes_producto" ADD FOREIGN KEY ("tela_id") REFERENCES "tela" (
 
 ALTER TABLE "variantes_producto" ADD FOREIGN KEY ("size_id") REFERENCES "sizes" ("size_id");
 
-ALTER TABLE "ventas" ADD FOREIGN KEY ("cliente_id") REFERENCES "clientes" ("cliente_id");
+ALTER TABLE "ventas" ADD FOREIGN KEY ("cliente_id") REFERENCES "clientes" ("cliente_id"); 
 
 ALTER TABLE "ventas" ADD FOREIGN KEY ("metodo_id") REFERENCES "metodos_pago" ("metodo_id");
 
