@@ -10,6 +10,8 @@ const ALLOWED_COLORS = new Map([
     ['gris perla', 'Gris Perla'],
     ['gris aero', 'Gris Aero'],
     ['gris acero', 'Gris Acero'],
+    ['azul aero', 'Azul Aero'],
+    ['azul acero', 'Azul Acero'],
     ['verde', 'Verde'],
     ['rosa', 'Rosa'],
     ['canela', 'Canela'],

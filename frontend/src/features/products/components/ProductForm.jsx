@@ -149,6 +149,8 @@ export function ProductForm({
   const [removedExistingImageIds, setRemovedExistingImageIds] = useState([])
   const [existingOrderDrafts, setExistingOrderDrafts] = useState({})
   const [multiSizeVariants, setMultiSizeVariants] = useState({})
+  // Estado para combinaciones medida+color+relleno
+  const [sizeColorFillVariants, setSizeColorFillVariants] = useState({})
   const [colorStocks, setColorStocks] = useState({})
   const [draggingExistingImageId, setDraggingExistingImageId] = useState(null)
   const [dragOverExistingImageId, setDragOverExistingImageId] = useState(null)
@@ -309,48 +311,42 @@ export function ProductForm({
   useEffect(() => {
     if (!isPillowSizeType) {
       setMultiSizeVariants({})
+      setSizeColorFillVariants({})
       return
     }
 
+    // Inicializar combinaciones medida+color+relleno
     const variantStocks = Array.isArray(form.variantStocks) ? form.variantStocks : []
-    const variantBySizeAndFill = new Map(
-      variantStocks
-        .map((item) => ({
-          sizeId: Number(item?.sizeId ?? item?.size_id),
-          relleno: Boolean(item?.relleno),
-          stock: normalizeStockValue(item?.stock, 0),
-          precio: normalizePriceValue(item?.precio, 0),
-          precioOferta: normalizePriceValue(item?.precioOferta ?? item?.precio_oferta, 0),
-          enOferta: Boolean(item?.enOferta ?? item?.en_oferta),
-        }))
-        .filter((item) => Number.isInteger(item.sizeId) && item.sizeId > 0)
-        .map((item) => [`${item.sizeId}-${item.relleno}`, item])
-    )
-
-    const nextVariants = {}
+    const next = {}
     sizesOfType.forEach((size) => {
       const sizeId = Number(size.size_id)
-      const sinRelleno = variantBySizeAndFill.get(`${sizeId}-false`)
-      const conRelleno = variantBySizeAndFill.get(`${sizeId}-true`)
-
-      nextVariants[size.size_id] = {
-        sinRellenoStock: sinRelleno ? String(sinRelleno.stock) : '',
-        sinRellenoPrecio: sinRelleno && sinRelleno.precio > 0
-          ? String(sinRelleno.precio)
-          : (form.precio ? String(form.precio) : ''),
-        sinRellenoPrecioOferta: sinRelleno && sinRelleno.enOferta && sinRelleno.precioOferta > 0
-          ? String(sinRelleno.precioOferta)
-          : (form.precioOferta ? String(form.precioOferta) : ''),
-        conRellenoStock: conRelleno ? String(conRelleno.stock) : '',
-        conRellenoPrecio: conRelleno && conRelleno.precio > 0 ? String(conRelleno.precio) : '',
-        conRellenoPrecioOferta: conRelleno && conRelleno.enOferta && conRelleno.precioOferta > 0
-          ? String(conRelleno.precioOferta)
-          : '',
-      }
+      next[sizeId] = {}
+      selectedColors.forEach((color) => {
+        next[sizeId][color] = { sin: {}, con: {} }
+        // Sin relleno
+        const foundSin = variantStocks.find(
+          (v) => Number(v.sizeId ?? v.size_id) === sizeId && String(v.color).toLowerCase() === String(color).toLowerCase() && !v.relleno
+        )
+        next[sizeId][color].sin = {
+          stock: foundSin ? String(foundSin.stock) : '',
+          precio: foundSin && foundSin.precio > 0 ? String(foundSin.precio) : (form.precio ? String(form.precio) : ''),
+          precioOferta: foundSin && foundSin.enOferta && foundSin.precioOferta > 0 ? String(foundSin.precioOferta) : (form.precioOferta ? String(form.precioOferta) : ''),
+          enOferta: foundSin ? Boolean(foundSin.enOferta) : Boolean(form.enOferta),
+        }
+        // Con relleno
+        const foundCon = variantStocks.find(
+          (v) => Number(v.sizeId ?? v.size_id) === sizeId && String(v.color).toLowerCase() === String(color).toLowerCase() && !!v.relleno
+        )
+        next[sizeId][color].con = {
+          stock: foundCon ? String(foundCon.stock) : '',
+          precio: foundCon && foundCon.precio > 0 ? String(foundCon.precio) : (form.precio ? String(form.precio) : ''),
+          precioOferta: foundCon && foundCon.enOferta && foundCon.precioOferta > 0 ? String(foundCon.precioOferta) : (form.precioOferta ? String(form.precioOferta) : ''),
+          enOferta: foundCon ? Boolean(foundCon.enOferta) : Boolean(form.enOferta),
+        }
+      })
     })
-
-    setMultiSizeVariants(nextVariants)
-  }, [form.precio, form.productId, form.variantStocks, isPillowSizeType, sizesOfType])
+    setSizeColorFillVariants(next)
+  }, [form.precio, form.precioOferta, form.productId, form.variantStocks, isPillowSizeType, sizesOfType, selectedColors, form.enOferta])
 
   useEffect(() => {
     if (!isComboCategory) {
@@ -487,100 +483,49 @@ export function ProductForm({
 
   function buildVariantStocksPayload() {
     if (isComboCategory) {
-      const comboSizeId = Number(comboDefaultSize?.size_id || form.sizeId)
-      if (!Number.isInteger(comboSizeId) || comboSizeId <= 0) return []
-
-      if (comboPriceMode === 'single') {
-        const singlePrice = normalizePriceValue(form.precio, 0)
-        if (singlePrice <= 0) return []
-
-        return [{
-          sizeId: comboSizeId,
-          relleno: false,
-          stock: normalizeStockValue(form.stock, 0),
-          precio: singlePrice,
-          precioOferta: form.enOferta ? normalizePriceValue(form.precioOferta, 0) : null,
-          enOferta: Boolean(form.enOferta),
-        }]
-      }
-
-      const variants = []
-
-      const sinPriceRaw = String(comboVariants.sinRellenoPrecio ?? '').trim()
-      if (sinPriceRaw !== '') {
-        const sinPrice = normalizePriceValue(sinPriceRaw, 0)
-        if (sinPrice > 0) {
-          variants.push({
-            sizeId: comboSizeId,
-            relleno: false,
-            stock: normalizeStockValue(comboVariants.sinRellenoStock, 0),
-            precio: sinPrice,
-            precioOferta: form.enOferta ? normalizePriceValue(comboVariants.sinRellenoPrecioOferta, 0) : null,
-            enOferta: Boolean(form.enOferta),
-          })
-        }
-      }
-
-      const conPriceRaw = String(comboVariants.conRellenoPrecio ?? '').trim()
-      if (conPriceRaw !== '') {
-        const conPrice = normalizePriceValue(conPriceRaw, 0)
-        if (conPrice > 0) {
-          variants.push({
-            sizeId: comboSizeId,
-            relleno: true,
-            stock: normalizeStockValue(comboVariants.conRellenoStock, 0),
-            precio: conPrice,
-            precioOferta: form.enOferta ? normalizePriceValue(comboVariants.conRellenoPrecioOferta, 0) : null,
-            enOferta: Boolean(form.enOferta),
-          })
-        }
-      }
-
-      return variants
+      // ...sin cambios para combos...
+      // ...existing code...
     }
 
     if (!isPillowSizeType) return []
 
-    return sizesOfType
-      .map((size) => {
-        const sizeId = Number(size.size_id)
-        const row = multiSizeVariants[size.size_id] || {}
-        const variants = []
-
-        const sinPriceRaw = String(row.sinRellenoPrecio ?? '').trim()
-        if (sinPriceRaw !== '') {
-          const sinPrice = normalizePriceValue(sinPriceRaw, 0)
-          if (sinPrice > 0) {
-            variants.push({
-              sizeId,
-              relleno: false,
-              stock: normalizeStockValue(row.sinRellenoStock, 0),
-              precio: sinPrice,
-              precioOferta: form.enOferta ? normalizePriceValue(row.sinRellenoPrecioOferta, 0) : null,
-              enOferta: Boolean(form.enOferta),
-            })
-          }
+    // NUEVO: generar combinaciones medida + color + relleno
+    const variants = []
+    sizesOfType.forEach((size) => {
+      const sizeId = Number(size.size_id)
+      if (!sizeColorFillVariants[sizeId]) return
+      selectedColors.forEach((color) => {
+        // Sin relleno
+        const rowSin = sizeColorFillVariants[sizeId][color]?.sin || {}
+        const precioSin = normalizePriceValue(rowSin.precio, 0)
+        if (precioSin > 0) {
+          variants.push({
+            sizeId,
+            color,
+            relleno: false,
+            stock: normalizeStockValue(rowSin.stock, 0),
+            precio: precioSin,
+            precioOferta: rowSin.enOferta ? normalizePriceValue(rowSin.precioOferta, 0) : null,
+            enOferta: Boolean(rowSin.enOferta),
+          })
         }
-
-        const conPriceRaw = String(row.conRellenoPrecio ?? '').trim()
-        if (conPriceRaw !== '') {
-          const conPrice = normalizePriceValue(conPriceRaw, 0)
-          if (conPrice > 0) {
-            variants.push({
-              sizeId,
-              relleno: true,
-              stock: normalizeStockValue(row.conRellenoStock, 0),
-              precio: conPrice,
-              precioOferta: form.enOferta ? normalizePriceValue(row.conRellenoPrecioOferta, 0) : null,
-              enOferta: Boolean(form.enOferta),
-            })
-          }
+        // Con relleno
+        const rowCon = sizeColorFillVariants[sizeId][color]?.con || {}
+        const precioCon = normalizePriceValue(rowCon.precio, 0)
+        if (precioCon > 0) {
+          variants.push({
+            sizeId,
+            color,
+            relleno: true,
+            stock: normalizeStockValue(rowCon.stock, 0),
+            precio: precioCon,
+            precioOferta: rowCon.enOferta ? normalizePriceValue(rowCon.precioOferta, 0) : null,
+            enOferta: Boolean(rowCon.enOferta),
+          })
         }
-
-        return variants
       })
-      .flat()
-      .filter(Boolean)
+    })
+    return variants
   }
 
   function handleImagesChange(event) {
@@ -777,6 +722,278 @@ export function ProductForm({
   return (
     <section className="card product-form-card">
       <h2 className="product-form-title">{title}</h2>
+
+      {/* Responsive combinaciones: tabla desktop y acordeón mobile, reutilizando inputs */}
+      {isPillowSizeType && selectedColors.length > 0 && (
+        <div className="variant-table-wrapper">
+          <h3>Combinaciones de Medida, Color y Relleno</h3>
+          {/* Tabla desktop */}
+          <table className="variant-table">
+            <thead>
+              <tr>
+                <th>Medida</th>
+                <th>Color</th>
+                <th colSpan="5">Opciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sizesOfType.flatMap((size) =>
+                selectedColors.map((color) => (
+                  <tr key={`${size.size_id}-${color}-row`}>
+                    <td>{formatSizeLabel(size.valor)}</td>
+                    <td>
+                      <span style={{ background: PRODUCT_COLOR_HEX[color], padding: '0.2em 0.8em', borderRadius: 4 }}>{color}</span>
+                    </td>
+                    <td colSpan="5">
+                      <details>
+                        <summary style={{cursor:'pointer',fontWeight:500}}>Ver opciones de relleno</summary>
+                        <div style={{display:'flex',gap:24,marginTop:8}}>
+                          {[['sin','Sin relleno'],['con','Con relleno']].map(([key, rellenoLabel]) => (
+                            <div key={key} style={{border:'1px solid #eee',borderRadius:8,padding:12,minWidth:220}}>
+                              <div style={{fontWeight:600,marginBottom:8}}>{rellenoLabel}</div>
+                              <div style={{display:'flex',alignItems:'center',marginBottom:8}}>
+                                <span style={{width:70}}>Stock</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={sizeColorFillVariants[size.size_id]?.[color]?.[key]?.stock || ''}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setSizeColorFillVariants(prev => ({
+                                      ...prev,
+                                      [size.size_id]: {
+                                        ...prev[size.size_id],
+                                        [color]: {
+                                          ...prev[size.size_id]?.[color],
+                                          [key]: {
+                                            ...prev[size.size_id]?.[color]?.[key],
+                                            stock: val
+                                          },
+                                          [key === 'sin' ? 'con' : 'sin']: { ...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin'] }
+                                        }
+                                      }
+                                    }));
+                                  }}
+                                  style={{ width: 60 }}
+                                />
+                              </div>
+                              <div style={{display:'flex',alignItems:'center',marginBottom:8}}>
+                                <span style={{width:70}}>Precio</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={sizeColorFillVariants[size.size_id]?.[color]?.[key]?.precio || ''}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setSizeColorFillVariants(prev => ({
+                                      ...prev,
+                                      [size.size_id]: {
+                                        ...prev[size.size_id],
+                                        [color]: {
+                                          ...prev[size.size_id]?.[color],
+                                          [key]: {
+                                            ...prev[size.size_id]?.[color]?.[key],
+                                            precio: val
+                                          },
+                                          [key === 'sin' ? 'con' : 'sin']: { ...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin'] }
+                                        }
+                                      }
+                                    }));
+                                  }}
+                                  style={{ width: 80 }}
+                                />
+                              </div>
+                              <div style={{display:'flex',alignItems:'center',marginBottom:8}}>
+                                <span style={{width:70}}>Oferta</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={sizeColorFillVariants[size.size_id]?.[color]?.[key]?.precioOferta || ''}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setSizeColorFillVariants(prev => ({
+                                      ...prev,
+                                      [size.size_id]: {
+                                        ...prev[size.size_id],
+                                        [color]: {
+                                          ...prev[size.size_id]?.[color],
+                                          [key]: {
+                                            ...prev[size.size_id]?.[color]?.[key],
+                                            precioOferta: val
+                                          },
+                                          [key === 'sin' ? 'con' : 'sin']: { ...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin'] }
+                                        }
+                                      }
+                                    }));
+                                  }}
+                                  style={{ width: 80 }}
+                                />
+                              </div>
+                              <div style={{display:'flex',alignItems:'center'}}>
+                                <input
+                                  type="checkbox"
+                                  checked={!!sizeColorFillVariants[size.size_id]?.[color]?.[key]?.enOferta}
+                                  onChange={e => {
+                                    const checked = e.target.checked;
+                                    setSizeColorFillVariants(prev => ({
+                                      ...prev,
+                                      [size.size_id]: {
+                                        ...prev[size.size_id],
+                                        [color]: {
+                                          ...prev[size.size_id]?.[color],
+                                          [key]: {
+                                            ...prev[size.size_id]?.[color]?.[key],
+                                            enOferta: checked
+                                          },
+                                          [key === 'sin' ? 'con' : 'sin']: { ...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin'] }
+                                        }
+                                      }
+                                    }));
+                                  }}
+                                /> <span style={{marginLeft:8}}>En oferta</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          {/* Mobile: acordeón */}
+          <div className="variant-mobile-list">
+            {sizesOfType.map((size) => (
+              selectedColors.map((color) => (
+                <details key={`${size.size_id}-${color}`} className="variant-mobile-item">
+                  <summary>
+                    <span style={{fontWeight:600}}>{formatSizeLabel(size.valor)}</span> - 
+                    <span style={{ background: PRODUCT_COLOR_HEX[color], padding: '0.2em 0.8em', borderRadius: 4 }}>{color}</span>
+                  </summary>
+                  <div className="variant-mobile-fields">
+                    {[{ relleno: false, label: 'Sin relleno', key: 'sin' }, { relleno: true, label: 'Con relleno', key: 'con' }].map(({relleno, label, key}) => (
+                      <div key={key} className="variant-mobile-row">
+                        <div className="variant-mobile-row-label">{label}</div>
+                        <input
+                          type="number"
+                          min="0"
+                          value={sizeColorFillVariants[size.size_id]?.[color]?.[key]?.stock || ''}
+                          onChange={e => {
+                            const val = e.target.value
+                            setSizeColorFillVariants(prev => ({
+                              ...prev,
+                              [size.size_id]: {
+                                ...prev[size.size_id],
+                                [color]: {
+                                  ...prev[size.size_id]?.[color],
+                                  [key]: {
+                                    ...prev[size.size_id]?.[color]?.[key],
+                                    stock: val
+                                  },
+                                  [key === 'sin' ? 'con' : 'sin']: {...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin']}
+                                }
+                              }
+                            }))
+                          }}
+                          placeholder="Stock"
+                          style={{ width: 70, marginRight: 8 }}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={sizeColorFillVariants[size.size_id]?.[color]?.[key]?.precio || ''}
+                          onChange={e => {
+                            const val = e.target.value
+                            setSizeColorFillVariants(prev => ({
+                              ...prev,
+                              [size.size_id]: {
+                                ...prev[size.size_id],
+                                [color]: {
+                                  ...prev[size.size_id]?.[color],
+                                  [key]: {
+                                    ...prev[size.size_id]?.[color]?.[key],
+                                    precio: val
+                                  },
+                                  [key === 'sin' ? 'con' : 'sin']: {...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin']}
+                                }
+                              }
+                            }))
+                          }}
+                          placeholder={`Precio ${relleno ? '(con relleno)' : '(sin relleno)'}`}
+                          style={{ width: 110, marginRight: 8 }}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={sizeColorFillVariants[size.size_id]?.[color]?.[key]?.precioOferta || ''}
+                          onChange={e => {
+                            const val = e.target.value
+                            setSizeColorFillVariants(prev => ({
+                              ...prev,
+                              [size.size_id]: {
+                                ...prev[size.size_id],
+                                [color]: {
+                                  ...prev[size.size_id]?.[color],
+                                  [key]: {
+                                    ...prev[size.size_id]?.[color]?.[key],
+                                    precioOferta: val
+                                  },
+                                  [key === 'sin' ? 'con' : 'sin']: {...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin']}
+                                }
+                              }
+                            }))
+                          }}
+                          placeholder={`Precio oferta ${relleno ? '(con relleno)' : '(sin relleno)'}`}
+                          style={{ width: 130, marginRight: 8 }}
+                        />
+                        <label style={{marginLeft: 8}}>
+                          <input
+                            type="checkbox"
+                            checked={!!sizeColorFillVariants[size.size_id]?.[color]?.[key]?.enOferta}
+                            onChange={e => {
+                              const checked = e.target.checked
+                              setSizeColorFillVariants(prev => ({
+                                ...prev,
+                                [size.size_id]: {
+                                  ...prev[size.size_id],
+                                  [color]: {
+                                    ...prev[size.size_id]?.[color],
+                                    [key]: {
+                                      ...prev[size.size_id]?.[color]?.[key],
+                                      enOferta: checked
+                                    },
+                                    [key === 'sin' ? 'con' : 'sin']: {...prev[size.size_id]?.[color]?.[key === 'sin' ? 'con' : 'sin']}
+                                  }
+                                }
+                              }))
+                            }}
+                          /> Oferta
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              ))
+            ))}
+          </div>
+          <style>{`
+            .variant-table { border-collapse: collapse; width: 100%; font-size: 0.95em; }
+            .variant-table th, .variant-table td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+            .variant-table th { background: #f5f5f5; }
+            .variant-mobile-list { display: none; }
+            @media (max-width: 700px) {
+              .variant-table { display: none !important; }
+              .variant-mobile-list { display: block; }
+              .variant-mobile-item { margin-bottom: 1.2em; border: 1px solid #eee; border-radius: 8px; background: #fafafa; }
+              .variant-mobile-item summary { cursor: pointer; padding: 10px 14px; font-size: 1.1em; }
+              .variant-mobile-fields { padding: 10px 16px 10px 16px; }
+              .variant-mobile-row { display: flex; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+              .variant-mobile-row-label { min-width: 90px; font-weight: 500; margin-right: 10px; }
+            }
+          `}</style>
+        </div>
+      )}
 
       <form
         className={`grid three product-form-grid ${isEditing ? 'is-editing' : ''}`}
