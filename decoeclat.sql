@@ -198,7 +198,7 @@ CREATE TABLE "roles" (
 INSERT INTO "roles" (descripcion) 
 VALUES 
   ('Administrador'), -- Será ID 1
-  ('Vendedor'),      -- Será ID 2
+  ('Vendedor');      -- Será ID 2
 
 ALTER TABLE "productos" ADD FOREIGN KEY ("categoria_id") REFERENCES "categorias" ("categoria_id");
 
@@ -256,4 +256,6 @@ VALUES
 ('Almohadones', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids')),
 ('Cestos', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids')),
 ('Contenedores', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids')),
-('Alfombras', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids'));
+('Alfombras', (SELECT categoria_id FROM categorias WHERE nombre = 'Kids')),
+('Patrios', (SELECT categoria_id FROM categorias WHERE nombre = 'Combos')),
+('Habitación', (SELECT categoria_id FROM categorias WHERE nombre = 'Combos'));

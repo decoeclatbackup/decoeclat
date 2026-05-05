@@ -96,6 +96,13 @@ export const productosRepository = {
 
     const variantConditions = [`v.producto_id = p.producto_id`, `v.activo = true`];
 
+    // Si se filtra por medidas (sizeId), solo mostrar productos con variantes con stock > 0
+    let requireStock = false;
+    if (filters.sizeId || filters.size_id) {
+      variantConditions.push(`v.stock > 0`);
+      requireStock = true;
+    }
+
     if (filters.telaId || filters.tela_id) {
       const telaIds = this.normalizeListFilter(filters.telaId || filters.tela_id);
       if (telaIds.length > 0) {
