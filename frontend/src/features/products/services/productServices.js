@@ -227,22 +227,24 @@ async function attachFirstVariant(product) {
 	} catch {
 		variants = []
 	}
-	const first = sortVariantsForDisplay(variants)[0] || null
+	const sorted = sortVariantsForDisplay(variants)
+	// Preferir la primera variante que tenga stock > 0; si no hay, usar la primera disponible
+	const preferred = sorted.find(v => Number(v?.stock ?? 0) > 0) || sorted[0] || null
 
 	return {
 		...product,
-		variante_id: first?.variante_id || null,
-		size_id: first?.size_id || null,
-		color: first?.color || null,
+		variante_id: preferred?.variante_id || null,
+		size_id: preferred?.size_id || null,
+		color: preferred?.color || null,
 			colors: Array.isArray(product?.colors) ? product.colors : [],
-		tela_id: first?.tela_id || null,
-		relleno: Boolean(first?.relleno),
-		stock: first?.stock ?? 0,
-		precio: first?.precio || 0,
-        precioOferta: first?.precio_oferta || null,
-        enOferta: first?.en_oferta || false,
-		Size: first?.size || first?.Size || null,
-		tela: first?.tela || null,
+		tela_id: preferred?.tela_id || null,
+		relleno: Boolean(preferred?.relleno),
+		stock: Number(preferred?.stock ?? 0),
+		precio: preferred?.precio || 0,
+		precioOferta: preferred?.precio_oferta || null,
+		enOferta: preferred?.en_oferta || false,
+		Size: preferred?.size || preferred?.Size || null,
+		tela: preferred?.tela || null,
 	}
 }
 
