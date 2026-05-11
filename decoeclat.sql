@@ -245,6 +245,7 @@ INSERT INTO categorias (nombre, parent_id) VALUES
 ('Para la Cocina', NULL),
 ('Kids', NULL),
 ('Combos', NULL);
+("EclatSales", NULL);
 
 -- Subcategorías
 INSERT INTO categorias (nombre, parent_id)
